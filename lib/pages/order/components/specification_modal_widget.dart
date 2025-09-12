@@ -1,0 +1,469 @@
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:order_app/pages/order/model/dish.dart';
+import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/pages/order/components/error_notification_manager.dart';
+
+/// 规格选择弹窗组件
+class SpecificationModalWidget {
+  /// 显示规格选择弹窗
+  static void showSpecificationModal(BuildContext context, Dish dish) {
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: EdgeInsets.symmetric(horizontal: 20),
+        child: Container(
+          height: 420,
+          child: _SpecificationModalContent(dish: dish),
+        ),
+      ),
+    );
+  }
+}
+
+/// 规格选择弹窗内容
+class _SpecificationModalContent extends StatefulWidget {
+  final Dish dish;
+
+  const _SpecificationModalContent({Key? key, required this.dish})
+    : super(key: key);
+
+  @override
+  State<_SpecificationModalContent> createState() =>
+      _SpecificationModalContentState();
+}
+
+class _SpecificationModalContentState
+    extends State<_SpecificationModalContent> {
+  Map<int, List<int>> selectedOptions = {}; // 规格ID -> 选中的选项ID列表
+  int quantity = 1;
+  double totalPrice = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    totalPrice = widget.dish.price;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: EdgeInsets.only(left: 16, right: 16),
+      child: Column(
+        children: [
+          // 标题栏
+          Container(
+            padding: EdgeInsets.only(top: 16, bottom: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.dish.name,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Get.back(),
+                  child: Icon(Icons.close, size: 24, color: Color(0xff666666)),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1),
+          // 可滚动的内容区域
+          Expanded(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.only(top: 16, bottom: 16),
+
+              child: SizedBox(
+                width: double.infinity,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    // 敏感物信息（不可选）
+                    if (widget.dish.allergens != null &&
+                        widget.dish.allergens!.isNotEmpty) ...[
+                      _buildAllergenSection(),
+                      SizedBox(height: 10),
+                    ],
+                    // 规格选项
+                    if (widget.dish.options != null &&
+                        widget.dish.options!.isNotEmpty) ...[
+                      _buildOptionsSection(),
+                      SizedBox(height: 20),
+                    ],
+                     
+                  ],
+                ),
+              ),
+            ),
+          ),
+          // 底部数量选择和购物车按钮
+          _buildBottomSection(),
+        ],
+      ),
+    );
+  }
+
+  /// 构建敏感物部分
+  Widget _buildAllergenSection() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '敏感物',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: Color(0xff666666),
+          ),
+        ),
+        SizedBox(height: 8),
+        Wrap(
+          spacing: 10,
+          runSpacing: 8,
+          children: widget.dish.allergens!.map((allergen) {
+            return Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (allergen.icon != null)
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: CachedNetworkImage(
+                      imageUrl: allergen.icon!,
+                      width: 16,
+                      height: 16,
+                      errorWidget: (context, url, error) =>
+                          Icon(Icons.warning, size: 16, color: Colors.orange),
+                    ),
+                  ),
+                if (allergen.icon != null) SizedBox(width: 4),
+                Text(
+                  allergen.label ?? '',
+                  style: TextStyle(fontSize: 12, color: Color(0xff3D3D3D)),
+                ),
+              ],
+            );
+          }).toList(),
+        ),
+      ],
+    );
+  }
+
+  /// 构建规格选项部分
+  Widget _buildOptionsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widget.dish.options!
+          .map<Widget>(
+            (option) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  option.name ?? '',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff666666),
+                  ),
+                ),
+                SizedBox(height: 8),
+                if (option.isMultiple == true) ...[
+                  _buildMultipleChoiceOptions(option),
+                ] else ...[
+                  _buildSingleChoiceOptions(option),
+                ],
+                SizedBox(height: 20),
+              ],
+            ),
+          )
+          .toList(),
+    );
+  }
+
+  /// 构建多选选项
+  Widget _buildMultipleChoiceOptions(dynamic option) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 8,
+      children: (option.items ?? []).map<Widget>((item) {
+        final isSelected =
+            selectedOptions[option.id]?.contains(item.id) ?? false;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              if (selectedOptions[option.id] == null) {
+                selectedOptions[option.id!] = [];
+              }
+              if (isSelected) {
+                selectedOptions[option.id]!.remove(item.id);
+              } else {
+                selectedOptions[option.id]!.add(item.id!);
+              }
+            });
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: isSelected ? Color(0x33FF9027) : Color(0xffF1F1F1),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: isSelected ? Color(0xffFF9027) : Colors.transparent,
+              ),
+            ),
+            child: Text(
+              '${item.label ?? ''}',
+              style: TextStyle(
+                fontSize: 14,
+                color: isSelected ? Color(0xffFF9027) : Colors.black,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// 构建单选选项
+  Widget _buildSingleChoiceOptions(dynamic option) {
+    return Wrap(
+      spacing: 10,
+      runSpacing: 8,
+      children: (option.items ?? []).map<Widget>((item) {
+        final isSelected =
+            selectedOptions[option.id]?.contains(item.id) ?? false;
+        return GestureDetector(
+          onTap: () {
+            setState(() {
+              selectedOptions[option.id!] = [item.id!];
+            });
+          },
+          child: Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            decoration: BoxDecoration(
+              color: isSelected ? Color(0x33FF9027) : Color(0xffF1F1F1),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: isSelected ? Color(0xffFF9027) : Colors.transparent,
+              ),
+            ),
+            child: Text(
+              '${item.label ?? ''}',
+              style: TextStyle(
+                fontSize: 14,
+                color: isSelected ? Color(0xffFF9027) : Colors.black,
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  /// 构建已选规格文本
+  Widget _buildSelectedSpecsText() {
+    return Text(
+      '已选规格: ${_getSelectedSpecsText()}',
+      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+    );
+  }
+
+  /// 获取已选规格文本
+  String _getSelectedSpecsText() {
+    List<String> specs = [];
+    for (var option in widget.dish.options ?? []) {
+      if (selectedOptions[option.id]?.isNotEmpty == true) {
+        List<String> optionNames = [];
+        for (var item in option.items ?? []) {
+          if (selectedOptions[option.id]!.contains(item.id)) {
+            optionNames.add(item.label ?? '');
+          }
+        }
+        if (optionNames.isNotEmpty) {
+          // specs.add('${option.name}: ${optionNames.join(', ')}');
+          specs.add(optionNames.join(', '));
+        }
+      }
+    }
+    return specs.join(', ');
+  }
+
+  /// 构建底部区域（数量选择 + 购物车按钮）
+  Widget _buildBottomSection() {
+    return Container(
+      padding: EdgeInsets.only(bottom: 15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        // border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(8)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 数量选择
+          Row(
+            children: [
+              Text(
+                '数量',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xff666666),
+                ),
+              ),
+              Spacer(),
+              GestureDetector(
+                onTap: () {
+                  if (quantity > 1) {
+                    setState(() {
+                      quantity--;
+                    });
+                  }
+                },
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                 
+                  child: Image(image: AssetImage('assets/order_jian_icon.webp')),
+                ),
+              ),
+              SizedBox(width: 10),
+              Text(
+                '$quantity',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+              SizedBox(width: 10),
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    quantity++;
+                  });
+                },
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                 
+                  child: Image(image: AssetImage('assets/order_jia_icon.webp')),
+                ),
+              ),
+            ],
+          ), SizedBox(height: 10),Divider(height: 1, color: Colors.grey.shade200), SizedBox(height: 10),
+          if (selectedOptions.isNotEmpty) ...[
+                      _buildSelectedSpecsText(),
+                    ],
+
+          SizedBox(height: 10),
+          // 价格和购物车按钮
+          Row(
+            children: [
+              Text(
+                '￥',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                  color: Colors.black,
+                ),
+              ),
+              Text(
+                totalPrice.toStringAsFixed(0),
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              Spacer(),
+
+              Obx(() {
+                final controller = Get.find<OrderController>();
+                final isLoading = controller.isDishLoading(widget.dish.id);
+                
+                return GestureDetector(
+                  onTap: isLoading ? null : _addToCart,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: isLoading ? Colors.grey : Colors.orange,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: isLoading
+                        ? SizedBox(
+                            width: 60,
+                            height: 24,
+                            child: Center(
+                              child: SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              ),
+                            ),
+                          )
+                        : Text(
+                            '+购物车',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
+                );
+              }),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 添加到购物车
+  void _addToCart() {
+    // 检查必选项
+    String? missingOptionName;
+    for (var option in widget.dish.options ?? []) {
+      if (option.isRequired == true) {
+        if (selectedOptions[option.id]?.isEmpty ?? true) {
+          missingOptionName = option.name;
+          break;
+        }
+      }
+    }
+
+    if (missingOptionName == null) {
+      // 添加到购物车
+      final controller = Get.find<OrderController>();
+      
+      // 构建选择的规格选项 - 直接传递optionId和itemIds
+      Map<String, List<String>> selectedOptionsMap = {};
+      selectedOptions.forEach((optionId, selectedItemIds) {
+        if (selectedItemIds.isNotEmpty) {
+          // 直接使用optionId作为key，itemIds作为value
+          selectedOptionsMap[optionId.toString()] = selectedItemIds.map((id) => id.toString()).toList();
+        }
+      });
+      
+      for (int i = 0; i < quantity; i++) {
+        controller.addToCart(widget.dish, selectedOptions: selectedOptionsMap);
+      }
+      Navigator.of(context).pop();
+      // 移除本地成功提示，等待服务器确认后再显示
+    } else {
+      ErrorNotificationManager().showWarningNotification(
+        title: '提示', 
+        message: '请选择$missingOptionName',
+        warningCode: 'missing_required_option',
+      );
+    }
+  }
+}

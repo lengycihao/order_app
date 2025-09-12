@@ -1,0 +1,14 @@
+外层的id为随机生成的字符串，帮我随机生成20位
+type是业务类型
+data是具体业务数据
+timestamp是当前时间戳
+
+data:
+- action是业务类型（add 添加、add_temp 添加临时菜、update 修改、delete 删除、clear 清空、refresh 刷新（服务器推送））
+- options是菜品规格
+   - id是规格名称id
+   - item_ids是规格对应的值的id列表
+   - custom_values暂时不用传或者传个空列表
+- dish_id是菜品id
+- quantity是菜品数量
+- force_operate是bool类型，是否强势添加（这个是根据收到的消息来判断的，默认是false）
