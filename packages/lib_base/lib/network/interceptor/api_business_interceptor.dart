@@ -84,7 +84,8 @@ class ApiBusinessInterceptor extends Interceptor {
   bool _isHttpStatusValid(int? statusCode) {
     if (statusCode == null) return false;
     // 允许的状态码：成功状态码和需要特殊处理的错误状态码
-    const validStatusCodes = {200, 201, 202, 204, 401, 403, 404, 422, 429, 500};
+    // 210: 数据处理中，需要重试
+    const validStatusCodes = {200, 201, 202, 204, 210, 401, 403, 404, 422, 429, 500};
     return validStatusCodes.contains(statusCode);
   }
 
@@ -170,6 +171,9 @@ class ApiBusinessInterceptor extends Interceptor {
       case 200:
       case 0: // 有些API使用0表示成功
         return _createSuccessResult(data, apiCode, message);
+
+      case 210: // 数据处理中，需要重试
+        return _createErrorResult(apiCode, message ?? '数据处理中，请稍后重试');
 
       case 401:
         return _handleUnauthorized(apiCode, message);

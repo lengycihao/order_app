@@ -382,44 +382,24 @@ class _SpecificationModalContentState
               ),
               Spacer(),
 
-              Obx(() {
-                final controller = Get.find<OrderController>();
-                final isLoading = controller.isDishLoading(widget.dish.id);
-                
-                return GestureDetector(
-                  onTap: isLoading ? null : _addToCart,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: isLoading ? Colors.grey : Colors.orange,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: isLoading
-                        ? SizedBox(
-                            width: 60,
-                            height: 24,
-                            child: Center(
-                              child: SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                                ),
-                              ),
-                            ),
-                          )
-                        : Text(
-                            '+购物车',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+              GestureDetector(
+                onTap: _addToCart,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(20),
                   ),
-                );
-              }),
+                  child: Text(
+                    '+购物车',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ],

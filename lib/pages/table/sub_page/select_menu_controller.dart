@@ -4,7 +4,7 @@ import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/api/base_api.dart';
 import 'package:lib_domain/entrity/order/dish_list_model/dish_list_model.dart';
-import 'package:order_app/pages/order/order_element/order_page.dart';
+import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:lib_base/logging/logging.dart';
@@ -327,7 +327,7 @@ class SelectMenuController extends GetxController {
     }
     
     // 使用导航管理器统一处理跳转逻辑
-    NavigationManager.goToOrderPage(() => OrderDishPage(), arguments: orderData);
+    NavigationManager.goToOrderPage(() => OrderMainPage(), arguments: orderData);
   }
 
   /// 返回上一页

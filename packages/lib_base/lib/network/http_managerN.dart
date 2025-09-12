@@ -530,12 +530,17 @@ class HttpManagerN {
         return response.data as HttpResultN;
       } else {
         // Fallback in case ApiInterceptor is disabled
+        // 安全处理response.data可能为null的情况
+        dynamic dataJson = null;
+        if (response.data != null && response.data is Map) {
+          dataJson = response.data["data"];
+        }
 
         return HttpResultN(
           isSuccess: true,
           code: response.statusCode ?? 200,
           msg: 'Success',
-          dataJson: response.data["data"],
+          dataJson: dataJson,
         );
       }
     } catch (e) {

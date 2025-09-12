@@ -22,4 +22,8 @@ class ApiRequest {
   static const tableDetail = '/api/waiter/table/detail';
 
   static const cartInfo = '/api/waiter/cart/info';
+
+  static const submitOrder = '/api/waiter/cart/submit_order';
+
+  static const currentOrder = '/api/waiter/order/current';
 }

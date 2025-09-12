@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lib_base/lib_base.dart';
+import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 
 /// 401错误测试页面
 /// 用于测试401错误的处理逻辑
@@ -63,7 +64,7 @@ class _Test401PageState extends State<Test401Page> {
                         SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: RestaurantLoadingWidget(size: 20),
                         ),
                         SizedBox(width: 8),
                         Text('测试中...'),

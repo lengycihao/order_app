@@ -8,7 +8,7 @@ import 'package:order_app/pages/table/tools/change_table_status_dialog.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/table/table_controller.dart';
-import 'package:order_app/pages/order/order_element/order_page.dart';
+import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:lib_domain/api/base_api.dart';
 
 class TableCard extends StatelessWidget {
@@ -181,7 +181,7 @@ class TableCard extends StatelessWidget {
           } else {
             // 其他状态（除了5,6）：直接进入点餐页面
             Get.to(
-              () => OrderDishPage(),
+              () => OrderMainPage(),
               arguments: {
                 'table': latestTable,
                 'menu_id': latestTable.menuId,

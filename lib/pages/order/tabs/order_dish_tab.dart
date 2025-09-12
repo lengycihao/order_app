@@ -7,23 +7,21 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/dish_item_widget.dart';
 import 'package:order_app/pages/order/components/allergen_filter_widget.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
-import 'package:order_app/pages/order/components/more_options_modal_widget.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
 import 'package:order_app/pages/order/components/quantity_input_widget.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
-import 'package:order_app/pages/order/ordered_page.dart';
-import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/utils/focus_manager.dart';
+import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
 
-class OrderDishPage extends StatefulWidget {
-  const OrderDishPage({super.key});
+class OrderDishTab extends StatefulWidget {
+  const OrderDishTab({super.key});
 
   @override
-  State<OrderDishPage> createState() => _OrderDishPageState();
+  State<OrderDishTab> createState() => _OrderDishTabState();
 }
 
-class _OrderDishPageState extends State<OrderDishPage> {
+class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClientMixin {
   late final OrderController controller;
   final ScrollController _scrollController = ScrollController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -34,21 +32,14 @@ class _OrderDishPageState extends State<OrderDishPage> {
   bool _isClickCategory = false;
 
   @override
+  bool get wantKeepAlive => true; // 保持页面状态
+
+  @override
   void initState() {
     super.initState();
 
-    // 获取或创建OrderController实例
-    try {
-      controller = Get.find<OrderController>();
-      print('🎯 OrderDishPage 获取已存在的 controller');
-    } catch (e) {
-      controller = Get.put(OrderController());
-      print('🎯 OrderDishPage 创建新的 controller');
-    }
-    print('🎯 Controller 类目数量: ${controller.categories.length}');
-
-    // 加载敏感物数据
-    controller.loadAllergens();
+    // 获取OrderController实例
+    controller = Get.find<OrderController>();
 
     // 监听滚动来更新左侧类目选中状态
     _scrollController.addListener(_onScroll);
@@ -79,8 +70,8 @@ class _OrderDishPageState extends State<OrderDishPage> {
     _categoryPositions.clear();
     double currentPosition = 0.0;
     const double itemHeight = 116.0;
-    const double categoryHeaderHeight = 40.0; // 普通标题高度
-    const double categoryBottomSpace = 100.0; // 每个类目底部的空间
+    const double categoryHeaderHeight = 40.0;
+    const double categoryBottomSpace = 100.0;
 
     for (int categoryIndex = 0; categoryIndex < controller.categories.length; categoryIndex++) {
       _categoryPositions.add(currentPosition);
@@ -95,17 +86,13 @@ class _OrderDishPageState extends State<OrderDishPage> {
       
       // 菜品列表高度 - 确保至少一屏
       final screenHeight = MediaQuery.of(context).size.height;
-      final minItemsPerScreen = ((screenHeight - 200) / itemHeight).floor(); // 减去其他UI元素高度
+      final minItemsPerScreen = ((screenHeight - 200) / itemHeight).floor();
       final actualItemCount = dishesInCategory > 0 
           ? (dishesInCategory < minItemsPerScreen ? minItemsPerScreen : dishesInCategory)
           : minItemsPerScreen;
       
       currentPosition += actualItemCount * itemHeight;
-      
-      // 类目底部空间
       currentPosition += categoryBottomSpace;
-      
-      // print('📍 类目 $categoryIndex (${controller.categories[categoryIndex]}) 位置: ${_categoryPositions[categoryIndex]}');
     }
   }
 
@@ -113,10 +100,8 @@ class _OrderDishPageState extends State<OrderDishPage> {
   int _buildItemCount() {
     int count = 0;
     for (int categoryIndex = 0; categoryIndex < controller.categories.length; categoryIndex++) {
-      // 类目标题
-      count++;
+      count++; // 类目标题
       
-      // 该类目的菜品 - 确保至少一屏
       final dishes = controller.filteredDishes
           .where((d) => d.categoryId == categoryIndex)
           .toList();
@@ -126,9 +111,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
       final displayItemCount = dishes.length < minItemsPerScreen ? minItemsPerScreen : dishes.length;
       
       count += displayItemCount;
-      
-      // 类目底部空间
-      count++;
+      count++; // 类目底部空间
     }
     return count;
   }
@@ -149,7 +132,6 @@ class _OrderDishPageState extends State<OrderDishPage> {
           .where((d) => d.categoryId == categoryIndex)
           .toList();
       
-      // 计算显示数量（确保至少一屏）
       final screenHeight = MediaQuery.of(context).size.height;
       final minItemsPerScreen = ((screenHeight - 200) / 116).floor();
       final displayItemCount = dishes.length < minItemsPerScreen ? minItemsPerScreen : dishes.length;
@@ -157,10 +139,8 @@ class _OrderDishPageState extends State<OrderDishPage> {
       for (int dishIndex = 0; dishIndex < displayItemCount; dishIndex++) {
         if (currentIndex == index) {
           if (dishIndex < dishes.length) {
-            // 显示真实菜品
             return _buildDishItem(dishes[dishIndex]);
           } else {
-            // 填充空白项目以确保至少一屏
             return Container(
               height: 116,
               color: Colors.white,
@@ -214,7 +194,6 @@ class _OrderDishPageState extends State<OrderDishPage> {
     final scrollOffset = _scrollController.offset;
     int newSelectedCategory = 0;
 
-    // 找到当前滚动位置对应的类目
     for (int i = _categoryPositions.length - 1; i >= 0; i--) {
       if (scrollOffset >= _categoryPositions[i]) {
         newSelectedCategory = i;
@@ -223,85 +202,16 @@ class _OrderDishPageState extends State<OrderDishPage> {
     }
 
     if (controller.selectedCategory.value != newSelectedCategory) {
-      print('🔄 滚动切换类目: ${controller.selectedCategory.value} -> $newSelectedCategory');
       controller.selectedCategory.value = newSelectedCategory;
     }
   }
 
-  /// 构建导航按钮
-  Widget _buildNavButton(String text, bool isSelected) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        border: isSelected ? null : null,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: isSelected ? Colors.orange : Colors.black,
-          fontSize: 16,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
-      ),
-    );
-  }
-
-
-
-  /// 处理返回按钮点击
-  void _handleBackPressed() async {
-    // 使用导航管理器统一处理返回逻辑
-    await NavigationManager.backToTablePage();
-  }
-
-  /// 导航到已点页面
-  void _navigateToOrderedPage() async {
-    // 跳转前刷新已点订单数据
-    await controller.loadCurrentOrder();
-    Get.to(() => OrderedPage());
-  }
-
-  /// 处理提交订单
-  Future<void> _handleSubmitOrder() async {
-    try {
-      // 显示纯动画加载弹窗（无文字）
-      OrderSubmitDialog.showLoadingOnly(context);
-      
-      // 提交订单
-      final success = await controller.submitOrder();
-      
-      // 关闭加载弹窗
-      Navigator.of(context).pop();
-      
-      if (success) {
-        // 提交成功，刷新数据后跳转到已点页面
-        await controller.loadCurrentOrder();
-        Get.to(() => OrderedPage());
-      } else {
-        // 提交失败，显示错误弹窗
-        await OrderSubmitDialog.showError(context);
-      }
-    } catch (e) {
-      print('❌ 提交订单异常: $e');
-      // 关闭加载弹窗
-      Navigator.of(context).pop();
-      // 显示错误弹窗
-      await OrderSubmitDialog.showError(
-        context,
-        message: '提交订单时发生错误，请重试',
-      );
-    }
-  }
-
-  /// zhuo
+  /// 滚动到指定类目
   void _scrollToCategory(int categoryIndex) async {
     if (categoryIndex < 0 || 
         categoryIndex >= controller.categories.length || 
         _categoryPositions.isEmpty) return;
 
-    print('🎯 点击类目: $categoryIndex (${controller.categories[categoryIndex]})');
-    
     _isClickCategory = true;
     controller.selectedCategory.value = categoryIndex;
     
@@ -311,108 +221,13 @@ class _OrderDishPageState extends State<OrderDishPage> {
         duration: Duration(milliseconds: 300),
         curve: Curves.easeInOut,
       );
-      print('✅ 滚动到类目完成');
     } catch (e) {
       print('❌ 滚动到类目失败: $e');
     } finally {
-      // 延迟重置标志
       Future.delayed(Duration(milliseconds: 100), () {
         _isClickCategory = false;
       });
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    print('🏗️ OrderDishPage build 被调用');
-    print('  类目数量: ${controller.categories.length}');
-    print('  菜品数量: ${controller.dishes.length}');
-    print('  购物车数量: ${controller.cart.length}');
-    
-    return Scaffold(
-      backgroundColor: Colors.white,
-      resizeToAvoidBottomInset: false, // 防止键盘抬起时购物车跟随移动
-      body: Column(
-        children: [
-          // 顶部导航栏
-          _buildTopNavigation(),
-          // 搜索 + 排序
-          _buildSearchAndFilter(),
-          // // 主体内容区域
-          _buildMainContent(),
-          // 底部购物车
-          _buildBottomCart(),
-        ],
-      ),
-    );
-  }
-
-  /// 构建顶部导航
-  Widget _buildTopNavigation() {
-    return Container(
-      color: Colors.white,
-      padding: EdgeInsets.only(
-        top: MediaQuery.of(context).padding.top+10,
-        left: 16,
-        right: 16,
-        bottom: 18,
-      ),
-      child: Row(
-        children: [
-          // 返回按钮
-          GestureDetector(
-            onTap: () => _handleBackPressed(),
-            child: Container(
-              width: 32,
-              height: 32,
-              padding: EdgeInsets.all(5),
-              child: Image.asset(
-                'assets/order_dish_back.webp',
-                fit: BoxFit.contain,
-                width: 20,
-                height: 20,
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          // 中间导航按钮组
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildNavButton('点餐', true),
-                SizedBox(width: 20),
-                GestureDetector(
-                  onTap: () => _navigateToOrderedPage(),
-                  child: _buildNavButton('已点', false),
-                ),
-              ],
-            ),
-          ),
-          // 右侧更多按钮
-          GestureDetector(
-            onTap: () {
-              MoreOptionsModalWidget.showMoreModal(context);
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                '更多',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   /// 构建搜索和筛选区域
@@ -423,9 +238,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
       child: Obx(() {
         return Row( 
           children: [
-            // 桌号显示或搜索框
             if (!controller.isSearchVisible.value) ...[
-              // 显示桌号
               Text(
                 controller.getTableDisplayText(),
                 style: TextStyle(
@@ -433,9 +246,8 @@ class _OrderDishPageState extends State<OrderDishPage> {
                   color: Color(0xff666666),
                 ),
               ),
-              Spacer(), // 桌号和搜索图标之间的间距，实现两端对齐
+              Spacer(),
             ] else ...[
-              // 显示搜索框
               Expanded(
                 child: Container(
                   height: 36,
@@ -463,8 +275,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
                               onTap: () {
                                 _searchController.clear();
                                 controller.searchKeyword.value = '';
-                                _searchFocusNode.unfocus(); // 失去焦点
-                                // 清除搜索后重新计算位置
+                                _searchFocusNode.unfocus();
                                 Future.delayed(Duration(milliseconds: 100), () {
                                   _calculateCategoryPositions();
                                 });
@@ -478,27 +289,23 @@ class _OrderDishPageState extends State<OrderDishPage> {
                           : null,
                     ),
                     onChanged: (v) {
-                      // 搜索后重新计算位置
                       Future.delayed(Duration(milliseconds: 100), () {
                         _calculateCategoryPositions();
                       });
                     },
                     onSubmitted: (value) {
-                      // 搜索提交后失去焦点
                       _searchFocusNode.unfocus();
                     },
                   ),
                 ),
               ),
-              SizedBox(width: 15), // 输入框和关闭按钮间隔15px
+              SizedBox(width: 15),
             ],
-            // 搜索图标（仅在搜索框未显示时显示）
+            
             if (!controller.isSearchVisible.value) ...[
               GestureDetector(
                 onTap: () {
-                  // 显示搜索框
                   controller.showSearchBox();
-                  // 延迟聚焦搜索框
                   Future.delayed(Duration(milliseconds: 100), () {
                     _searchFocusNode.requestFocus();
                   });
@@ -506,21 +313,18 @@ class _OrderDishPageState extends State<OrderDishPage> {
                 child: SizedBox(
                   width: 24,
                   height: 24,
-                   
-                  child: Image(image: AssetImage("assets/order_allergen_search.webp"),width:20,)
+                  child: Image(image: AssetImage("assets/order_allergen_search.webp"), width: 20),
                 ),
               ),
               SizedBox(width: 13),
             ],
             
-            // 如果搜索框显示，添加关闭按钮
             if (controller.isSearchVisible.value) ...[
               GestureDetector(
                 onTap: () {
                   controller.hideSearchBox();
                   _searchController.clear();
                   _searchFocusNode.unfocus();
-                  // 隐藏搜索框后重新计算位置
                   Future.delayed(Duration(milliseconds: 100), () {
                     _calculateCategoryPositions();
                   });
@@ -542,7 +346,6 @@ class _OrderDishPageState extends State<OrderDishPage> {
               SizedBox(width: 13),
             ],
             
-            // 敏感物筛选图标
             AllergenFilterWidget.buildFilterButton(context),
           ],
         );
@@ -555,9 +358,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
     return Expanded(
       child: Row(
         children: [
-          // 左侧分类
           _buildCategoryList(),
-          // 右侧菜品列表
           _buildDishList(),
         ],
       ),
@@ -568,7 +369,6 @@ class _OrderDishPageState extends State<OrderDishPage> {
   Widget _buildCategoryList() {
     return Container(
       width: 72,
-      // color: Colors.grey.shade50, // 使用浅灰色作为整体背景
       child: Obx(() {
         if (controller.categories.isEmpty) {
           return Center(
@@ -586,12 +386,10 @@ class _OrderDishPageState extends State<OrderDishPage> {
             
             return GetBuilder<OrderController>(
               builder: (controller) {
-                // 在GetBuilder中计算购物车数量，确保响应式更新
                 final categoryCount = controller.cart.entries
                     .where((e) => e.key.dish.categoryId == index)
                     .fold<int>(0, (sum, e) => sum + e.value);
 
-                // 检查当前分类是否是被选中分类的上下相邻分类
                 final selectedIndex = controller.selectedCategory.value;
                 final isAboveSelected = index == selectedIndex - 1;
                 final isBelowSelected = index == selectedIndex + 1;
@@ -606,7 +404,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
                       decoration: BoxDecoration(
                         color: isSelected
                             ? Colors.white
-                            : Color(0xfff4f4f4), // 未选中项使用红色背景
+                            : Color(0xfff4f4f4),
                         borderRadius: (isAboveSelected || isBelowSelected) ? BorderRadius.only(
                           topRight: isBelowSelected ? Radius.circular(8) : Radius.zero,
                           bottomRight: isAboveSelected ? Radius.circular(8) : Radius.zero,
@@ -615,7 +413,6 @@ class _OrderDishPageState extends State<OrderDishPage> {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          // 状态指示条
                           if (isSelected)
                             Positioned(
                               left: 0,
@@ -627,9 +424,9 @@ class _OrderDishPageState extends State<OrderDishPage> {
                                 decoration: BoxDecoration(
                                   color: Colors.orange,
                                   borderRadius: BorderRadius.only(
-       topRight: Radius.elliptical(5, 5),  // 右上角椭圆半径
-       bottomRight: Radius.elliptical(5, 5),// 右下角椭圆半径
-    ),
+                                    topRight: Radius.elliptical(5, 5),
+                                    bottomRight: Radius.elliptical(5, 5),
+                                  ),
                                 ),
                               ),
                             ),
@@ -641,7 +438,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
                               style: TextStyle(
                                 color: isSelected
                                     ? Colors.orange
-                                    : Color(0xff666666), // 红色背景上使用白色文字
+                                    : Color(0xff666666),
                                 fontWeight: isSelected 
                                     ? FontWeight.bold 
                                     : FontWeight.normal,
@@ -692,7 +489,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
   Widget _buildDishList() {
     return Expanded(
       child: Container(
-        color: Colors.white, // 内容区域背景色设为红色
+        color: Colors.white,
         child: Obx(() {
           if (controller.categories.isEmpty) {
             return Center(
@@ -705,12 +502,10 @@ class _OrderDishPageState extends State<OrderDishPage> {
 
           return GestureDetector(
             onTap: () {
-              // 点击列表时收起所有数量输入键盘并恢复原值
               GlobalFocusManager().dismissAllQuantityInputs();
             },
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
-                // 滚动结束后重新计算位置
                 if (notification is ScrollEndNotification) {
                   Future.delayed(Duration(milliseconds: 50), () {
                     _calculateCategoryPositions();
@@ -741,11 +536,9 @@ class _OrderDishPageState extends State<OrderDishPage> {
         SpecificationModalWidget.showSpecificationModal(context, dish);
       },
       onAddTap: () {
-        print('➕ 添加菜品: ${dish.name}');
         controller.addToCart(dish);
       },
       onRemoveTap: () {
-        print('➖ 减少菜品: ${dish.name}');
         controller.removeFromCart(dish);
       },
     );
@@ -755,7 +548,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
   Widget _buildCategoryBottomSpace(int categoryIndex) {
     final isLastCategory = categoryIndex == controller.categories.length - 1;
     return Container(
-      height: isLastCategory ? 150 : 100, // 最后一个类目给更多空间
+      height: isLastCategory ? 150 : 100,
       color: Colors.white,
       child: Center(
         child: Text(
@@ -769,10 +562,58 @@ class _OrderDishPageState extends State<OrderDishPage> {
     );
   }
 
+  /// 处理提交订单
+  Future<void> _handleSubmitOrder() async {
+    if (!mounted) return;
+    
+    try {
+      // 显示纯动画加载弹窗（无文字）
+      OrderSubmitDialog.showLoadingOnly(context);
+      
+      final success = await controller.submitOrder();
+      
+      if (!mounted) return;
+      
+      // 关闭加载弹窗
+      Navigator.of(context).pop();
+      
+      if (success) {
+        // 下单成功，刷新已点订单数据后切换到已点页面
+        await controller.loadCurrentOrder();
+        _switchToOrderedTab();
+      } else {
+        // 下单失败，显示错误弹窗
+        await OrderSubmitDialog.showError(context);
+      }
+    } catch (e) {
+      print('❌ 提交订单异常: $e');
+      if (mounted) {
+        // 关闭加载弹窗
+        Navigator.of(context).pop();
+        // 显示错误弹窗
+        await OrderSubmitDialog.showError(
+          context,
+          message: '提交订单时发生错误，请重试',
+        );
+      }
+    }
+  }
+
+  /// 切换到已点页面
+  void _switchToOrderedTab() {
+    if (!mounted) return;
+    
+    try {
+      // 直接使用OrderMainPageController来切换Tab
+      Get.find<OrderMainPageController>().switchToOrderedTab();
+    } catch (e) {
+      print('❌ 切换到已点页面失败: $e');
+    }
+  }
+
   /// 构建底部购物车
   Widget _buildBottomCart() {
     return Obx(() {
-      // 缓存计算结果，避免重复计算
       final totalCount = controller.totalCount;
       final totalPrice = controller.totalPrice;
       
@@ -908,7 +749,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
   /// 显示购物车弹窗
   void _showCartModal() {
     final screenHeight = MediaQuery.of(context).size.height;
-    final maxHeight = screenHeight * 0.8; // 五分之四屏幕高度
+    final maxHeight = screenHeight * 0.8;
     
     ModalUtils.showBottomModal(
       context: context,
@@ -920,7 +761,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
           constraints: BoxConstraints(
             maxHeight: maxHeight,
           ),
-          child: _CartModalContent(),
+          child: _CartModalContent(onSubmitOrder: _handleSubmitOrder),
         ),
       ),
     );
@@ -928,7 +769,6 @@ class _OrderDishPageState extends State<OrderDishPage> {
 
   /// 显示清空购物车对话框
   void _showClearCartDialog(BuildContext context) {
-    final controller = Get.find<OrderController>();
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -998,7 +838,8 @@ class _OrderDishPageState extends State<OrderDishPage> {
             SizedBox(height: 12),
             
           ],
-        ),actionsAlignment: MainAxisAlignment.spaceAround,
+        ),
+        actionsAlignment: MainAxisAlignment.spaceAround,
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
@@ -1018,8 +859,8 @@ class _OrderDishPageState extends State<OrderDishPage> {
           ElevatedButton(
             onPressed: () {
               controller.clearCart();
-              Navigator.of(context).pop(); // 关闭对话框
-              Get.back(); // 关闭购物车弹窗
+              Navigator.of(context).pop();
+              Get.back();
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
@@ -1039,43 +880,28 @@ class _OrderDishPageState extends State<OrderDishPage> {
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    super.build(context); // 必须调用，因为使用了AutomaticKeepAliveClientMixin
+    
+    return Column(
+      children: [
+        // 搜索 + 排序
+        _buildSearchAndFilter(),
+        // 主体内容区域
+        _buildMainContent(),
+        // 底部购物车
+        _buildBottomCart(),
+      ],
+    );
+  }
 }
-
 
 /// 购物车弹窗内容
 class _CartModalContent extends StatelessWidget {
-  /// 处理提交订单
-  Future<void> _handleSubmitOrder(BuildContext context) async {
-    try {
-      final controller = Get.find<OrderController>();
-      // 显示纯动画加载弹窗（无文字）
-      OrderSubmitDialog.showLoadingOnly(context);
-      
-      // 提交订单
-      final success = await controller.submitOrder();
-      
-      // 关闭加载弹窗
-      Navigator.of(context).pop();
-      
-      if (success) {
-        // 提交成功，刷新数据后跳转到已点页面
-        await controller.loadCurrentOrder();
-        Get.to(() => OrderedPage());
-      } else {
-        // 提交失败，显示错误弹窗
-        await OrderSubmitDialog.showError(context);
-      }
-    } catch (e) {
-      print('❌ 提交订单异常: $e');
-      // 关闭加载弹窗
-      Navigator.of(context).pop();
-      // 显示错误弹窗
-      await OrderSubmitDialog.showError(
-        context,
-        message: '提交订单时发生错误，请重试',
-      );
-    }
-  }
+  final VoidCallback onSubmitOrder;
+  
+  const _CartModalContent({required this.onSubmitOrder});
 
   @override
   Widget build(BuildContext context) {
@@ -1167,9 +993,11 @@ class _CartModalContent extends StatelessWidget {
                   ),
                   Spacer(),
                   ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
+                      // 先关闭购物车弹窗
                       Get.back();
-                      _handleSubmitOrder(context);
+                      // 然后执行下单逻辑（会显示新的加载弹窗）
+                      onSubmitOrder();
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
@@ -1214,11 +1042,10 @@ class _CartItem extends StatelessWidget {
       key: Key('cart_item_${cartItem.cartSpecificationId ?? cartItem.dish.id}'),
       endActionPane: ActionPane(
         motion: const ScrollMotion(),
-        extentRatio: 0.25, // 限制侧滑宽度为屏幕的25%
+        extentRatio: 0.25,
         children: [
           SlidableAction(
             onPressed: (context) async {
-              // 显示确认对话框
               final shouldDelete = await showDialog<bool>(
                 context: context,
                 barrierDismissible: false,
@@ -1343,7 +1170,6 @@ class _CartItem extends StatelessWidget {
               ) ?? false;
               
               if (shouldDelete) {
-                // 删除整个购物车项（所有数量）
                 controller.deleteCartItem(cartItem);
               }
             },
@@ -1360,7 +1186,6 @@ class _CartItem extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-          // 菜品图片
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
             child: CachedNetworkImage(
@@ -1383,7 +1208,6 @@ class _CartItem extends StatelessWidget {
             ),
           ),
           SizedBox(width: 12),
-          // 菜品信息
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1396,40 +1220,18 @@ class _CartItem extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4),
-                // 敏感物图标
-                if (cartItem.dish.allergens != null && cartItem.dish.allergens!.isNotEmpty)
-                  Row(
-                    children: cartItem.dish.allergens!.take(4).map((allergen) {
-                      return Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (allergen.icon != null)
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: CachedNetworkImage(
-                                imageUrl: allergen.icon!,
-                                width: 16,
-                                height: 16,
-                                errorWidget: (context, url, error) => Icon(
-                                  Icons.warning,
-                                  size: 16,
-                                  color: Colors.orange,
-                                ),
-                              ),
-                            )
-                          else
-                            Icon(
-                              Icons.warning,
-                              size: 16,
-                              color: Colors.orange,
-                            ),
-                          SizedBox(width: 4),
-                        ],
-                      );
-                    }).toList(),
-                  ),
+                Row(
+                  children: [
+                    Image.asset("assets/order_allergic_beans.webp", width: 16),
+                    SizedBox(width: 4),
+                    Image.asset("assets/order_allergic_milk.webp", width: 16),
+                    SizedBox(width: 4),
+                    Image.asset("assets/order_allergic_flour.webp", width: 16),
+                    SizedBox(width: 4),
+                    Image.asset("assets/order_allergic_shell.webp", width: 16),
+                  ],
+                ),
                 SizedBox(height: 8),
-                // 规格显示
                 if (cartItem.specificationText.isNotEmpty)
                   Text(
                     cartItem.specificationText,
@@ -1440,7 +1242,6 @@ class _CartItem extends StatelessWidget {
                   ),
                 if (cartItem.specificationText.isNotEmpty)
                   SizedBox(height: 4),
-                // 价格显示
                 RichText(
                   text: TextSpan(
                     children: [
@@ -1467,7 +1268,6 @@ class _CartItem extends StatelessWidget {
             ),
           ),
           SizedBox(width: 12),
-          // 数量控制
           Align(
             alignment: Alignment.bottomCenter,
             child: Row(
@@ -1487,7 +1287,6 @@ class _CartItem extends StatelessWidget {
                     currentQuantity: count,
                     isInCartModal: true,
                     onQuantityChanged: () {
-                      // 刷新购物车UI
                       controller.forceRefreshCartUI();
                     },
                   ),
@@ -1509,4 +1308,72 @@ class _CartItem extends StatelessWidget {
     );
   }
 
+}
+
+// 定义购物车弹窗容器
+class CartModalContainer extends StatelessWidget {
+  final String title;
+  final VoidCallback onClear;
+  final Widget child;
+
+  const CartModalContainer({
+    Key? key,
+    required this.title,
+    required this.onClear,
+    required this.child,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(16),
+          topRight: Radius.circular(16),
+        ),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 顶部标题栏
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Text(
+                  '购物车',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Spacer(),
+                GestureDetector(
+                  onTap: onClear,
+                  child: Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '清空',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Divider(height: 1, thickness: 1),
+          child,
+        ],
+      ),
+    );
+  }
 }

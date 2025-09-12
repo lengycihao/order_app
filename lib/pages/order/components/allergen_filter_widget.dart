@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
+import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 
 /// 敏感物筛选组件
 class AllergenFilterWidget {
@@ -12,6 +14,11 @@ class AllergenFilterWidget {
     
     // 同步临时选择状态
     controller.cancelAllergenSelection();
+    
+    // 如果敏感物数据为空且不在加载中，自动重新加载
+    if (controller.allAllergens.isEmpty && !controller.isLoadingAllergens.value) {
+      controller.loadAllergens();
+    }
     
     showDialog(
       context: context,
@@ -57,8 +64,8 @@ class _AllergenModalContent extends StatelessWidget {
         title: '敏感物',
         margin: EdgeInsets.zero,
         onClose: () {
-          // 清空敏感物的所有筛选和缓存
-          controller.clearAllAllergenData();
+          // 只清空临时选择状态，保留敏感物数据
+          controller.cancelAllergenSelection();
           Get.back();
         },
         child: Column(
@@ -83,13 +90,9 @@ class _AllergenModalContent extends StatelessWidget {
             Flexible(
               child: controller.isLoadingAllergens.value
                   ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          CircularProgressIndicator(),
-                          SizedBox(height: 16),
-                          Text('加载敏感物中...'),
-                        ],
+                      child: RestaurantLoadingWidget(
+                        message: '加载敏感物中...',
+                        size: 40.0,
                       ),
                     )
                   : ListView.builder(
@@ -187,17 +190,14 @@ class _AllergenItem extends StatelessWidget {
           children: [
             // 敏感物图标
             if (allergen.icon != null)
-              ClipRRect(
-                 borderRadius: BorderRadius.circular(15), // 👈 圆角大小
-                child: CachedNetworkImage(
-                  imageUrl: allergen.icon!,
-                  width: 30,
-                  height: 30,
-                  errorWidget: (context, url, error) => Icon(
-                    Icons.warning,
-                    size: 24,
-                    color: Colors.orange,
-                  ),
+              CachedNetworkImage(
+                imageUrl: allergen.icon!,
+                width: 30,
+                height: 30,
+                errorWidget: (context, url, error) => Icon(
+                  Icons.warning,
+                  size: 24,
+                  color: Colors.orange,
                 ),
               )
             else

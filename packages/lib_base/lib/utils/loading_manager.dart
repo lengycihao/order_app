@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 
 /// 全局Loading管理器
 /// 解决多个网络请求同时进行时loading动画一直存在的问题
@@ -87,25 +88,9 @@ class LoadingManager {
               ),
             ],
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const CircularProgressIndicator(
-                strokeWidth: 3,
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-              ),
-              if (message != null && message.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(
-                  message,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ],
+          child: RestaurantLoadingWidget(
+            size: 50,
+            color: Colors.orange,
           ),
         ),
       ),

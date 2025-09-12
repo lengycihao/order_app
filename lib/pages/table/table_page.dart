@@ -3,6 +3,7 @@ import 'package:order_app/pages/table/card/table_card.dart';
 import 'package:order_app/pages/table/table_controller.dart';
 import 'package:get/get.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
+import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 
 class TablePage extends StatelessWidget {
   final TableController controller = Get.put(TableController());
@@ -178,7 +179,7 @@ class TablePage extends StatelessWidget {
               sliver: data.isEmpty
                   ? SliverFillRemaining(
                       child: controller.isLoading.value
-                          ? Center(child: CircularProgressIndicator())
+                          ? Center(child: RestaurantLoadingWidget(size: 40))
                           : Center(child: Text('暂无数据')),
                     )
                   : SliverGrid(

@@ -3,6 +3,8 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/pages/order/order_element/models.dart';
+import 'package:order_app/pages/order/components/quantity_input_widget.dart';
 
 /// 菜品列表项组件
 class DishItemWidget extends StatelessWidget {
@@ -109,18 +111,36 @@ class DishItemWidget extends StatelessWidget {
     );
   }
 
-  /// 构建过敏图标
+  /// 构建过敏原信息（仅图标）
   Widget _buildAllergenIcons() {
-    return Row(
-      children: [
-        Image.asset("assets/order_allergic_beans.webp", width: 12),
-        SizedBox(width: 6),
-        Image.asset("assets/order_allergic_milk.webp", width: 12),
-        SizedBox(width: 6),
-        Image.asset("assets/order_allergic_flour.webp", width: 12),
-        SizedBox(width: 6),
-        Image.asset("assets/order_allergic_shell.webp", width: 12),
-      ],
+    if (dish.allergens == null || dish.allergens!.isEmpty) {
+      return SizedBox.shrink();
+    }
+    
+    return Wrap(
+      spacing: 4,
+      runSpacing: 2,
+      children: dish.allergens!.take(3).map((allergen) {
+        return allergen.icon != null
+            ? ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: CachedNetworkImage(
+                  imageUrl: allergen.icon!,
+                  width: 12,
+                  height: 12,
+                  errorWidget: (context, url, error) => Icon(
+                    Icons.warning,
+                    size: 12,
+                    color: Colors.orange,
+                  ),
+                ),
+              )
+            : Icon(
+                Icons.warning,
+                size: 12,
+                color: Colors.orange,
+              );
+      }).toList(),
     );
   }
 
@@ -176,10 +196,13 @@ class DishItemWidget extends StatelessWidget {
               right: -3,
               top: -6,
               child: Container(
-                padding: EdgeInsets.all(2),
+                padding: EdgeInsets.symmetric(
+                  horizontal: count > 99 ? 4 : 2,
+                  vertical: 1,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.red,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 constraints: BoxConstraints(
                   minWidth: 16,
@@ -204,7 +227,15 @@ class DishItemWidget extends StatelessWidget {
   /// 构建数量控制按钮
   Widget _buildQuantityControls(int count) {
     final controller = Get.find<OrderController>();
-    final isLoading = controller.isDishLoading(dish.id);
+    
+    // 查找对应的购物车项
+    CartItem? cartItem;
+    for (var entry in controller.cart.entries) {
+      if (entry.key.dish.id == dish.id && entry.key.selectedOptions.isEmpty) {
+        cartItem = entry.key;
+        break;
+      }
+    }
     
     return Row(
       mainAxisSize: MainAxisSize.min,
@@ -220,36 +251,33 @@ class DishItemWidget extends StatelessWidget {
             onTap: onRemoveTap,
           ),
         if (count > 0) SizedBox(width: 5),
-        // 数量显示
+        // 数量显示 - 如果有购物车项则使用可点击输入
         if (count > 0)
-          Text(
-            "$count",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        if (count > 0) SizedBox(width: 5),
-        // 加号按钮 - 根据加载状态显示不同内容
-        GestureDetector(
-          onTap: isLoading ? null : onAddTap, // 加载时禁用点击
-          child: Container(
-            width: 22,
-            height: 22,
-            child: isLoading
-                ? SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
-                    ),
-                  )
-                : Icon(
-                    Icons.add_circle,
-                    color: Colors.orange,
-                    size: 22,
+          cartItem != null
+              ? QuantityInputWidget(
+                  cartItem: cartItem,
+                  currentQuantity: count,
+                  isInCartModal: false,
+                  onQuantityChanged: () {
+                    // 刷新UI
+                    controller.update();
+                  },
+                )
+              : Text(
+                  "$count",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
                   ),
+                ),
+        if (count > 0) SizedBox(width: 5),
+        // 加号按钮 - 直接显示，无loading状态
+        GestureDetector(
+          onTap: onAddTap,
+          child: Icon(
+            Icons.add_circle,
+            color: Colors.orange,
+            size: 22,
           ),
         ),
       ],

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/mine/sub_page/change_psw_controller.dart';
+import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 
 class ChangePasswordPage extends StatelessWidget {
   final ChangePasswordController controller = Get.put(
@@ -162,11 +163,9 @@ class ChangePasswordPage extends StatelessWidget {
                     ),
                   ),
                   child: controller.isLoading.value
-                      ? const CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.white,
-                          ),
-                          strokeWidth: 2,
+                      ? RestaurantLoadingWidget(
+                          size: 20,
+                          color: Colors.white,
                         )
                       : const Text(
                           '提交',

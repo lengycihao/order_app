@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/table/table_page.dart';
 import 'package:order_app/pages/table/table_controller.dart';
+import 'package:order_app/pages/nav/screen_nav_page.dart';
 
 /// 导航管理器 - 统一管理页面导航和返回逻辑
 class NavigationManager {
@@ -11,13 +12,13 @@ class NavigationManager {
   NavigationManager._();
   
   /// 从点餐页面返回到桌台页面
-  /// 使用Get.offAll清空导航栈，确保返回到桌台页面
+  /// 返回到主页面（包含底部导航栏），并切换到桌台页面
   static Future<void> backToTablePage() async {
     // 保存当前Controller状态
     final currentController = Get.find<TableController>();
     
-    // 清空导航栈并返回到桌台页面
-    Get.offAll(() => TablePage());
+    // 返回到主页面（包含底部导航栏）
+    Get.offAll(() => ScreenNavPage());
     
     // 等待页面构建完成
     await Future.delayed(Duration(milliseconds: 100));

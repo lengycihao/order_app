@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
+import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/pages/order/components/error_notification_manager.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
@@ -297,7 +298,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
               padding: EdgeInsets.all(16),
               child: _isLoading
                   ? Center(
-                      child: CircularProgressIndicator(color: Colors.orange),
+                      child: RestaurantLoadingWidget(size: 30),
                     )
                   : _availableTables.isEmpty
                   ? Center(
@@ -676,7 +677,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
               padding: EdgeInsets.all(16),
               child: _isLoading
                   ? Center(
-                      child: CircularProgressIndicator(color: Colors.orange),
+                      child: RestaurantLoadingWidget(size: 30),
                     )
                   : _menuList.isEmpty
                   ? Center(

@@ -50,11 +50,21 @@ class ModalUtils {
         content: Text(content),
         actions: [
           TextButton(
-            onPressed: onCancel ?? () => Get.back(),
+            onPressed: () {
+              if (onCancel != null) {
+                onCancel();
+              }
+              Get.back();
+            },
             child: Text(cancelText),
           ),
           TextButton(
-            onPressed: onConfirm ?? () => Get.back(),
+            onPressed: () {
+              if (onConfirm != null) {
+                onConfirm();
+              }
+              Get.back();
+            },
             style: TextButton.styleFrom(
               foregroundColor: confirmColor ?? Colors.red,
             ),
