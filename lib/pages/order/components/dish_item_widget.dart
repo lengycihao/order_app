@@ -76,6 +76,11 @@ class DishItemWidget extends StatelessWidget {
 
   /// 构建菜品图片
   Widget _buildDishImage() {
+    // 如果图片URL为空，不显示任何内容
+    if (dish.image.isEmpty) {
+      return SizedBox.shrink();
+    }
+    
     return CachedNetworkImage(
       imageUrl: dish.image,
       width: 100,
@@ -111,36 +116,75 @@ class DishItemWidget extends StatelessWidget {
     );
   }
 
-  /// 构建过敏原信息（仅图标）
+  /// 构建敏感物和标签
   Widget _buildAllergenIcons() {
-    if (dish.allergens == null || dish.allergens!.isEmpty) {
+    List<Widget> widgets = [];
+    
+    // 显示敏感物（allergens）- 只显示图标，不显示名字，无背景
+    if (dish.allergens != null && dish.allergens!.isNotEmpty) {
+      // 过滤掉空的敏感物数据
+      final validAllergens = dish.allergens!.where((allergen) => 
+        allergen.icon != null && allergen.icon!.isNotEmpty
+      ).toList();
+      
+      if (validAllergens.isNotEmpty) {
+        widgets.add(
+          Wrap(
+            spacing: 4,
+            runSpacing: 2,
+            children: validAllergens.take(3).map((allergen) {
+              return Container(
+                child: CachedNetworkImage(
+                  imageUrl: allergen.icon!,
+                  width: 16,
+                  height: 16,
+                  fit: BoxFit.contain,
+                  placeholder: (context, url) => SizedBox.shrink(),
+                  errorWidget: (context, url, error) => SizedBox.shrink(),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      }
+    }
+    
+    // 显示标签（tags）- 去掉背景
+    if (dish.tags != null && dish.tags!.isNotEmpty) {
+      // 过滤掉空的标签数据
+      final validTags = dish.tags!.where((tag) => 
+        tag.isNotEmpty
+      ).toList();
+      
+      if (validTags.isNotEmpty) {
+        widgets.add(
+          Wrap(
+            spacing: 4,
+            runSpacing: 2,
+            children: validTags.take(3).map((tag) {
+              return Container(
+                child: Text(
+                  tag,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Colors.orange[700],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      }
+    }
+    
+    if (widgets.isEmpty) {
       return SizedBox.shrink();
     }
     
-    return Wrap(
-      spacing: 4,
-      runSpacing: 2,
-      children: dish.allergens!.take(3).map((allergen) {
-        return allergen.icon != null
-            ? ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: CachedNetworkImage(
-                  imageUrl: allergen.icon!,
-                  width: 12,
-                  height: 12,
-                  errorWidget: (context, url, error) => Icon(
-                    Icons.warning,
-                    size: 12,
-                    color: Colors.orange,
-                  ),
-                ),
-              )
-            : Icon(
-                Icons.warning,
-                size: 12,
-                color: Colors.orange,
-              );
-      }).toList(),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: widgets,
     );
   }
 

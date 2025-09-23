@@ -1,5 +1,6 @@
 import 'package:lib_domain/cons/api_request.dart';
 import 'package:lib_domain/entrity/cart/cart_info_model.dart';
+import 'package:lib_domain/entrity/cart/cart_item_model.dart';
 import 'package:lib_base/lib_base.dart';
 
 class CartApi {
@@ -16,11 +17,51 @@ class CartApi {
       queryParam: params,
     );
     
+    // 处理状态码210（数据处理中）的特殊情况
+    if (result.code == 210) {
+      print('⚠️ CartAPI 返回状态码210，数据处理中，返回空购物车');
+      final emptyCart = CartInfoModel(
+        cartId: null,
+        tableId: int.tryParse(tableId),
+        items: <CartItemModel>[],
+        totalQuantity: 0,
+        totalPrice: 0.0,
+        createdAt: null,
+        updatedAt: null,
+      );
+      return HttpResultN<CartInfoModel>(
+        isSuccess: true,
+        code: 210,
+        msg: '数据处理中',
+        data: emptyCart,
+      );
+    }
+    
     if (result.isSuccess) {
       try {
         final dataJson = result.getDataJson();
         print('🛒 CartAPI dataJson: $dataJson');
         print('🛒 CartAPI dataJson type: ${dataJson.runtimeType}');
+        
+        // 检查数据是否为空
+        if (dataJson.isEmpty) {
+          print('⚠️ CartAPI 返回空数据，创建空购物车');
+          final emptyCart = CartInfoModel(
+            cartId: null,
+            tableId: int.tryParse(tableId),
+            items: <CartItemModel>[],
+            totalQuantity: 0,
+            totalPrice: 0.0,
+            createdAt: null,
+            updatedAt: null,
+          );
+          return HttpResultN<CartInfoModel>(
+            isSuccess: true,
+            code: result.code,
+            msg: result.msg,
+            data: emptyCart,
+          );
+        }
         
         final cartModel = CartInfoModel.fromJson(dataJson);
         print('🛒 CartAPI converted model: $cartModel');

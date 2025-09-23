@@ -15,10 +15,12 @@ import 'package:lib_base/logging/logging.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:order_app/pages/order/components/force_update_dialog.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 // 导入优化后的类
 import 'order_constants.dart';
 import 'websocket_handler.dart';
+import 'websocket_debounce_manager.dart';
 import 'cart_manager.dart';
 import 'error_handler.dart';
 import 'data_converter.dart';
@@ -41,6 +43,7 @@ class OrderController extends GetxController {
   final isSearchVisible = false.obs;
   final isLoadingDishes = false.obs;
   final isLoadingCart = false.obs;
+  final isCartOperationLoading = false.obs; // 购物车操作loading状态
 
   // 从路由传递的数据
   var table = Rx<TableListModel?>(null);
@@ -67,6 +70,7 @@ class OrderController extends GetxController {
   
   // 管理器
   late final WebSocketHandler _wsHandler;
+  late final WebSocketDebounceManager _wsDebounceManager;
   late final CartManager _cartManager;
   late final ErrorHandler _errorHandler;
   
@@ -227,6 +231,11 @@ class OrderController extends GetxController {
       isWebSocketConnected.value = success;
       
       if (success) {
+        // 初始化WebSocket防抖管理器
+        _wsDebounceManager = WebSocketDebounceManager(
+          wsHandler: _wsHandler,
+          logTag: OrderConstants.logTag,
+        );
         logDebug('📋 桌台ID: $tableId ✅ 桌台 $tableName WebSocket连接初始化成功', tag: OrderConstants.logTag);
       } else {
         logDebug('📋 桌台ID: $tableId ❌ 桌台 $tableName WebSocket连接初始化失败', tag: OrderConstants.logTag);
@@ -258,8 +267,20 @@ class OrderController extends GetxController {
   Future<void> _loadDishesAndCart() async {
     logDebug('🔄 开始按顺序加载菜品和购物车数据', tag: OrderConstants.logTag);
     
+    // 先加载菜品数据
     await _loadDishesFromApi();
-    await _loadCartFromApi();
+    
+    // 等待菜品数据加载完成后再加载购物车
+    if (dishes.isNotEmpty) {
+      await _loadCartFromApi();
+    } else {
+      logDebug('⚠️ 菜品数据未加载完成，延迟加载购物车', tag: OrderConstants.logTag);
+      Future.delayed(Duration(milliseconds: 1000), () {
+        if (dishes.isNotEmpty) {
+          _loadCartFromApi();
+        }
+      });
+    }
     
     // 强制刷新UI以确保显示更新
     Future.delayed(Duration(milliseconds: OrderConstants.uiRefreshDelayMs), () {
@@ -272,7 +293,7 @@ class OrderController extends GetxController {
   }
 
   /// 从API加载购物车数据
-  Future<void> _loadCartFromApi() async {
+  Future<void> _loadCartFromApi({int retryCount = 0}) async {
     if (table.value?.tableId == null) {
       logDebug('❌ 桌台ID为空，无法加载购物车数据', tag: OrderConstants.logTag);
       return;
@@ -291,6 +312,16 @@ class OrderController extends GetxController {
       if (cartData != null) {
         cartInfo.value = cartData;
         _convertApiCartToLocalCart();
+        
+        // 如果购物车为空但本地有数据，可能是状态码210，延迟重试
+        if ((cartInfo.value?.items == null || cartInfo.value!.items!.isEmpty) && cart.isNotEmpty && retryCount < 2) {
+          logDebug('⚠️ 购物车数据可能不稳定，2秒后重试 (${retryCount + 1}/2)', tag: OrderConstants.logTag);
+          Future.delayed(Duration(seconds: 2), () {
+            if (isLoadingCart.value == false) {
+              _loadCartFromApi(retryCount: retryCount + 1);
+            }
+          });
+        }
       } else {
         logDebug('🛒 购物车API返回空数据，保留本地购物车', tag: OrderConstants.logTag);
       }
@@ -304,10 +335,27 @@ class OrderController extends GetxController {
   /// 将API购物车数据转换为本地购物车格式
   void _convertApiCartToLocalCart() {
     if (cartInfo.value?.items == null || cartInfo.value!.items!.isEmpty) {
-      logDebug('🛒 服务器购物车为空，清空本地购物车', tag: OrderConstants.logTag);
-      cart.clear();
-      cart.refresh();
-      update();
+      // 检查是否是因为状态码210导致的空购物车
+      if (cartInfo.value?.tableId != null && cart.isNotEmpty) {
+        logDebug('⚠️ 服务器购物车为空但本地有数据，可能是状态码210，保留本地购物车', tag: OrderConstants.logTag);
+        return; // 保留本地购物车，不清空
+      } else {
+        logDebug('🛒 服务器购物车为空，清空本地购物车', tag: OrderConstants.logTag);
+        cart.clear();
+        cart.refresh();
+        update();
+        return;
+      }
+    }
+    
+    // 确保菜品数据已加载
+    if (dishes.isEmpty) {
+      logDebug('⚠️ 菜品数据未加载完成，延迟转换购物车', tag: OrderConstants.logTag);
+      Future.delayed(Duration(milliseconds: 500), () {
+        if (dishes.isNotEmpty) {
+          _convertApiCartToLocalCart();
+        }
+      });
       return;
     }
     
@@ -353,11 +401,11 @@ class OrderController extends GetxController {
         _loadDishesFromData(result.data!);
       } else {
         logDebug('❌ 获取菜品数据失败: ${result.msg}', tag: OrderConstants.logTag);
-        Get.snackbar('错误', result.msg ?? '获取菜品数据失败');
+        Toast.error(Get.context!, result.msg ?? '获取菜品数据失败');
       }
     } catch (e) {
       logDebug('❌ 获取菜品数据异常: $e', tag: OrderConstants.logTag);
-      Get.snackbar('错误', '获取菜品数据异常');
+      Toast.error(Get.context!, '获取菜品数据异常');
     } finally {
       isLoadingDishes.value = false;
     }
@@ -391,6 +439,9 @@ class OrderController extends GetxController {
 
   void addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) {
     logDebug('📤 发送添加菜品请求: ${dish.name}', tag: OrderConstants.logTag);
+    
+    // 开始loading状态
+    isCartOperationLoading.value = true;
     
     // 创建临时的CartItem用于保存操作上下文
     // 注意：这里创建的CartItem可能没有cartId和cartSpecificationId
@@ -427,6 +478,9 @@ class OrderController extends GetxController {
     _cartManager.debounceOperation(key, () {
       if (!cart.containsKey(cartItem)) return;
       
+      // 开始loading状态
+      isCartOperationLoading.value = true;
+      
       final oldQuantity = cart[cartItem]!;
       if (oldQuantity > 1) {
         final newQuantity = oldQuantity - 1;
@@ -436,7 +490,11 @@ class OrderController extends GetxController {
         _lastOperationCartItem = cartItem;
         _lastOperationQuantity = newQuantity;
         
-        _wsHandler.sendUpdateQuantity(cartItem: cartItem, quantity: newQuantity);
+        // 使用防抖管理器发送WebSocket消息
+        _wsDebounceManager.debounceUpdateQuantity(
+          cartItem: cartItem,
+          quantity: newQuantity,
+        );
       } else {
         cart[cartItem] = 0;
         
@@ -444,7 +502,11 @@ class OrderController extends GetxController {
         _lastOperationCartItem = cartItem;
         _lastOperationQuantity = 0;
         
-        _wsHandler.sendDecreaseQuantity(cartItem: cartItem, incrQuantity: -1);
+        // 使用防抖管理器发送减少数量消息
+        _wsDebounceManager.debounceDecreaseQuantity(
+          cartItem: cartItem,
+          incrQuantity: -1,
+        );
         cart.remove(cartItem);
       }
       cart.refresh();
@@ -454,6 +516,9 @@ class OrderController extends GetxController {
 
   void deleteCartItem(CartItem cartItem) {
     if (!cart.containsKey(cartItem)) return;
+    
+    // 开始loading状态
+    isCartOperationLoading.value = true;
     
     // 保存操作上下文，用于可能的409强制更新
     _lastOperationCartItem = cartItem;
@@ -472,6 +537,9 @@ class OrderController extends GetxController {
     _cartManager.debounceOperation(key, () {
       if (!cart.containsKey(cartItem)) return;
       
+      // 开始loading状态
+      isCartOperationLoading.value = true;
+      
       final oldQuantity = cart[cartItem]!;
       final newQuantity = oldQuantity + 1;
       cart[cartItem] = newQuantity;
@@ -480,7 +548,11 @@ class OrderController extends GetxController {
       _lastOperationCartItem = cartItem;
       _lastOperationQuantity = newQuantity;
       
-      _wsHandler.sendUpdateQuantity(cartItem: cartItem, quantity: newQuantity);
+      // 使用防抖管理器发送WebSocket消息
+      _wsDebounceManager.debounceUpdateQuantity(
+        cartItem: cartItem,
+        quantity: newQuantity,
+      );
       
       cart.refresh();
       update();
@@ -519,31 +591,25 @@ class OrderController extends GetxController {
       return;
     }
 
+    // 开始loading状态
+    isCartOperationLoading.value = true;
+
     // 保存操作上下文，用于可能的409强制更新
     _lastOperationCartItem = cartItem;
     _lastOperationQuantity = newQuantity;
 
     logDebug('📤 发送手动更新数量请求: ${cartItem.dish.name} -> $newQuantity', tag: OrderConstants.logTag);
 
-    // 先发送WebSocket更新请求，但不等待响应
-    // 响应将通过WebSocket消息处理，包括409强制更新
-    final success = await _wsHandler.sendUpdateQuantity(
+    // 使用防抖管理器发送WebSocket更新请求
+    _wsDebounceManager.debounceUpdateQuantity(
       cartItem: cartItem,
       quantity: newQuantity,
     );
     
-    if (success) {
-      logDebug('📤 WebSocket发送成功，等待服务器响应', tag: OrderConstants.logTag);
-      // 不在这里更新本地状态，等待WebSocket响应
-      // 如果服务器返回409，会通过_handleForceUpdateRequired处理
-      // 如果服务器返回成功，会通过_handleCartUpdate处理
-    } else {
-      logDebug('❌ WebSocket发送失败: ${cartItem.dish.name}', tag: OrderConstants.logTag);
-      onError(500, 'WebSocket发送失败');
-      // 清理操作上下文
-      _lastOperationCartItem = null;
-      _lastOperationQuantity = null;
-    }
+    logDebug('📤 WebSocket防抖发送成功，等待服务器响应', tag: OrderConstants.logTag);
+    // 不在这里更新本地状态，等待WebSocket响应
+    // 如果服务器返回409，会通过_handleForceUpdateRequired处理
+    // 如果服务器返回成功，会通过_handleCartUpdate处理
   }
 
 
@@ -554,24 +620,19 @@ class OrderController extends GetxController {
     VoidCallback onSuccess,
     Function(int code, String message) onError,
   ) async {
-    // 先发送强制更新请求，成功后再更新本地数量
-    final success = await _wsHandler.sendUpdateQuantity(
+    // 使用防抖管理器发送强制更新请求
+    _wsDebounceManager.debounceUpdateQuantity(
       cartItem: cartItem,
       quantity: newQuantity,
       forceOperate: true, // 添加强制操作标志
     );
     
-    if (success) {
-      // 服务器确认成功后才更新本地数量
-      cart[cartItem] = newQuantity;
-      cart.refresh();
-      update();
-      logDebug('✅ 强制更新数量成功: ${cartItem.dish.name} -> $newQuantity', tag: OrderConstants.logTag);
-      onSuccess();
-    } else {
-      logDebug('❌ 强制更新数量失败: ${cartItem.dish.name}', tag: OrderConstants.logTag);
-      onError(500, 'WebSocket发送失败');
-    }
+    // 服务器确认成功后才更新本地数量
+    cart[cartItem] = newQuantity;
+    cart.refresh();
+    update();
+    logDebug('✅ 强制更新数量成功: ${cartItem.dish.name} -> $newQuantity', tag: OrderConstants.logTag);
+    onSuccess();
   }
 
   void _removeDishFromCart(Dish dish) {
@@ -768,19 +829,27 @@ class OrderController extends GetxController {
 
   void _handleCartAdd() {
     logDebug('➕ 收到服务器购物车添加消息', tag: OrderConstants.logTag);
+    // 停止loading状态
+    isCartOperationLoading.value = false;
   }
 
   void _handleCartUpdate() {
     logDebug('🔄 收到服务器购物车更新消息', tag: OrderConstants.logTag);
+    // 停止loading状态
+    isCartOperationLoading.value = false;
   }
 
   void _handleCartDelete() {
     logDebug('🗑️ 收到服务器购物车删除消息', tag: OrderConstants.logTag);
+    // 停止loading状态
+    isCartOperationLoading.value = false;
     _cartManager.refreshCartFromServer(_loadCartFromApi);
   }
 
   void _handleCartClear() {
     logDebug('🧹 收到服务器购物车清空消息', tag: OrderConstants.logTag);
+    // 停止loading状态
+    isCartOperationLoading.value = false;
     _cartManager.refreshCartFromServer(_loadCartFromApi);
   }
 
@@ -1178,6 +1247,7 @@ class OrderController extends GetxController {
   @override
   void onClose() {
     _wsHandler.dispose();
+    _wsDebounceManager.dispose();
     _cartManager.dispose();
     super.onClose();
   }

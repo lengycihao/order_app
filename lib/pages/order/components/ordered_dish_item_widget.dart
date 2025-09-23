@@ -117,63 +117,36 @@ class OrderedDishItemWidget extends StatelessWidget {
     );
   }
 
-  /// 构建过敏原信息
+  /// 构建过敏原信息（只显示图片，不显示文字和背景）
   Widget _buildAllergens() {
     return Wrap(
       spacing: 4,
       runSpacing: 2,
       children: dish.allergens!.take(3).map((allergen) {
         return Container(
-          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-          decoration: BoxDecoration(
-            color: Colors.orange[50],
-            borderRadius: BorderRadius.circular(4),
-            border: Border.all(
-              color: Colors.orange[200]!,
-              width: 0.5,
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // 过敏原图标
-              if (allergen.icon != null && allergen.icon!.isNotEmpty)
-                Container(
-                  width: 12,
-                  height: 12,
-                  margin: EdgeInsets.only(right: 4),
-                  child: CachedNetworkImage(
-                    imageUrl: allergen.icon!,
-                    fit: BoxFit.contain,
-                    placeholder: (context, url) => Icon(
-                      Icons.warning,
-                      size: 10,
-                      color: Colors.orange[700],
-                    ),
-                    errorWidget: (context, url, error) => Icon(
-                      Icons.warning,
-                      size: 10,
-                      color: Colors.orange[700],
-                    ),
+          margin: EdgeInsets.only(right: 4),
+          child: allergen.icon != null && allergen.icon!.isNotEmpty
+              ? CachedNetworkImage(
+                  imageUrl: allergen.icon!,
+                  width: 16,
+                  height: 16,
+                  fit: BoxFit.contain,
+                  placeholder: (context, url) => Icon(
+                    Icons.warning,
+                    size: 16,
+                    color: Colors.orange,
+                  ),
+                  errorWidget: (context, url, error) => Icon(
+                    Icons.warning,
+                    size: 16,
+                    color: Colors.orange,
                   ),
                 )
-              else
-                Icon(
+              : Icon(
                   Icons.warning,
-                  size: 10,
-                  color: Colors.orange[700],
+                  size: 16,
+                  color: Colors.orange,
                 ),
-              // 过敏原文字
-              Text(
-                allergen.label ?? '',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.orange[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
         );
       }).toList(),
     );

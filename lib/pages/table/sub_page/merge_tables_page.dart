@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/entrity/home/lobby_list_model/lobby_list_model.dart';
-import 'package:order_app/utils/snackbar_utils.dart';
+import 'package:order_app/utils/toast_utils.dart';
 import '../../../constants/global_colors.dart';
 import 'package:lib_domain/api/base_api.dart';
 import 'package:order_app/pages/table/sub_page/select_menu_page.dart';
@@ -166,7 +166,7 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
   /// 确认并桌操作
   Future<void> _confirmMerge() async {
     if (selectedTableIds.length < 2) {
-      SnackbarUtils.showWarning(context, '请至少选择2个桌台进行合并');
+      Toast.error(context, '请至少选择2个桌台进行合并');
       return;
     }
 
@@ -180,7 +180,7 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
 
     try {
       // 显示加载提示（使用临时提示，会自动取消之前的提示）
-      SnackbarUtils.showTemporary(context, '正在合并桌台...', color: Colors.blue);
+      Toast.info(context, '正在合并桌台...');
 
       // 转换桌台ID为整数列表
       final tableIds = selectedTableIds.map((id) => int.parse(id)).toList();
@@ -193,13 +193,13 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
         await _handleMergeSuccess(result.data!);
       } else {
         // 并桌失败，取消之前的提示并显示错误
-        SnackbarUtils.dismissCurrentSafely(context);
-        SnackbarUtils.showError(context, result.msg ?? '并桌失败');
+        Toast.hide();
+        Toast.error(context, result.msg ?? '并桌失败');
       }
     } catch (e) {
       // 网络错误，取消之前的提示并显示错误
-      SnackbarUtils.dismissCurrentSafely(context);
-      SnackbarUtils.showError(context, '并桌操作失败: $e');
+      Toast.hide();
+      Toast.error(context, '并桌操作失败: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -213,8 +213,8 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
   Future<void> _handleMergeSuccess(TableListModel mergedTable) async {
     try {
       // 取消之前的加载提示，显示成功提示
-      SnackbarUtils.dismissCurrentSafely(context);
-      SnackbarUtils.showSuccess(context, '桌台合并成功');
+      Toast.hide();
+      Toast.success(context, '桌台合并成功');
 
       // 判断选中的桌子中是否有非空闲桌子
       final hasNonEmptyTables = _hasNonEmptyTables();
@@ -228,8 +228,8 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
       }
     } catch (e) {
       // 跳转异常，取消之前的提示并显示错误
-      SnackbarUtils.dismissCurrentSafely(context);
-      SnackbarUtils.showError(context, '跳转失败: $e');
+      Toast.hide();
+      Toast.error(context, '跳转失败: $e');
     }
   }
 
@@ -283,7 +283,7 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
     // 获取非空闲桌子的菜单
     final selectedMenu = _getNonEmptyTableMenu();
     if (selectedMenu == null) {
-      SnackbarUtils.showError(context, '无法获取菜单信息');
+      Toast.error(context, '无法获取菜单信息');
       return;
     }
 

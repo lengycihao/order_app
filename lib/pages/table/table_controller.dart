@@ -8,6 +8,7 @@ import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_mo
 import 'package:order_app/cons/table_status.dart';
 import 'package:lib_base/utils/websocket_manager.dart';
 import 'package:order_app/pages/table/sub_page/merge_tables_page.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 class TableController extends GetxController {
   var selectedTab = 0.obs;
@@ -80,6 +81,29 @@ class TableController extends GetxController {
       hasNetworkError.value = true;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// 隐式刷新数据（不显示加载状态）
+  Future<void> refreshDataForTab(int index) async {
+    if (index >= tabDataList.length) return;
+    hasNetworkError.value = false;
+    
+    try {
+      final result = await _baseApi.getTableList(
+        hallId: lobbyListModel.value.halls!.isNotEmpty
+            ? lobbyListModel.value.halls![index].hallId.toString()
+            : "0",
+      );
+      if (result.isSuccess) {
+        List<TableListModel> data = result.data!;
+        tabDataList[index].value = data;
+        hasNetworkError.value = false;
+      } else {
+        hasNetworkError.value = true;
+      }
+    } catch (e) {
+      hasNetworkError.value = true;
     }
   }
 
@@ -163,16 +187,16 @@ class TableController extends GetxController {
       );
 
       if (result.isSuccess) {
-        Get.snackbar('成功', '桌台状态更新成功');
+        Toast.success(Get.context!, '桌台状态更新成功');
         // 刷新当前tab的桌台数据
         await fetchDataForTab(selectedTab.value);
       } else {
-        Get.snackbar('失败', result.msg ?? '状态更新失败');
+        Toast.error(Get.context!, result.msg ?? '状态更新失败');
       }
     } catch (e) {
       // 关闭加载对话框
       Get.back();
-      Get.snackbar('错误', '网络错误: $e');
+      Toast.error(Get.context!, '网络错误: $e');
     }
   }
 

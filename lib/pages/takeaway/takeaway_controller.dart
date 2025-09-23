@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/takeaway/model/takeaway_order_model.dart';
 import 'package:lib_domain/api/takeout_api.dart';
-import 'package:order_app/utils/snackbar_utils.dart';
+import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/lib_base.dart';
+import 'package:order_app/utils/websocket_lifecycle_manager.dart';
 
 class TakeawayController extends GetxController {
   // 未结账订单列表
@@ -39,7 +40,17 @@ class TakeawayController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // 设置页面类型并清理WebSocket连接
+    wsLifecycleManager.setCurrentPageType(WebSocketLifecycleManager.PAGE_TAKEAWAY);
     loadInitialData();
+  }
+
+  @override
+  void onClose() {
+    // 清理WebSocket连接
+    wsLifecycleManager.cleanupAllConnections();
+    searchController.dispose();
+    super.onClose();
   }
 
   void loadInitialData() {
@@ -110,12 +121,12 @@ class TakeawayController extends GetxController {
         }
       } else {
         logDebug('❌ API请求失败: ${result.msg}', tag: 'TakeawayController');
-        SnackbarUtils.showError(Get.context!, result.msg ?? '获取未结账订单失败');
+        Toast.error(Get.context!, result.msg ?? '获取未结账订单失败');
       }
     } catch (e) {
       logDebug('❌ 加载未结账订单异常: $e', tag: 'TakeawayController');
       hasNetworkErrorUnpaid.value = true;
-      SnackbarUtils.showError(Get.context!, '获取未结账订单异常');
+      Toast.error(Get.context!, '获取未结账订单异常');
     } finally {
       isRefreshingUnpaid.value = false;
     }
@@ -167,12 +178,12 @@ class TakeawayController extends GetxController {
         }
       } else {
         logDebug('❌ 已结账API请求失败: ${result.msg}', tag: 'TakeawayController');
-        SnackbarUtils.showError(Get.context!, result.msg ?? '获取已结账订单失败');
+        Toast.error(Get.context!, result.msg ?? '获取已结账订单失败');
       }
     } catch (e) {
       logDebug('❌ 加载已结账订单异常: $e', tag: 'TakeawayController');
       hasNetworkErrorPaid.value = true;
-      SnackbarUtils.showError(Get.context!, '获取已结账订单异常');
+      Toast.error(Get.context!, '获取已结账订单异常');
     } finally {
       isRefreshingPaid.value = false;
     }
@@ -216,11 +227,11 @@ class TakeawayController extends GetxController {
           }
         }
       } else {
-        SnackbarUtils.showError(Get.context!, result.msg ?? '搜索订单失败');
+        Toast.error(Get.context!, result.msg ?? '搜索订单失败');
       }
     } catch (e) {
       logDebug('❌ 搜索订单异常: $e', tag: 'TakeawayController');
-      SnackbarUtils.showError(Get.context!, '搜索订单异常');
+      Toast.error(Get.context!, '搜索订单异常');
     } finally {
       if (tabIndex == 0) {
         isRefreshingUnpaid.value = false;

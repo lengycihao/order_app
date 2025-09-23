@@ -11,12 +11,15 @@ class WaiterLoginModel {
   String? waiterName;
   @JsonKey(name: 'language_code')
   String? languageCode;
+  @JsonKey(name: 'avatar')
+  String? avatar;
 
   WaiterLoginModel({
     this.token,
     this.waiterId,
     this.waiterName,
     this.languageCode,
+    this.avatar,
   });
 
   factory WaiterLoginModel.fromRawJson(String str) =>

@@ -252,40 +252,32 @@ class _MenuItem extends StatelessWidget {
       return SizedBox.shrink();
     }
 
-    // 查找成人和儿童价格
-    String adultPrice = '0';
-    String childPrice = '0';
+    // 构建固定费用信息列表
+    List<Widget> costWidgets = [];
     
     for (var cost in menuFixedCosts!) {
-      if (cost.name?.contains('成人') == true || cost.name?.contains('大人') == true) {
-        adultPrice = cost.amount ?? '0';
-      } else if (cost.name?.contains('儿童') == true || cost.name?.contains('小孩') == true) {
-        childPrice = cost.amount ?? '0';
+      if (cost.name != null && cost.amount != null && cost.unit != null) {
+        costWidgets.add(
+          Text(
+            '${cost.name}: ${cost.amount}/${cost.unit}',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        );
       }
+    }
+
+    if (costWidgets.isEmpty) {
+      return SizedBox.shrink();
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '成人: ¥$adultPrice',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          '儿童: ¥$childPrice',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+      children: costWidgets,
     );
   }
 

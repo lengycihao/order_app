@@ -8,6 +8,7 @@ import 'package:lib_domain/api/base_api.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'takeaway_controller.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 class TakeawayPage extends StatelessWidget {
   final TakeawayController controller = Get.put(TakeawayController());
@@ -164,10 +165,10 @@ class TakeawayPage extends StatelessWidget {
           },
         );
       } else {
-        Get.snackbar('开桌失败', result.msg ?? '未知错误');
+        Toast.error(Get.context!, result.msg ?? '未知错误');
       }
     } catch (e) {
-      Get.snackbar('开桌失败', '网络错误: $e');
+      Toast.error(Get.context!, '网络错误: $e');
     }
   }
 

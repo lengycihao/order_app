@@ -245,14 +245,7 @@ class SelectMenuPage extends GetView<SelectMenuController> {
                       const SizedBox(height: 8),
 
                       // 价格信息
-                      Text(
-                        '成人：${item.adultPackagePrice}/位\n儿童：${item.childPackagePrice}/位',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xff666666),
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                      _buildPriceInfo(item),
                     ],
                   ),
                 ),
@@ -308,6 +301,49 @@ class SelectMenuPage extends GetView<SelectMenuController> {
           ),
         ),
       ),
+    );
+  }
+
+  /// 构建价格信息
+  Widget _buildPriceInfo(dynamic item) {
+    // 检查是否有menu_fixed_costs字段
+    if (item.menuFixedCosts != null && item.menuFixedCosts.isNotEmpty) {
+      // 构建固定费用信息列表
+      List<Widget> costWidgets = [];
+      
+      for (var cost in item.menuFixedCosts) {
+        if (cost.name != null && cost.amount != null && cost.unit != null) {
+          costWidgets.add(
+            Text(
+              '${cost.name}: ${cost.amount}/${cost.unit}',
+              style: const TextStyle(
+                fontSize: 14,
+                color: Color(0xff666666),
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
+        }
+      }
+
+      if (costWidgets.isNotEmpty) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: costWidgets,
+        );
+      }
+    }
+
+    // 如果没有固定费用信息，显示默认的成人和儿童价格
+    return Text(
+      '成人：${item.adultPackagePrice}/位\n儿童：${item.childPackagePrice}/位',
+      style: const TextStyle(
+        fontSize: 14,
+        color: Color(0xff666666),
+      ),
+      textAlign: TextAlign.center,
     );
   }
 }

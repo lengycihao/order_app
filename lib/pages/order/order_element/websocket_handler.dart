@@ -1,5 +1,7 @@
 import 'package:lib_base/lib_base.dart';
 import 'package:lib_base/utils/websocket_manager.dart';
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../model/dish.dart';
 import 'order_constants.dart';
 import 'models.dart';
@@ -200,9 +202,10 @@ class WebSocketHandler {
       
       final code = data['code'] as int?;
       final message = data['message'] as String?;
+      final originalId = data['original_id'] as String?;
       
       if (code != null && message != null) {
-        logDebug('📝 操作确认: 代码$code, 消息$message', tag: _logTag);
+        logDebug('📝 收到服务器二次确认消息: 代码$code, 消息$message, 原始ID$originalId', tag: _logTag);
         
         if (code == 0) {
           // 操作成功
@@ -211,13 +214,53 @@ class WebSocketHandler {
           // 需要强制操作确认
           logDebug('⚠️ 收到409状态码，需要用户确认强制操作', tag: _logTag);
           onForceUpdateRequired?.call(message, data);
+        } else if (code == 404) {
+          // 404错误 - 显示具体错误信息
+          logDebug('❌ 收到404错误: $message', tag: _logTag);
+          _showErrorMessage('操作失败', message);
+          // 停止loading状态
+          _stopLoadingState();
         } else {
           // 其他操作失败
           logDebug('❌ 操作失败: $message', tag: _logTag);
+          _showErrorMessage('操作失败', message);
+          // 停止loading状态
+          _stopLoadingState();
         }
       }
     } catch (e) {
       logDebug('❌ 处理服务器操作确认消息失败: $e', tag: _logTag);
+      // 异常情况下也停止loading状态
+      _stopLoadingState();
+    }
+  }
+  
+  /// 显示错误消息
+  void _showErrorMessage(String title, String message) {
+    try {
+      Get.snackbar(
+        title,
+        message,
+        snackPosition: SnackPosition.TOP,
+        duration: Duration(seconds: 3),
+        backgroundColor: Colors.red.withOpacity(0.1),
+        colorText: Colors.red,
+        icon: Icon(Icons.error, color: Colors.red),
+        margin: EdgeInsets.all(16),
+        borderRadius: 8,
+      );
+    } catch (e) {
+      logDebug('❌ 显示错误消息失败: $e', tag: _logTag);
+    }
+  }
+
+  /// 停止loading状态
+  void _stopLoadingState() {
+    try {
+      // 通过回调通知Controller停止loading状态
+      onCartUpdate?.call();
+    } catch (e) {
+      logDebug('❌ 停止loading状态失败: $e', tag: _logTag);
     }
   }
 

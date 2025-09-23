@@ -6,8 +6,54 @@ import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 
-class TablePage extends StatelessWidget {
+class TablePage extends StatefulWidget {
+  @override
+  _TablePageState createState() => _TablePageState();
+}
+
+class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
   final TableController controller = Get.put(TableController());
+  bool _isReturningFromOrder = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.resumed) {
+      // 应用恢复时，检查是否从点餐页面返回
+      _checkIfReturningFromOrder();
+    }
+  }
+
+  /// 检查是否从点餐页面返回
+  void _checkIfReturningFromOrder() {
+    // 这里可以通过路由栈或其他方式判断是否从点餐页面返回
+    // 暂时使用一个简单的逻辑：如果当前有数据且不在加载状态，则认为是返回
+    if (controller.tabDataList.isNotEmpty && 
+        controller.tabDataList[controller.selectedTab.value].isNotEmpty &&
+        !controller.isLoading.value) {
+      _isReturningFromOrder = true;
+      // 进行隐式刷新
+      _refreshCurrentTab();
+    }
+  }
+
+  /// 刷新当前tab数据
+  Future<void> _refreshCurrentTab() async {
+    await controller.refreshDataForTab(controller.selectedTab.value);
+    _isReturningFromOrder = false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,8 +179,8 @@ class TablePage extends StatelessWidget {
   /// 下拉刷新 + 加载状态 + 空数据提示 + Grid 间距优化
   Widget buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
-      // 如果正在加载且没有数据，显示骨架图
-      if (controller.isLoading.value && data.isEmpty) {
+      // 如果正在加载且没有数据，且不是从点餐页面返回，显示骨架图
+      if (controller.isLoading.value && data.isEmpty && !_isReturningFromOrder) {
         return const TablePageSkeleton();
       }
       

@@ -1,7 +1,7 @@
 import 'package:get/get.dart';
 import 'package:order_app/pages/takeaway/model/takeaway_order_detail_model.dart';
 import 'package:lib_domain/api/takeout_api.dart';
-import 'package:order_app/utils/snackbar_utils.dart';
+import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/lib_base.dart';
 
 class OrderDetailControllerNew extends GetxController {
@@ -27,14 +27,14 @@ class OrderDetailControllerNew extends GetxController {
       orderId = arguments['orderId'] as int;
       loadOrderDetail();
     } else {
-      SnackbarUtils.showError(Get.context!, '订单ID不能为空');
+      Toast.error(Get.context!, '订单ID不能为空');
     }
   }
 
   /// 加载订单详情
   Future<void> loadOrderDetail() async {
     if (orderId == null) {
-      SnackbarUtils.showError(Get.context!, '订单ID不能为空');
+      Toast.error(Get.context!, '订单ID不能为空');
       return;
     }
     
@@ -46,11 +46,11 @@ class OrderDetailControllerNew extends GetxController {
       if (result.isSuccess && result.data != null) {
         orderDetail.value = TakeawayOrderDetailResponse.fromJson(result.data!);
       } else {
-        SnackbarUtils.showError(Get.context!, result.msg ?? '获取订单详情失败');
+        Toast.error(Get.context!, result.msg ?? '获取订单详情失败');
       }
     } catch (e) {
       logDebug('❌ 加载订单详情异常: $e', tag: 'OrderDetailControllerNew');
-      SnackbarUtils.showError(Get.context!, '获取订单详情异常');
+      Toast.error(Get.context!, '获取订单详情异常');
     } finally {
       isLoading.value = false;
     }
@@ -64,7 +64,7 @@ class OrderDetailControllerNew extends GetxController {
   /// 再来一单
   void reorder() {
     if (orderDetail.value?.details == null || orderDetail.value!.details!.isEmpty) {
-      SnackbarUtils.showError(Get.context!, '订单商品信息不完整，无法再来一单');
+      Toast.error(Get.context!, '订单商品信息不完整，无法再来一单');
       return;
     }
     
@@ -72,7 +72,7 @@ class OrderDetailControllerNew extends GetxController {
     // 1. 将订单中的商品添加到购物车
     // 2. 跳转到外卖页面或购物车页面
     
-    SnackbarUtils.showSuccess(Get.context!, '商品已添加到购物车');
+    Toast.success(Get.context!, '商品已添加到购物车');
     
     // 暂时跳转到外卖页面
     Get.back();
@@ -82,18 +82,18 @@ class OrderDetailControllerNew extends GetxController {
   /// 联系商家
   void contactMerchant() {
     // TODO: 实现联系商家功能
-    SnackbarUtils.showInfo(Get.context!, '联系商家功能暂未开放');
+    Toast.info(Get.context!, '联系商家功能暂未开放');
   }
 
   /// 申请退款
   void requestRefund() {
     if (orderDetail.value?.isPaid != true) {
-      SnackbarUtils.showError(Get.context!, '只有已支付的订单才能申请退款');
+      Toast.error(Get.context!, '只有已支付的订单才能申请退款');
       return;
     }
     
     // TODO: 实现申请退款功能
-    SnackbarUtils.showInfo(Get.context!, '退款申请功能暂未开放');
+    Toast.info(Get.context!, '退款申请功能暂未开放');
   }
 
   /// 计算商品总价

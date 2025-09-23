@@ -28,7 +28,7 @@ class DataConverter {
             final dish = Dish(
               id: item.id?.toString() ?? '',
               name: item.name ?? '',
-              image: item.image ?? OrderConstants.defaultDishImage,
+              image: item.image ?? '', // 空字段不显示假数据
               price: double.tryParse(item.price ?? '0') ?? 0.0,
               categoryId: categoryIndex,
               hasOptions: item.hasOptions ?? false,

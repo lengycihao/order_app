@@ -149,32 +149,10 @@ class _OrderDishPageState extends State<OrderDishPage> {
           .where((d) => d.categoryId == categoryIndex)
           .toList();
       
-      // 计算显示数量（确保至少一屏）
-      final screenHeight = MediaQuery.of(context).size.height;
-      final minItemsPerScreen = ((screenHeight - 200) / 116).floor();
-      final displayItemCount = dishes.length < minItemsPerScreen ? minItemsPerScreen : dishes.length;
-      
-      for (int dishIndex = 0; dishIndex < displayItemCount; dishIndex++) {
+      // 只显示真实菜品，不填充空白
+      for (int dishIndex = 0; dishIndex < dishes.length; dishIndex++) {
         if (currentIndex == index) {
-          if (dishIndex < dishes.length) {
-            // 显示真实菜品
-            return _buildDishItem(dishes[dishIndex]);
-          } else {
-            // 填充空白项目以确保至少一屏
-            return Container(
-              height: 116,
-              color: Colors.white,
-              child: Center(
-                child: Text(
-                  '更多菜品即将上线',
-                  style: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            );
-          }
+          return _buildDishItem(dishes[dishIndex]);
         }
         currentIndex++;
       }
@@ -294,11 +272,15 @@ class _OrderDishPageState extends State<OrderDishPage> {
     }
   }
 
-  /// zhuo
+  /// 滚动到指定类目
   void _scrollToCategory(int categoryIndex) async {
     if (categoryIndex < 0 || 
-        categoryIndex >= controller.categories.length || 
-        _categoryPositions.isEmpty) return;
+        categoryIndex >= controller.categories.length) return;
+
+    // 如果位置信息为空，先计算位置
+    if (_categoryPositions.isEmpty) {
+      _calculateCategoryPositions();
+    }
 
     print('🎯 点击类目: $categoryIndex (${controller.categories[categoryIndex]})');
     

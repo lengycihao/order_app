@@ -14,6 +14,8 @@ import 'package:order_app/utils/focus_manager.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
 import 'package:order_app/components/skeleton_widget.dart';
+import 'package:lib_base/network/interceptor/auth_service.dart';
+import 'package:get_it/get_it.dart';
 
 class OrderDishTab extends StatefulWidget {
   const OrderDishTab({super.key});
@@ -133,29 +135,10 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
           .where((d) => d.categoryId == categoryIndex)
           .toList();
       
-      final screenHeight = MediaQuery.of(context).size.height;
-      final minItemsPerScreen = ((screenHeight - 200) / 116).floor();
-      final displayItemCount = dishes.length < minItemsPerScreen ? minItemsPerScreen : dishes.length;
-      
-      for (int dishIndex = 0; dishIndex < displayItemCount; dishIndex++) {
+      // 只显示真实菜品，不填充空白
+      for (int dishIndex = 0; dishIndex < dishes.length; dishIndex++) {
         if (currentIndex == index) {
-          if (dishIndex < dishes.length) {
-            return _buildDishItem(dishes[dishIndex]);
-          } else {
-            return Container(
-              height: 116,
-              color: Colors.white,
-              child: Center(
-                child: Text(
-                  '更多菜品即将上线',
-                  style: TextStyle(
-                    color: Colors.grey.shade400,
-                    fontSize: 14,
-                  ),
-                ),
-              ),
-            );
-          }
+          return _buildDishItem(dishes[dishIndex]);
         }
         currentIndex++;
       }
@@ -210,8 +193,12 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   /// 滚动到指定类目
   void _scrollToCategory(int categoryIndex) async {
     if (categoryIndex < 0 || 
-        categoryIndex >= controller.categories.length || 
-        _categoryPositions.isEmpty) return;
+        categoryIndex >= controller.categories.length) return;
+
+    // 如果位置信息为空，先计算位置
+    if (_categoryPositions.isEmpty) {
+      _calculateCategoryPositions();
+    }
 
     _isClickCategory = true;
     controller.selectedCategory.value = categoryIndex;
@@ -613,15 +600,15 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     return Container(
       height: isLastCategory ? 150 : 100,
       color: Colors.white,
-      child: Center(
+      child: isLastCategory ? Center(
         child: Text(
-          isLastCategory ? '已经到底啦～' : '${controller.categories[categoryIndex]} 结束',
+          '已经到底啦～',
           style: TextStyle(
             color: Colors.grey,
             fontSize: 14,
           ),
         ),
-      ),
+      ) : null,
     );
   }
 
@@ -1025,48 +1012,70 @@ class _UserAvatarWithLoadingState extends State<_UserAvatarWithLoading>
 
   @override
   Widget build(BuildContext context) {
+    final authService = GetIt.instance<AuthService>();
+    final user = authService.currentUser;
     return Stack(
-      children: [
-        // 用户头像
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.blue.shade100,
-            border: Border.all(
-              color: Colors.blue.shade300,
-              width: 2,
-            ),
-          ),
-          child: Icon(
-            Icons.person,
-            color: Colors.blue.shade600,
-            size: 24,
-          ),
-        ),
-        // Loading动画
-        if (widget.isLoading)
-          Positioned.fill(
-            child: Container(
+          children: [
+            // 用户头像 - 使用真实头像或占位图
+            Container(
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.black.withOpacity(0.3),
+                // 移除边框
               ),
-              child: AnimatedBuilder(
-                animation: _loadingController,
-                builder: (context, child) {
-                  return CircularProgressIndicator(
-                    value: _loadingController.value,
-                    strokeWidth: 3,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  );
-                },
+              child: ClipOval(
+                child: user?.avatar != null && user!.avatar!.isNotEmpty
+                    ? Image.network(
+                        user.avatar!,
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Image.asset(
+                            'assets/order_mine_placeholder.webp',
+                            width: 40,
+                            height: 40,
+                            fit: BoxFit.cover,
+                          );
+                        },
+                      )
+                    : Image.asset(
+                        'assets/order_mine_placeholder.webp',
+                        width: 40,
+                        height: 40,
+                        fit: BoxFit.cover,
+                      ),
               ),
             ),
-          ),
-      ],
-    );
+            // Loading动画 - 在头像内部显示转圈动画
+            if (widget.isLoading)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.black.withOpacity(0.3),
+                  ),
+                  child: Center(
+                    child: SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: AnimatedBuilder(
+                        animation: _loadingController,
+                        builder: (context, child) {
+                          return CircularProgressIndicator(
+                            value: _loadingController.value,
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        );
   }
 }
 
@@ -1083,8 +1092,8 @@ class _CartModalContent extends StatelessWidget {
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 购物车列表
-          controller.isLoadingCart.value
+          // 购物车列表 - 只在初始加载时显示骨架图，操作时不显示
+          controller.isLoadingCart.value && !controller.isCartOperationLoading.value
               ? const CartSkeleton()
               : controller.cart.isEmpty
                   ? Container(
@@ -1387,48 +1396,40 @@ class _CartItem extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: 4),
-                Row(
-                  children: [
-                    Image.asset("assets/order_allergic_beans.webp", width: 16),
-                    SizedBox(width: 4),
-                    Image.asset("assets/order_allergic_milk.webp", width: 16),
-                    SizedBox(width: 4),
-                    Image.asset("assets/order_allergic_flour.webp", width: 16),
-                    SizedBox(width: 4),
-                    Image.asset("assets/order_allergic_shell.webp", width: 16),
-                  ],
-                ),
-                SizedBox(height: 8),
-                if (cartItem.specificationText.isNotEmpty)
-                  Text(
-                    cartItem.specificationText,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                // 敏感物图标（只显示图标，不显示文字，去除背景）
+                if (cartItem.dish.allergens != null && cartItem.dish.allergens!.isNotEmpty)
+                  Row(
+                    children: cartItem.dish.allergens!.map((allergen) {
+                      return Container(
+                        margin: EdgeInsets.only(right: 4),
+                        child: allergen.icon != null
+                            ? CachedNetworkImage(
+                                imageUrl: allergen.icon!,
+                                width: 16,
+                                height: 16,
+                                fit: BoxFit.contain,
+                                errorWidget: (context, url, error) => Icon(
+                                  Icons.warning,
+                                  size: 16,
+                                  color: Colors.orange,
+                                ),
+                              )
+                            : Icon(
+                                Icons.warning,
+                                size: 16,
+                                color: Colors.orange,
+                              ),
+                      );
+                    }).toList(),
                   ),
-                if (cartItem.specificationText.isNotEmpty)
-                  SizedBox(height: 4),
-                RichText(
-                  text: TextSpan(
-                    children: [
-                      TextSpan(
-                        text: '￥${cartItem.dish.price.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black,
-                        ),
-                      ),
-                      TextSpan(
-                        text: '/份',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xFF999999),
-                          fontWeight: FontWeight.normal,
-                        ),
-                      ),
-                    ],
+                SizedBox(height: 8),
+                // 价格显示（单价）
+                Text(
+                  '￥${cartItem.dish.price.toStringAsFixed(0)}/份',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
                 ),
               ],

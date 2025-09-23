@@ -6,6 +6,7 @@ import 'package:order_app/pages/order/components/restaurant_loading_widget.dart'
 import 'package:order_app/pages/order/components/error_notification_manager.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
+import 'package:lib_domain/entrity/home/table_menu_list_model/menu_fixed_cost.dart';
 import 'package:lib_domain/api/base_api.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -255,6 +256,9 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         newTableId: _selectedTableId!,
       );
 
+      // 无论成功失败都先关闭弹窗
+      Get.back();
+
       if (result.isSuccess) {
         // 更新controller中的桌台信息
         final newTable = _availableTables.firstWhere(
@@ -262,7 +266,6 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         );
         controller.table.value = newTable;
 
-        Get.back();
         ErrorNotificationManager().showSuccessNotification(
           title: '成功', 
           message: '已成功更换桌台',
@@ -276,6 +279,8 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         );
       }
     } catch (e) {
+      // 异常情况下也要关闭弹窗
+      Get.back();
       ErrorNotificationManager().showErrorNotification(
         title: '错误', 
         message: '换桌操作异常：$e',
@@ -631,6 +636,9 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
         menuId: _selectedMenuId!,
       );
 
+      // 无论成功失败都先关闭弹窗
+      Get.back();
+
       if (result.isSuccess) {
         // 更新controller中的菜单信息
         final newMenu = _menuList.firstWhere(
@@ -641,7 +649,6 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
         // 刷新点餐页面数据
         await controller.refreshOrderData();
 
-        Get.back();
         ErrorNotificationManager().showSuccessNotification(
           title: '成功', 
           message: '已成功更换菜单',
@@ -655,6 +662,8 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
         );
       }
     } catch (e) {
+      // 异常情况下也要关闭弹窗
+      Get.back();
       ErrorNotificationManager().showErrorNotification(
         title: '错误', 
         message: '更换菜单操作异常：$e',
@@ -721,6 +730,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
                               int.tryParse(menu.adultPackagePrice ?? '0') ?? 0,
                           childPrice:
                               int.tryParse(menu.childPackagePrice ?? '0') ?? 0,
+                          menuFixedCosts: menu.menuFixedCosts,
                           isSelected: isSelected,
                           onTap: () {
                             setState(() {
@@ -768,6 +778,7 @@ class _MenuItem extends StatelessWidget {
   final String imageUrl; // 这里可以添加图片URL字段
   final int adultPrice;
   final int childPrice;
+  final List<MenuFixedCost>? menuFixedCosts;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -777,9 +788,67 @@ class _MenuItem extends StatelessWidget {
     required this.adultPrice,
     required this.imageUrl,
     required this.childPrice,
+    this.menuFixedCosts,
     required this.isSelected,
     required this.onTap,
   }) : super(key: key);
+
+  /// 构建价格信息
+  Widget _buildPriceInfo() {
+    // 检查是否有menu_fixed_costs字段
+    if (menuFixedCosts != null && menuFixedCosts!.isNotEmpty) {
+      // 构建固定费用信息列表
+      List<Widget> costWidgets = [];
+      
+      for (var cost in menuFixedCosts!) {
+        if (cost.name != null && cost.amount != null && cost.unit != null) {
+          costWidgets.add(
+            Text(
+              '${cost.name}: ${cost.amount}/${cost.unit}',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade600,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          );
+        }
+      }
+
+      if (costWidgets.isNotEmpty) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: costWidgets,
+        );
+      }
+    }
+
+    // 如果没有固定费用信息，显示默认的成人和儿童价格
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          '成人: ¥$adultPrice',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          '儿童: ¥$childPrice',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -835,29 +904,7 @@ class _MenuItem extends StatelessWidget {
                     // 价格信息 - 自适应内容
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            '成人: ¥$adultPrice',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(
-                            '儿童: ¥$childPrice',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ),
+                      child: _buildPriceInfo(),
                     ),
                   ],
                 ),
