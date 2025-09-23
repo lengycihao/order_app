@@ -113,6 +113,7 @@ class CartManager {
           categoryId: correctCategoryId,
           allergens: [],
           options: [],
+          tags: null, // 临时菜品没有tags信息
         );
         logDebug('🆕 创建临时菜品: ${existingDish.name} (分类ID: $correctCategoryId)', tag: _logTag);
       }

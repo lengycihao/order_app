@@ -570,14 +570,14 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       // 显示纯动画加载弹窗（无文字）
       OrderSubmitDialog.showLoadingOnly(context);
       
-      final success = await controller.submitOrder();
+      final result = await controller.submitOrder();
       
       if (!mounted) return;
       
       // 关闭加载弹窗
       Navigator.of(context).pop();
       
-      if (success) {
+      if (result['success'] == true) {
         // 下单成功，刷新已点订单数据后切换到已点页面
         await controller.loadCurrentOrder();
         _switchToOrderedTab();

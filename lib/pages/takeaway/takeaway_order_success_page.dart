@@ -172,7 +172,7 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
               if (isOtherTime) {
                 controller.showTimePicker();
               } else {
-                controller.selectTimeOption(context, index);
+                controller.selectTimeOption(index);
               }
             },
             child: AnimatedContainer(
@@ -225,9 +225,7 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
             color: const Color(0xFFF7F7F7),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Obx(() => TextField(
-            controller: controller.isNavigating.value ? null : controller.remarkController,
-            enabled: !controller.isNavigating.value,
+          child: Obx(() => TextField( 
             maxLines: null,
             expands: true,
             textAlignVertical: TextAlignVertical.top,

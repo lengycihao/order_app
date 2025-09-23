@@ -28,4 +28,9 @@ class ApiRequest {
   static const currentOrder = '/api/waiter/order/current';
 
   static const mergeTable = '/api/waiter/table/merge';
+
+  // 外卖相关接口
+  static const takeoutList = '/api/waiter/order/takeout/list';
+  
+  static const takeoutDetail = '/api/waiter/order/takeout/detail';
 }

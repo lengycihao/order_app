@@ -1,152 +1,248 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:lib_base/lib_base.dart';
+import 'package:lib_domain/entrity/takeout/takeout_time_option_model.dart';
 
 class TakeawayOrderSuccessController extends GetxController {
-  // 订单基本信息
-  String orderNumber = 'TA202412010001';
-  String orderTime = '2024-12-01 14:30:25';
-  String paymentMethod = '微信支付';
-  String orderStatus = '已完成';
-  String orderRemark = '不要葱花香菜、清蒸鲈鱼不要鱼、柠檬茶不要柠檬、三分糖、少冰';
-
-  // 订单商品
-  List<Map<String, dynamic>> orderItems = [
-    {
-      'name': '宫保鸡丁',
-      'price': 28.00,
-      'quantity': 1,
-      'remark': '不要花生',
-      'imageUrl': null,
-    },
-    {
-      'name': '清蒸鲈鱼',
-      'price': 45.00,
-      'quantity': 1,
-      'remark': '不要鱼',
-      'imageUrl': null,
-    },
-    {
-      'name': '柠檬茶',
-      'price': 12.00,
-      'quantity': 2,
-      'remark': '不要柠檬、三分糖、少冰',
-      'imageUrl': null,
-    },
-  ];
-
-  // 费用明细
-  double subtotal = 97.00;
-  double deliveryFee = 5.00;
-  double packagingFee = 2.00;
-  double totalAmount = 104.00;
-
-  // 配送信息
-  Map<String, String> deliveryInfo = {
-    'name': '张三',
-    'phone': '138****8888',
-    'address': '北京市朝阳区三里屯街道工体北路8号院',
-    'time': '2024-12-01 15:00-15:30',
-  };
+  // 桌台ID
+  final RxInt tableId = 0.obs;
+  
+  // 备注输入控制器
+  final TextEditingController remarkController = TextEditingController();
+  
+  // 时间选项列表（从API获取 + 其他时间选项）
+  final RxList<TakeoutTimeOptionItem> timeOptions = <TakeoutTimeOptionItem>[].obs;
+  
+  // 选中的时间索引
+  final RxInt selectedTimeIndex = 0.obs;
+  
+  // 选中的时间文本
+  final RxString selectedTimeText = ''.obs;
+  
+  // 选中的时间（DateTime）
+  final Rx<DateTime?> selectedDateTime = Rx<DateTime?>(null);
+  
+  // 自定义时间（当选择其他时间时）
+  final Rx<DateTime?> customDateTime = Rx<DateTime?>(null);
+  
+  // 加载状态
+  final RxBool isLoading = false.obs;
+  
+  // 提交状态
+  final RxBool isSubmitting = false.obs;
 
   @override
   void onInit() {
     super.onInit();
-    // 初始化数据
-    _loadOrderDetail();
+    // 获取传递的桌台ID
+    if (Get.arguments != null && Get.arguments is Map) {
+      final args = Get.arguments as Map;
+      if (args['tableId'] != null) {
+        tableId.value = args['tableId'] as int;
+      }
+    }
+    // 加载时间选项
+    _loadTimeOptions();
+  }
+  
+  @override
+  void onClose() {
+    remarkController.dispose();
+    super.onClose();
   }
 
-  void _loadOrderDetail() {
-    // 这里可以从API加载订单详情数据
-    // 目前使用模拟数据
-    update();
+  // 加载时间选项
+  Future<void> _loadTimeOptions() async {
+    try {
+      isLoading.value = true;
+      
+      final result = await HttpManagerN.instance.executeGet('/api/waiter/setting/takeout_time_option');
+      
+      if (result.isSuccess) {
+        final model = TakeoutTimeOptionModel.fromJson(result.getDataJson());
+        timeOptions.clear();
+        timeOptions.addAll(model.options);
+        
+        // 添加"其他时间"选项
+        timeOptions.add(TakeoutTimeOptionItem(
+          value: -1,
+          label: '其他时间',
+        ));
+        
+        // 默认选择第一个选项
+        if (timeOptions.isNotEmpty) {
+          selectedTimeIndex.value = 0;
+          _updateSelectedTime(0);
+        }
+      } else {
+        Get.snackbar('错误', '加载时间选项失败', backgroundColor: Colors.red, colorText: Colors.white);
+      }
+    } catch (e) {
+      Get.snackbar('错误', '加载时间选项失败', backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  // 再来一单
-  void reorder() {
-    Get.snackbar(
-      '提示',
-      '已将商品加入购物车',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
+  // 选择时间选项
+  void selectTimeOption(int index) {
+    if (index < 0 || index >= timeOptions.length) return;
+    
+    selectedTimeIndex.value = index;
+    
+    // 如果选择的是"其他时间"
+    if (timeOptions[index].value == -1) {
+      showTimePicker();
+    } else {
+      _updateSelectedTime(index);
+    }
+  }
+
+  // 更新选中的时间
+  void _updateSelectedTime(int index) {
+    if (index < 0 || index >= timeOptions.length) return;
+    
+    final option = timeOptions[index];
+    if (option.value == -1) {
+      // 其他时间选项
+      if (customDateTime.value != null) {
+        selectedTimeText.value = _formatTime(customDateTime.value!);
+        selectedDateTime.value = customDateTime.value;
+      }
+    } else {
+      // 预设时间选项
+      selectedTimeText.value = option.label;
+      // 使用时间戳创建DateTime
+      selectedDateTime.value = DateTime.fromMillisecondsSinceEpoch(option.value * 1000);
+    }
+  }
+
+  // 显示时间选择器
+  void showTimePicker() async {
+    final now = DateTime.now();
+    final initialTime = TimeOfDay.fromDateTime(customDateTime.value ?? now);
+    
+    final selectedTime = await Get.dialog<TimeOfDay>(
+      TimePickerDialog(
+        initialTime: initialTime,
+        helpText: '选择取餐时间',
+        cancelText: '取消',
+        confirmText: '确认',
+      ),
     );
     
-    // 跳转到外卖页面
-    Get.back();
-    Get.toNamed('/takeaway');
+    if (selectedTime != null) {
+      // 创建今天的指定时间
+      final today = DateTime.now();
+      final selectedDateTime = DateTime(
+        today.year,
+        today.month,
+        today.day,
+        selectedTime.hour,
+        selectedTime.minute,
+        0, // 秒数设为00
+      );
+      
+      // 如果选择的时间已经过去，则设为明天
+      final finalDateTime = selectedDateTime.isBefore(DateTime.now()) 
+          ? selectedDateTime.add(const Duration(days: 1))
+          : selectedDateTime;
+      
+      customDateTime.value = finalDateTime;
+      // 更新显示的时间文本
+      selectedTimeText.value = _formatTime(finalDateTime);
+      this.selectedDateTime.value = finalDateTime;
+    } else {
+      // 如果用户取消了时间选择，重置为第一个选项
+      if (timeOptions.isNotEmpty) {
+        selectedTimeIndex.value = 0;
+        _updateSelectedTime(0);
+      }
+    }
   }
 
-  // 联系商家
-  void contactMerchant() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('联系商家'),
-        content: const Text('是否拨打商家电话？\n400-123-4567'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back();
-              // 这里可以调用拨号功能
-              Get.snackbar(
-                '提示',
-                '正在拨打电话...',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: Colors.blue,
-                colorText: Colors.white,
-                duration: const Duration(seconds: 2),
-              );
-            },
-            child: const Text('拨打'),
-          ),
-        ],
-      ),
-    );
+
+  // 格式化时间显示
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final dateOnly = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    
+    String timeStr = '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+    
+    if (dateOnly == today) {
+      return '今天 $timeStr';
+    } else if (dateOnly == today.add(const Duration(days: 1))) {
+      return '明天 $timeStr';
+    } else {
+      return '${dateTime.month}月${dateTime.day}日 $timeStr';
+    }
   }
 
-  // 分享订单
-  void shareOrder() {
-    Get.snackbar(
-      '提示',
-      '订单分享功能开发中...',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-    );
+  // 设置桌台ID
+  void setTableId(int id) {
+    tableId.value = id;
+  }
+  
+  // 获取当前选中的时间文本（供页面显示）
+  String get currentSelectedTimeText => selectedTimeText.value;
+  
+  // 是否选择了其他时间选项
+  bool get isOtherTimeSelected => selectedTimeIndex.value < timeOptions.length && 
+      timeOptions[selectedTimeIndex.value].value == -1;
+
+  // 确认订单（供页面底部确认按钮调用）
+  Future<void> confirmOrder() async {
+    await submitTakeoutOrder();
   }
 
-  // 申请退款
-  void requestRefund() {
-    Get.dialog(
-      AlertDialog(
-        title: const Text('申请退款'),
-        content: const Text('确定要申请退款吗？\n退款将在1-3个工作日内处理。'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back();
-              Get.snackbar(
-                '提示',
-                '退款申请已提交',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: Colors.green,
-                colorText: Colors.white,
-                duration: const Duration(seconds: 2),
-              );
-            },
-            child: const Text('确定'),
-          ),
-        ],
-      ),
-    );
+  // 提交外卖订单
+  Future<void> submitTakeoutOrder() async {
+    if (isSubmitting.value) return;
+    
+    // 验证必填项
+    if (tableId.value <= 0) {
+      Get.snackbar('错误', '桌台ID不能为空', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    
+    if (selectedDateTime.value == null) {
+      Get.snackbar('错误', '请选择取餐时间', backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+    
+    try {
+      isSubmitting.value = true;
+      
+      // 格式化时间为 yyyy-MM-dd HH:mm:ss
+      final formattedTime = '${selectedDateTime.value!.year.toString().padLeft(4, '0')}-'
+          '${selectedDateTime.value!.month.toString().padLeft(2, '0')}-'
+          '${selectedDateTime.value!.day.toString().padLeft(2, '0')} '
+          '${selectedDateTime.value!.hour.toString().padLeft(2, '0')}:'
+          '${selectedDateTime.value!.minute.toString().padLeft(2, '0')}:00';
+      
+      final params = {
+        'table_id': tableId.value,
+        'remark': remarkController.text.trim(),
+        'estimate_pickup_time': formattedTime,
+      };
+      
+      final result = await HttpManagerN.instance.executePost(
+        '/api/waiter/cart/submit_takeout_order',
+        jsonParam: params,
+      );
+      
+      if (result.isSuccess) {
+        Get.snackbar('成功', '订单提交成功', backgroundColor: Colors.green, colorText: Colors.white);
+        // 跳转到订单成功页面或返回上一页
+        Get.back();
+      } else {
+        Get.snackbar('错误', '订单提交失败', backgroundColor: Colors.red, colorText: Colors.white);
+      }
+    } catch (e) {
+      Get.snackbar('错误', '订单提交失败', backgroundColor: Colors.red, colorText: Colors.white);
+    } finally {
+      isSubmitting.value = false;
+    }
   }
 }

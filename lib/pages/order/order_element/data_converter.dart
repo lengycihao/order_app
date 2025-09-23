@@ -34,6 +34,7 @@ class DataConverter {
               hasOptions: item.hasOptions ?? false,
               options: item.options,
               allergens: item.allergens,
+              tags: item.tags,
             );
             dishes.add(dish);
           }

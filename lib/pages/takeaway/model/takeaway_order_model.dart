@@ -41,7 +41,7 @@ class TakeawayOrderModel {
   @JsonKey(name: 'id')
   int? id;
 
-  @JsonKey(name: 'table_id')
+  @JsonKey(name: 'order_no')
   String? orderNo;
 
   @JsonKey(name: 'order_time')

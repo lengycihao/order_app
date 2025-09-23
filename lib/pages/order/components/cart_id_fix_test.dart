@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
-import '../order_element/order_controller.dart';
 import '../model/dish.dart';
 
 /// 购物车ID修复测试
@@ -18,6 +17,7 @@ class CartIdFixTest {
       categoryId: 1,
       allergens: [],
       options: [],
+      tags: null,
     );
     
     final testCartItem = CartItem(
@@ -97,6 +97,7 @@ class CartIdFixTest {
       categoryId: 1,
       allergens: [],
       options: [],
+      tags: null,
     );
     
     final convertedCartItem = CartItem(

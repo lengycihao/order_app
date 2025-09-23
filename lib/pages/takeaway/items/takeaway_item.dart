@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/takeaway/model/takeaway_order_model.dart';
-import 'package:order_app/pages/takeaway/order_detail_page.dart';
+import 'package:order_app/pages/takeaway/order_detail_page_new.dart';
  
-import 'package:order_app/utils/screen_adaptation.dart';
 class TakeawayItem extends StatelessWidget {
   final TakeawayOrderModel order; // 直接接收订单模型对象
 
@@ -159,10 +158,10 @@ class TakeawayItem extends StatelessWidget {
     );
   }
 
-  /// 跳转到订单详情页�?
+  /// 跳转到订单详情页面
   void _navigateToOrderDetail() {
     Get.to(
-      () => const OrderDetailPage(),
+      () => const OrderDetailPageNew(),
       arguments: {
         'orderId': order.id, // 外卖订单ID
       },

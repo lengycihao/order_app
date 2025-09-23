@@ -10,6 +10,7 @@ class Dish {
   final bool hasOptions;
   final List<Option>? options;
   final List<Allergen>? allergens;
+  final List<String>? tags; // 规格属性
 
   Dish({
     required this.id,
@@ -20,5 +21,6 @@ class Dish {
     this.hasOptions = false,
     this.options,
     this.allergens,
+    this.tags,
   });
 }

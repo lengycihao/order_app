@@ -47,6 +47,7 @@ class OrderController extends GetxController {
   var menu = Rx<TableMenuListModel?>(null);
   var adultCount = 0.obs;
   var childCount = 0.obs;
+  var source = "".obs; // 订单来源：table(桌台), takeaway(外卖)
   
   // 购物车数据
   var cartInfo = Rx<CartInfoModel?>(null);
@@ -109,6 +110,7 @@ class OrderController extends GetxController {
       _processTableData(args);
       _processMenuData(args);
       _processPeopleCount(args);
+      _processSource(args);
     }
   }
 
@@ -168,6 +170,23 @@ class OrderController extends GetxController {
       childCount.value = args['child_count'] as int;
     }
     logDebug('✅ 儿童数量: ${childCount.value}', tag: OrderConstants.logTag);
+  }
+
+  /// 处理订单来源
+  void _processSource(Map<String, dynamic> args) {
+    if (args['source'] != null) {
+      source.value = args['source'] as String;
+      logDebug('✅ 订单来源: ${source.value}', tag: OrderConstants.logTag);
+    } else {
+      // 根据是否有桌台信息判断来源
+      if (table.value?.tableId != null) {
+        source.value = 'table';
+        logDebug('✅ 根据桌台信息推断来源为: table', tag: OrderConstants.logTag);
+      } else {
+        source.value = 'takeaway';
+        logDebug('✅ 根据无桌台信息推断来源为: takeaway', tag: OrderConstants.logTag);
+      }
+    }
   }
 
   /// 初始化WebSocket连接
@@ -1033,10 +1052,13 @@ class OrderController extends GetxController {
   }
 
   /// 提交订单
-  Future<bool> submitOrder() async {
+  Future<Map<String, dynamic>> submitOrder() async {
     if (table.value?.tableId == null) {
       logDebug('❌ 桌台ID为空，无法提交订单', tag: OrderConstants.logTag);
-      return false;
+      return {
+        'success': false,
+        'message': '桌台ID为空，无法提交订单'
+      };
     }
 
     try {
@@ -1055,15 +1077,24 @@ class OrderController extends GetxController {
         
         // 提交成功后刷新已点订单数据，使用重试机制
         await loadCurrentOrder();
-        return true;
+        return {
+          'success': true,
+          'message': '订单提交成功'
+        };
       } else {
         logDebug('❌ 订单提交失败: ${result.msg}', tag: OrderConstants.logTag);
-        return false;
+        return {
+          'success': false,
+          'message': result.msg ?? '订单提交失败'
+        };
       }
     } catch (e, stackTrace) {
       logDebug('❌ 订单提交异常: $e', tag: OrderConstants.logTag);
       logDebug('❌ StackTrace: $stackTrace', tag: OrderConstants.logTag);
-      return false;
+      return {
+        'success': false,
+        'message': '订单提交异常: $e'
+      };
     }
   }
 

@@ -269,12 +269,12 @@ class _OrderDishPageState extends State<OrderDishPage> {
       OrderSubmitDialog.showLoadingOnly(context);
       
       // 提交订单
-      final success = await controller.submitOrder();
+      final result = await controller.submitOrder();
       
       // 关闭加载弹窗
       Navigator.of(context).pop();
       
-      if (success) {
+      if (result['success'] == true) {
         // 提交成功，刷新数据后跳转到已点页面
         await controller.loadCurrentOrder();
         Get.to(() => OrderedPage());
@@ -1052,12 +1052,12 @@ class _CartModalContent extends StatelessWidget {
       OrderSubmitDialog.showLoadingOnly(context);
       
       // 提交订单
-      final success = await controller.submitOrder();
+      final result = await controller.submitOrder();
       
       // 关闭加载弹窗
       Navigator.of(context).pop();
       
-      if (success) {
+      if (result['success'] == true) {
         // 提交成功，刷新数据后跳转到已点页面
         await controller.loadCurrentOrder();
         Get.to(() => OrderedPage());
