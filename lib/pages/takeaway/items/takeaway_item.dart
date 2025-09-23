@@ -19,14 +19,6 @@ class TakeawayItem extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -38,9 +30,9 @@ class TakeawayItem extends StatelessWidget {
               Text(
                 order.pickupCode ?? order.orderNo ?? 'N/A',
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 36,
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+                  color: Color(0xff333333),
                 ),
               ),
               Container(
@@ -74,7 +66,7 @@ class TakeawayItem extends StatelessWidget {
                   Text(
                     order.formattedOrderTime,
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       color: Color(0xff333333),
                     ),
                   ),
@@ -83,7 +75,7 @@ class TakeawayItem extends StatelessWidget {
               Text(
                 order.formattedTotalAmount,
                 style: const TextStyle(
-                  fontSize: 15,
+                  fontSize: 16,
                   fontWeight: FontWeight.w500,
                   color: Color(0xff333333),
                 ),
@@ -132,26 +124,27 @@ class TakeawayItem extends StatelessWidget {
           //   ),
           
           // 备注信息（如果存在则显示�?
-          if (order.remark != null && order.remark!.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // const Icon(Icons.note, size: 16, color: Color(0xff666666)),
-                  const SizedBox(width: 4),
-                  Expanded(
-                    child: Text(
-                      '备注${order.remark}',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        color: Color(0xff666666),
-                      ),
+          if (order.remark != null && order.remark!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            const Divider(height: 1, color: Color(0xffE5E5E5)),
+            const SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // const Icon(Icons.note, size: 16, color: Color(0xff666666)),
+                const SizedBox(width: 4),
+                Expanded(
+                  child: Text(
+                    '备注${order.remark}',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      color: Color(0xff666666),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
+          ],
         ],
       ),
       ),

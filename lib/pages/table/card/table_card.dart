@@ -122,7 +122,12 @@ class TableCard extends StatelessWidget {
           ),
         );
       },
-      onTap: () async {
+      onTap: isMergeMode ? null : () async {
+        // 如果是并桌模式，不处理点击事件
+        if (isMergeMode) {
+          return;
+        }
+        
         // 防抖处理
         final currentTime = DateTime.now().millisecondsSinceEpoch;
         if (currentTime - _lastClickTime < _debounceDelay) {
@@ -213,23 +218,35 @@ class TableCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: _getStatusColor(status),
           borderRadius: BorderRadius.circular(8),
+          border: isMergeMode && isSelected 
+              ? Border.all(color: Color(0xffFF9027), width: 4)
+              : null,
+          boxShadow: [
+            BoxShadow(
+              offset: Offset(0, 1),
+              blurRadius: 3,
+              color: Color(0x33000000), // #000000 20%
+            ),
+          ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Stack(
           children: [
-            // 桌号 & 人数
-            Container(
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 桌号 & 人数
+                Container(
               padding: EdgeInsets.all(8),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // 桌名 - 支持多行显示，最多5行
+                  // 桌名 - 限制为2行显示
                   Expanded(
                     flex: 2,
                     child: Text(
                       table.tableName ?? "",
                       style: TextStyle(fontWeight: FontWeight.bold),
-                      maxLines: 5,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
@@ -296,24 +313,37 @@ class TableCard extends StatelessWidget {
                 ],
               ),
             ),
-            // 新增：待结账时显示订单金额
-            if (table.businessStatus == 3)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                child: Center(
-                  child: Text(
-                    '€ ${table.orderAmount.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      color: Colors.black,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold, // 加粗
-                    ),
-                  ),
+            // 金额显示在正中间
+            Expanded(
+              child: Center(
+                child: table.businessStatus == 3
+                    ? Text(
+                        '€ ${table.orderAmount.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          color: Colors.black,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      )
+                    : SizedBox(),
+              ),
+            ),
+                Spacer(),
+                // 状态 & 时间
+                _getStatusLabel(context, status),
+              ],
+            ),
+            // 选中状态图标 - 右下角
+            if (isMergeMode && isSelected)
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Image.asset(
+                  'assets/order_select.webp',
+                  width: 30,
+                  height: 30,
                 ),
               ),
-            Spacer(),
-            // 状态 & 时间
-            _getStatusLabel(context, status),
           ],
         ),
       ),

@@ -177,6 +177,9 @@ class OrderController extends GetxController {
     if (args['source'] != null) {
       source.value = args['source'] as String;
       logDebug('✅ 订单来源: ${source.value}', tag: OrderConstants.logTag);
+    } else if (args['fromTakeaway'] == true) {
+      source.value = 'takeaway';
+      logDebug('✅ 订单来源: takeaway (fromTakeaway参数)', tag: OrderConstants.logTag);
     } else {
       // 根据是否有桌台信息判断来源
       if (table.value?.tableId != null) {

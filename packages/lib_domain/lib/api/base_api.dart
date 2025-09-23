@@ -236,4 +236,25 @@ class BaseApi {
       return result.convert();
     }
   }
+
+  /// 虚拟开桌
+  Future<HttpResultN<TableListModel>> openVirtualTable({
+    required int menuId,
+  }) async {
+    final params = {
+      "menu_id": menuId,
+    };
+    final result = await HttpManagerN.instance.executePost(
+      ApiRequest.openVirtualTable,
+      jsonParam: params,
+    );
+    
+    if (result.isSuccess) {
+      return result.convert(
+        data: TableListModel.fromJson(result.getDataJson()),
+      );
+    } else {
+      return result.convert();
+    }
+  }
 }

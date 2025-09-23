@@ -9,6 +9,7 @@ import 'package:lib_base/network/interceptor/api_business_interceptor.dart';
 import 'package:lib_base/network/interceptor/network_loading_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:order_app/service/service_locator.dart';
+import 'package:order_app/l10n/app_localizations.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -61,6 +62,12 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
+      
+      // 添加国际化配置
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: const Locale('zh'), // 默认中文
+      
       initialRoute: isLoggedIn ? '/home' : '/login', // 动态控制初始页面
       getPages: [
         GetPage(name: '/login', page: () => LoginPage()), // 登录页面路由

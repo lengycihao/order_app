@@ -3,7 +3,7 @@ import 'package:lib_base/lib_base.dart';
 
 class TakeoutApi {
   /// 获取外卖订单列表
-  Future<HttpResultN<Map<String, dynamic>>> getTakeoutList({
+  Future<HttpResultN<dynamic>> getTakeoutList({
     required int queryType, // 1已结账 2未结账
     int page = 1,
     int pageSize = 20,
@@ -19,16 +19,21 @@ class TakeoutApi {
       params['pickup_code'] = pickupCode;
     }
     
+    logDebug('🚀 外卖API请求参数: $params', tag: 'TakeoutApi');
+    
     final result = await HttpManagerN.instance.executeGet(
       ApiRequest.takeoutList,
       queryParam: params,
     );
     
-    return result.convert();
+    logDebug('📡 外卖API原始响应: ${result.dataJson}', tag: 'TakeoutApi');
+    
+    // 直接返回原始结果，让控制器处理数据解析
+    return result;
   }
 
   /// 获取外卖订单详情
-  Future<HttpResultN<Map<String, dynamic>>> getTakeoutDetail({
+  Future<HttpResultN<dynamic>> getTakeoutDetail({
     required int id,
   }) async {
     final params = <String, dynamic>{
@@ -40,6 +45,7 @@ class TakeoutApi {
       queryParam: params,
     );
     
-    return result.convert();
+    // 直接返回原始结果，让控制器处理数据解析
+    return result;
   }
 }

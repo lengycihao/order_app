@@ -10,11 +10,11 @@ import 'package:order_app/pages/order/components/specification_modal_widget.dart
 import 'package:order_app/pages/order/components/more_options_modal_widget.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
 import 'package:order_app/pages/order/components/quantity_input_widget.dart';
-import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/pages/order/ordered_page.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/utils/focus_manager.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
+import 'package:order_app/components/skeleton_widget.dart';
 
 class OrderDishPage extends StatefulWidget {
   const OrderDishPage({super.key});
@@ -553,14 +553,21 @@ class _OrderDishPageState extends State<OrderDishPage> {
   /// 构建主体内容
   Widget _buildMainContent() {
     return Expanded(
-      child: Row(
-        children: [
-          // 左侧分类
-          _buildCategoryList(),
-          // 右侧菜品列表
-          _buildDishList(),
-        ],
-      ),
+      child: Obx(() {
+        // 如果正在加载菜品数据，显示骨架图
+        if (controller.isLoadingDishes.value) {
+          return const OrderPageSkeleton();
+        }
+        
+        return Row(
+          children: [
+            // 左侧分类
+            _buildCategoryList(),
+            // 右侧菜品列表
+            _buildDishList(),
+          ],
+        );
+      }),
     );
   }
 
@@ -571,9 +578,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
       // color: Colors.grey.shade50, // 使用浅灰色作为整体背景
       child: Obx(() {
         if (controller.categories.isEmpty) {
-          return Center(
-            child: RestaurantLoadingWidget(size: 30),
-          );
+          return const OrderPageSkeleton();
         }
         
         final selectedCategoryIndex = controller.selectedCategory.value;
@@ -695,12 +700,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
         color: Colors.white, // 内容区域背景色设为红色
         child: Obx(() {
           if (controller.categories.isEmpty) {
-            return Center(
-              child: RestaurantLoadingWidget(
-                message: '加载菜品中...',
-                size: 80.0,
-              ),
-            );
+            return const OrderPageSkeleton();
           }
 
           return GestureDetector(
@@ -1086,13 +1086,7 @@ class _CartModalContent extends StatelessWidget {
         children: [
           // 购物车列表
           controller.isLoadingCart.value
-              ? Container(
-                  padding: EdgeInsets.all(40),
-                  child: RestaurantLoadingWidget(
-                    message: '正在加载购物车...',
-                    size: 60.0,
-                  ),
-                )
+              ? const CartSkeleton()
               : controller.cart.isEmpty
                   ? Container(
                       padding: EdgeInsets.all(40),

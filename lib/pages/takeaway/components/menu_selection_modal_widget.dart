@@ -7,7 +7,6 @@ import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_mo
 import 'package:lib_domain/entrity/home/table_menu_list_model/menu_fixed_cost.dart';
 import 'package:lib_domain/api/base_api.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
 
 /// 菜单选择弹窗组件
 class MenuSelectionModalWidget {
@@ -105,123 +104,110 @@ class _MenuSelectionModalContentState extends State<_MenuSelectionModalContent> 
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      child: ModalContainerWithMargin(
-        title: '选择菜单',
-        margin: EdgeInsets.zero,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 菜单列表 - 使用固定高度避免IntrinsicHeight冲突
-            Container(
-              height: 400, // 设置固定高度
+    return ModalContainerWithMargin(
+      title: '选择菜单',
+      margin: EdgeInsets.zero,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 菜单列表
+          Flexible(
+            child: Container(
               padding: EdgeInsets.all(16),
               child: _isLoading
-                  ? Container(
-                      height: 120,
-                      child: Center(
-                        child: RestaurantLoadingWidget(size: 30),
-                      ),
+                  ? Center(
+                      child: RestaurantLoadingWidget(size: 30),
                     )
                   : _errorMessage != null
-                  ? Container(
-                      height: 200,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.error_outline,
-                              size: 64,
-                              color: Colors.red.shade400,
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            size: 64,
+                            color: Colors.red.shade400,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            _errorMessage!,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.red.shade600,
                             ),
-                            SizedBox(height: 16),
-                            Text(
-                              _errorMessage!,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.red.shade600,
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadMenuList,
-                              child: Text(context.l10n.more),
-                            ),
-                          ],
-                        ),
+                          ),
+                          SizedBox(height: 16),
+                          ElevatedButton(
+                            onPressed: _loadMenuList,
+                            child: Text(context.l10n.more),
+                          ),
+                        ],
                       ),
                     )
                   : _menuList.isEmpty
-                  ? Container(
-                      height: 150,
-                      child: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.restaurant_menu,
-                              size: 64,
-                              color: Colors.grey.shade400,
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.restaurant_menu,
+                            size: 64,
+                            color: Colors.grey.shade400,
+                          ),
+                          SizedBox(height: 16),
+                          Text(
+                            context.l10n.noData,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey.shade600,
                             ),
-                            SizedBox(height: 16),
-                            Text(
-                              context.l10n.noData,
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey.shade600,
-                              ),
-                            ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     )
                   : _buildMenuGrid(),
             ),
-            // 确认按钮
-            Container(
-              padding: EdgeInsets.all(16),
-              child: GestureDetector(
-                onTap: _confirmSelection,
-                child: Container(
-                  width: 180,
-                  height: 32,
+          ),
+          // 确认按钮
+          Container(
+            padding: EdgeInsets.all(16),
+            child: GestureDetector(
+              onTap: _confirmSelection,
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: Colors.orange,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                  child: Center(
-                    child: Text(
-                      context.l10n.confirm,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 20,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                child: Text(
+                  context.l10n.confirm,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   /// 构建菜单网格
   Widget _buildMenuGrid() {
-    return MasonryGridView.builder(
+    return GridView.builder(
+      shrinkWrap: true,
       physics: NeverScrollableScrollPhysics(),
-      shrinkWrap: true, // 添加shrinkWrap以支持固定高度容器
-      gridDelegate: SliverSimpleGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 150 / 170,
       ),
-      mainAxisSpacing: 12,
-      crossAxisSpacing: 12,
       itemCount: _menuList.length,
       itemBuilder: (context, index) {
         final menu = _menuList[index];
@@ -263,35 +249,43 @@ class _MenuItem extends StatelessWidget {
   /// 构建价格信息
   Widget _buildPriceInfo(BuildContext context) {
     if (menuFixedCosts == null || menuFixedCosts!.isEmpty) {
-      return Text(
-        context.l10n.noData,
-        style: TextStyle(
-          fontSize: 11,
-          color: Colors.grey,
-        ),
-        textAlign: TextAlign.center,
-        maxLines: 2, // 允许最多2行
-        overflow: TextOverflow.ellipsis,
-      );
+      return SizedBox.shrink();
+    }
+
+    // 查找成人和儿童价格
+    String adultPrice = '0';
+    String childPrice = '0';
+    
+    for (var cost in menuFixedCosts!) {
+      if (cost.name?.contains('成人') == true || cost.name?.contains('大人') == true) {
+        adultPrice = cost.amount ?? '0';
+      } else if (cost.name?.contains('儿童') == true || cost.name?.contains('小孩') == true) {
+        childPrice = cost.amount ?? '0';
+      }
     }
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: menuFixedCosts!.take(3).map((cost) { // 最多显示3个价格项
-        return Padding(
-          padding: EdgeInsets.only(bottom: 1),
-          child: Text(
-            '${cost.name ?? ''}：${cost.amount ?? ''} / ${cost.type ?? ''} ${cost.unit ?? ''}',
-            style: const TextStyle(
-              fontSize: 11,
-              color: Colors.grey,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2, // 每个价格项允许最多2行
-            overflow: TextOverflow.ellipsis,
+      children: [
+        Text(
+          '成人: ¥$adultPrice',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade600,
           ),
-        );
-      }).toList(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        Text(
+          '儿童: ¥$childPrice',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey.shade600,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ],
     );
   }
 
@@ -320,13 +314,13 @@ class _MenuItem extends StatelessWidget {
             child: Stack(
               children: [
                 Column(
-                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    // 图片区域 - 固定尺寸，保持正方形
-                    AspectRatio(
-                      aspectRatio: 1.0,
+                    // 图片区域 - 占用大部分空间，但允许文本自适应
+                    Expanded(
+                      flex: 3,
                       child: Container(
-                        padding: EdgeInsets.all(4),
+                        padding: EdgeInsets.all(8),
+                        width: double.infinity,
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: CachedNetworkImage(
@@ -348,7 +342,7 @@ class _MenuItem extends StatelessWidget {
                     ),
                     // 价格信息 - 自适应内容
                     Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                       child: _buildPriceInfo(context),
                     ),
                   ],
@@ -380,6 +374,8 @@ class _MenuItem extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                       color: isSelected ? Colors.white : Color(0xff666666),
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ),

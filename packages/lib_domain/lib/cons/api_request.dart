@@ -33,4 +33,7 @@ class ApiRequest {
   static const takeoutList = '/api/waiter/order/takeout/list';
   
   static const takeoutDetail = '/api/waiter/order/takeout/detail';
+  
+  // 虚拟开桌接口
+  static const openVirtualTable = '/api/waiter/table/open_virtual';
 }

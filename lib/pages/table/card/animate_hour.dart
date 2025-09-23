@@ -114,7 +114,7 @@ class _AnimatedHourglassState extends State<AnimatedHourglass>
           },
         ),
         SizedBox(width: 4),
-        Text(TimeFormatter.formatDurationShortFromNum(_currentDuration), style: TextStyle(fontSize: 12)),
+        Text(TimeFormatter.formatTableTimeFromNum(_currentDuration), style: TextStyle(fontSize: 12)),
       ],
     );
   }

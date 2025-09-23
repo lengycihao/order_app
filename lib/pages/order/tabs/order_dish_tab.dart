@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -9,10 +10,10 @@ import 'package:order_app/pages/order/components/allergen_filter_widget.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
 import 'package:order_app/pages/order/components/quantity_input_widget.dart';
-import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/utils/focus_manager.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
+import 'package:order_app/components/skeleton_widget.dart';
 
 class OrderDishTab extends StatefulWidget {
   const OrderDishTab({super.key});
@@ -236,6 +237,74 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Obx(() {
+        // 如果是外卖页面，直接显示搜索框
+        if (controller.source.value == 'takeaway') {
+          return Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: Color(0xffF5F5F5),
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    textAlignVertical: TextAlignVertical.center,
+                    decoration: InputDecoration(
+                      hintText: "请输入菜品名称或首字母",
+                      hintStyle: TextStyle(
+                        color: Colors.grey.shade500,
+                        fontSize: 14,
+                      ),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 12,
+                      ),
+                      suffixIcon: controller.searchKeyword.value.isNotEmpty
+                          ? GestureDetector(
+                              onTap: () {
+                                _searchController.clear();
+                                controller.searchKeyword.value = '';
+                                _searchFocusNode.unfocus();
+                                Future.delayed(Duration(milliseconds: 100), () {
+                                  _calculateCategoryPositions();
+                                });
+                              },
+                              child: Icon(
+                                Icons.search,
+                                color: Colors.grey.shade500,
+                                size: 18,
+                              ),
+                            )
+                          : Icon(
+                              Icons.search,
+                              color: Colors.grey.shade500,
+                              size: 18,
+                            ),
+                    ),
+                    onChanged: (v) {
+                      controller.searchKeyword.value = v;
+                      Future.delayed(Duration(milliseconds: 100), () {
+                        _calculateCategoryPositions();
+                      });
+                    },
+                    onSubmitted: (value) {
+                      _searchFocusNode.unfocus();
+                    },
+                  ),
+                ),
+              ),
+              SizedBox(width: 15),
+              // 敏感物筛选图标
+              AllergenFilterWidget.buildFilterButton(context),
+            ],
+          );
+        }
+        
+        // 桌台页面的原有逻辑
         return Row( 
           children: [
             if (!controller.isSearchVisible.value) ...[
@@ -289,6 +358,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                           : null,
                     ),
                     onChanged: (v) {
+                      controller.searchKeyword.value = v;
                       Future.delayed(Duration(milliseconds: 100), () {
                         _calculateCategoryPositions();
                       });
@@ -371,9 +441,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       width: 72,
       child: Obx(() {
         if (controller.categories.isEmpty) {
-          return Center(
-            child: RestaurantLoadingWidget(size: 30),
-          );
+          return const OrderPageSkeleton();
         }
         
         final selectedCategoryIndex = controller.selectedCategory.value;
@@ -492,12 +560,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
         color: Colors.white,
         child: Obx(() {
           if (controller.categories.isEmpty) {
-            return Center(
-              child: RestaurantLoadingWidget(
-                message: '加载菜品中...',
-                size: 80.0,
-              ),
-            );
+            return const OrderPageSkeleton();
           }
 
           return GestureDetector(
@@ -897,6 +960,116 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   }
 }
 
+/// 用户头像组件（带loading动画）
+class _UserAvatarWithLoading extends StatefulWidget {
+  final bool isLoading;
+  
+  const _UserAvatarWithLoading({
+    Key? key,
+    required this.isLoading,
+  }) : super(key: key);
+
+  @override
+  State<_UserAvatarWithLoading> createState() => _UserAvatarWithLoadingState();
+}
+
+class _UserAvatarWithLoadingState extends State<_UserAvatarWithLoading>
+    with TickerProviderStateMixin {
+  late AnimationController _loadingController;
+  Timer? _timeoutTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadingController = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+  }
+
+  @override
+  void didUpdateWidget(_UserAvatarWithLoading oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    
+    if (widget.isLoading && !oldWidget.isLoading) {
+      // 开始loading
+      _startLoading();
+    } else if (!widget.isLoading && oldWidget.isLoading) {
+      // 停止loading
+      _stopLoading();
+    }
+  }
+
+  void _startLoading() {
+    _loadingController.repeat();
+    // 设置超时逻辑 - 10秒后自动停止loading
+    _timeoutTimer?.cancel();
+    _timeoutTimer = Timer(const Duration(seconds: 10), () {
+      if (mounted && widget.isLoading) {
+        _stopLoading();
+      }
+    });
+  }
+
+  void _stopLoading() {
+    _loadingController.stop();
+    _timeoutTimer?.cancel();
+  }
+
+  @override
+  void dispose() {
+    _loadingController.dispose();
+    _timeoutTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        // 用户头像
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.blue.shade100,
+            border: Border.all(
+              color: Colors.blue.shade300,
+              width: 2,
+            ),
+          ),
+          child: Icon(
+            Icons.person,
+            color: Colors.blue.shade600,
+            size: 24,
+          ),
+        ),
+        // Loading动画
+        if (widget.isLoading)
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.black.withOpacity(0.3),
+              ),
+              child: AnimatedBuilder(
+                animation: _loadingController,
+                builder: (context, child) {
+                  return CircularProgressIndicator(
+                    value: _loadingController.value,
+                    strokeWidth: 3,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  );
+                },
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// 购物车弹窗内容
 class _CartModalContent extends StatelessWidget {
   final VoidCallback onSubmitOrder;
@@ -912,13 +1085,7 @@ class _CartModalContent extends StatelessWidget {
         children: [
           // 购物车列表
           controller.isLoadingCart.value
-              ? Container(
-                  padding: EdgeInsets.all(40),
-                  child: RestaurantLoadingWidget(
-                    message: '正在加载购物车...',
-                    size: 60.0,
-                  ),
-                )
+              ? const CartSkeleton()
               : controller.cart.isEmpty
                   ? Container(
                       padding: EdgeInsets.all(40),
@@ -1341,13 +1508,13 @@ class CartModalContainer extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                Text(
-                  '购物车',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                // 用户头像
+                Obx(() {
+                  final controller = Get.find<OrderController>();
+                  return _UserAvatarWithLoading(
+                    isLoading: controller.isCartOperationLoading.value,
+                  );
+                }),
                 Spacer(),
                 GestureDetector(
                   onTap: onClear,

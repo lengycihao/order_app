@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
-import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/pages/order/components/order_module_widget.dart';
 import 'package:order_app/pages/order/components/custom_refresh_indicator.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
+import 'package:order_app/components/skeleton_widget.dart';
 
 class OrderedPage extends StatefulWidget {
   const OrderedPage({super.key});
@@ -127,22 +127,7 @@ class _OrderedPageState extends State<OrderedPage> {
     return Expanded(
       child: Obx(() {
         if (controller.isLoadingOrdered.value) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                RestaurantLoadingWidget(size: 40),
-                SizedBox(height: 16),
-                Text(
-                  '加载中...',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          );
+          return const OrderedPageSkeleton();
         }
 
         if (controller.currentOrder.value == null) {

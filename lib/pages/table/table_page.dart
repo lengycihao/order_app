@@ -4,6 +4,7 @@ import 'package:order_app/pages/table/table_controller.dart';
 import 'package:get/get.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
+import 'package:order_app/components/skeleton_widget.dart';
 
 class TablePage extends StatelessWidget {
   final TableController controller = Get.put(TableController());
@@ -11,6 +12,7 @@ class TablePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFF9F9F9),
       appBar: AppBar(
         automaticallyImplyLeading: false, // 禁用自动返回按钮
         title: Text('桌台'),
@@ -18,42 +20,6 @@ class TablePage extends StatelessWidget {
         centerTitle: true,
         shadowColor: Colors.grey.withOpacity(0.3),
         actions: [
-          // WebSocket连接状态指示器
-          Obx(() => Container(
-            margin: EdgeInsets.only(right: 10),
-            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(12),
-              color: controller.isWebSocketConnected.value 
-                ? Colors.green.withOpacity(0.1)
-                : Colors.red.withOpacity(0.1),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: controller.isWebSocketConnected.value 
-                      ? Colors.green 
-                      : Colors.red,
-                  ),
-                ),
-                SizedBox(width: 4),
-                Text(
-                  controller.isWebSocketConnected.value ? '在线' : '离线',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: controller.isWebSocketConnected.value 
-                      ? Colors.green 
-                      : Colors.red,
-                  ),
-                ),
-              ],
-            ),
-          )),
           GestureDetector(
             onTap: () => controller.toggleMergeMode(),
             child: Container(
@@ -167,6 +133,11 @@ class TablePage extends StatelessWidget {
   /// 下拉刷新 + 加载状态 + 空数据提示 + Grid 间距优化
   Widget buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
+      // 如果正在加载且没有数据，显示骨架图
+      if (controller.isLoading.value && data.isEmpty) {
+        return const TablePageSkeleton();
+      }
+      
       return RefreshIndicator(
         onRefresh: () async {
           await controller.fetchDataForTab(tabIndex);
@@ -180,7 +151,7 @@ class TablePage extends StatelessWidget {
                   ? SliverFillRemaining(
                       child: controller.isLoading.value
                           ? Center(child: RestaurantLoadingWidget(size: 40))
-                          : Center(child: Text('暂无数据')),
+                          : (controller.hasNetworkError.value ? _buildNetworkErrorState() : _buildEmptyState()),
                     )
                   : SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -209,5 +180,53 @@ class TablePage extends StatelessWidget {
         ),
       );
     });
+  }
+
+  /// 构建空状态
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/order_empty.webp',
+            width: 180,
+            height: 100,
+          ),
+          SizedBox(height: 8),
+          Text(
+            '暂无桌台',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFFFF9027),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建网络错误状态
+  Widget _buildNetworkErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/order_nonet.webp',
+            width: 180,
+            height: 100,
+          ),
+          SizedBox(height: 8),
+          Text(
+            '暂无网络',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFFFF9027),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

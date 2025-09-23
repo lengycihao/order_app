@@ -7,6 +7,7 @@ import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:order_app/cons/table_status.dart';
 import 'package:lib_base/utils/websocket_manager.dart';
+import 'package:order_app/pages/table/sub_page/merge_tables_page.dart';
 
 class TableController extends GetxController {
   var selectedTab = 0.obs;
@@ -20,6 +21,7 @@ class TableController extends GetxController {
   var isLoading = false.obs;
   var isMergeMode = false.obs;
   var selectedTables = <String>[].obs; // 存储选中的桌台ID或编号
+  var hasNetworkError = false.obs; // 网络错误状态
   
   // WebSocket管理器
   final WebSocketManager _wsManager = wsManager;
@@ -59,16 +61,26 @@ class TableController extends GetxController {
   Future<void> fetchDataForTab(int index) async {
     if (index >= tabDataList.length) return;
     isLoading.value = true;
-    final result = await _baseApi.getTableList(
-      hallId: lobbyListModel.value.halls!.isNotEmpty
-          ? lobbyListModel.value.halls![index].hallId.toString()
-          : "0",
-    );
-    if (result.isSuccess) {
-      List<TableListModel> data = result.data!;
-      tabDataList[index].value = data;
+    hasNetworkError.value = false;
+    
+    try {
+      final result = await _baseApi.getTableList(
+        hallId: lobbyListModel.value.halls!.isNotEmpty
+            ? lobbyListModel.value.halls![index].hallId.toString()
+            : "0",
+      );
+      if (result.isSuccess) {
+        List<TableListModel> data = result.data!;
+        tabDataList[index].value = data;
+        hasNetworkError.value = false;
+      } else {
+        hasNetworkError.value = true;
+      }
+    } catch (e) {
+      hasNetworkError.value = true;
+    } finally {
+      isLoading.value = false;
     }
-    isLoading.value = false;
   }
 
   // Future<List<TableModel>> fetchHallData(int index) async {
@@ -103,8 +115,32 @@ class TableController extends GetxController {
   }
 
   void toggleMergeMode() {
-    isMergeMode.value = !isMergeMode.value;
-    selectedTables.clear();
+    if (!isMergeMode.value) {
+      // 进入并桌模式，跳转到并桌页面
+      _navigateToMergePage();
+    } else {
+      // 退出并桌模式
+      isMergeMode.value = false;
+      selectedTables.clear();
+    }
+  }
+
+  /// 跳转到并桌页面
+  void _navigateToMergePage() {
+    // 准备所有tab的桌台数据
+    List<List<TableListModel>> allTabTables = [];
+    for (var tabData in tabDataList) {
+      allTabTables.add(tabData);
+    }
+
+    // 跳转到并桌页面
+    Get.to(
+      () => MergeTablesPage(
+        allTabTables: allTabTables,
+        menuModelList: menuModelList,
+        lobbyListModel: lobbyListModel.value,
+      ),
+    );
   }
 
   void toggleTableSelected(String tableId) {

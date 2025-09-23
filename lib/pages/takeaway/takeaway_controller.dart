@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/takeaway/model/takeaway_order_model.dart';
 import 'package:lib_domain/api/takeout_api.dart';
@@ -23,9 +24,17 @@ class TakeawayController extends GetxController {
   int _paidPage = 1;
   final int _pageSize = 20;
   
+  // 搜索相关
+  final TextEditingController searchController = TextEditingController();
+  String? _currentSearchCode;
+  
   // 是否还有更多数据
   var hasMoreUnpaid = true.obs;
   var hasMorePaid = true.obs;
+  
+  // 网络错误状态
+  var hasNetworkErrorUnpaid = false.obs;
+  var hasNetworkErrorPaid = false.obs;
 
   @override
   void onInit() {
@@ -34,12 +43,18 @@ class TakeawayController extends GetxController {
   }
 
   void loadInitialData() {
-    // 加载两个tab的数据
+    // 只加载未结账订单，已结账订单在用户切换到对应tab时再加载
     refreshData(0); // 未结账
-    refreshData(1); // 已结账
   }
 
   Future<void> refreshData(int tabIndex) async {
+    // 重置网络错误状态
+    if (tabIndex == 0) {
+      hasNetworkErrorUnpaid.value = false;
+    } else {
+      hasNetworkErrorPaid.value = false;
+    }
+    
     if (tabIndex == 0) {
       // 未结账 - query_type = 2
       await _loadUnpaidOrders(refresh: true);
@@ -61,14 +76,22 @@ class TakeawayController extends GetxController {
     isRefreshingUnpaid.value = true;
     
     try {
+      logDebug('🔄 开始请求未结账订单 - page: $_unpaidPage, pageSize: $_pageSize', tag: 'TakeawayController');
+      
       final result = await _takeoutApi.getTakeoutList(
         queryType: 2, // 未结账
         page: _unpaidPage,
         pageSize: _pageSize,
+        pickupCode: _currentSearchCode,
       );
       
-      if (result.isSuccess && result.data != null) {
-        final response = TakeawayOrderListResponse.fromJson(result.data!);
+      logDebug('📡 API响应 - isSuccess: ${result.isSuccess}, msg: ${result.msg}', tag: 'TakeawayController');
+      logDebug('📡 API响应数据: ${result.dataJson}', tag: 'TakeawayController');
+      
+      if (result.isSuccess && result.dataJson != null) {
+        final response = TakeawayOrderListResponse.fromJson(result.dataJson as Map<String, dynamic>);
+        
+        logDebug('📊 解析后的数据 - total: ${response.total}, data长度: ${response.data?.length}', tag: 'TakeawayController');
         
         if (refresh) {
           unpaidOrders.clear();
@@ -76,6 +99,7 @@ class TakeawayController extends GetxController {
         
         if (response.data != null) {
           unpaidOrders.addAll(response.data!);
+          logDebug('✅ 未结账订单数量: ${unpaidOrders.length}', tag: 'TakeawayController');
         }
         
         // 检查是否还有更多数据
@@ -85,10 +109,12 @@ class TakeawayController extends GetxController {
           _unpaidPage++;
         }
       } else {
+        logDebug('❌ API请求失败: ${result.msg}', tag: 'TakeawayController');
         SnackbarUtils.showError(Get.context!, result.msg ?? '获取未结账订单失败');
       }
     } catch (e) {
       logDebug('❌ 加载未结账订单异常: $e', tag: 'TakeawayController');
+      hasNetworkErrorUnpaid.value = true;
       SnackbarUtils.showError(Get.context!, '获取未结账订单异常');
     } finally {
       isRefreshingUnpaid.value = false;
@@ -107,14 +133,22 @@ class TakeawayController extends GetxController {
     isRefreshingPaid.value = true;
     
     try {
+      logDebug('🔄 开始请求已结账订单 - page: $_paidPage, pageSize: $_pageSize', tag: 'TakeawayController');
+      
       final result = await _takeoutApi.getTakeoutList(
         queryType: 1, // 已结账
         page: _paidPage,
         pageSize: _pageSize,
+        pickupCode: _currentSearchCode,
       );
       
-      if (result.isSuccess && result.data != null) {
-        final response = TakeawayOrderListResponse.fromJson(result.data!);
+      logDebug('📡 已结账API响应 - isSuccess: ${result.isSuccess}, msg: ${result.msg}', tag: 'TakeawayController');
+      logDebug('📡 已结账API响应数据: ${result.dataJson}', tag: 'TakeawayController');
+      
+      if (result.isSuccess && result.dataJson != null) {
+        final response = TakeawayOrderListResponse.fromJson(result.dataJson as Map<String, dynamic>);
+        
+        logDebug('📊 已结账解析后的数据 - total: ${response.total}, data长度: ${response.data?.length}', tag: 'TakeawayController');
         
         if (refresh) {
           paidOrders.clear();
@@ -122,6 +156,7 @@ class TakeawayController extends GetxController {
         
         if (response.data != null) {
           paidOrders.addAll(response.data!);
+          logDebug('✅ 已结账订单数量: ${paidOrders.length}', tag: 'TakeawayController');
         }
         
         // 检查是否还有更多数据
@@ -131,10 +166,12 @@ class TakeawayController extends GetxController {
           _paidPage++;
         }
       } else {
+        logDebug('❌ 已结账API请求失败: ${result.msg}', tag: 'TakeawayController');
         SnackbarUtils.showError(Get.context!, result.msg ?? '获取已结账订单失败');
       }
     } catch (e) {
       logDebug('❌ 加载已结账订单异常: $e', tag: 'TakeawayController');
+      hasNetworkErrorPaid.value = true;
       SnackbarUtils.showError(Get.context!, '获取已结账订单异常');
     } finally {
       isRefreshingPaid.value = false;
@@ -199,6 +236,52 @@ class TakeawayController extends GetxController {
       await _loadUnpaidOrders(refresh: false);
     } else {
       await _loadPaidOrders(refresh: false);
+    }
+  }
+
+  /// 处理tab切换
+  void onTabChanged(int tabIndex) {
+    logDebug('🔄 Tab切换到: $tabIndex', tag: 'TakeawayController');
+    
+    // 如果切换到已结账tab且还没有数据，则加载数据
+    if (tabIndex == 1 && paidOrders.isEmpty) {
+      refreshData(1);
+    }
+  }
+
+  /// 根据取餐码搜索
+  Future<void> searchByPickupCode(String pickupCode) async {
+    if (pickupCode.isEmpty) return;
+    
+    _currentSearchCode = pickupCode;
+    logDebug('🔍 开始搜索取餐码: $pickupCode', tag: 'TakeawayController');
+    
+    // 清空当前数据
+    unpaidOrders.clear();
+    paidOrders.clear();
+    
+    // 重置分页
+    _unpaidPage = 1;
+    _paidPage = 1;
+    hasMoreUnpaid.value = true;
+    hasMorePaid.value = true;
+    
+    // 同时搜索未结账和已结账订单
+    await Future.wait([
+      _loadUnpaidOrders(),
+      _loadPaidOrders(),
+    ]);
+  }
+
+  /// 清除搜索
+  void clearSearch() {
+    if (_currentSearchCode != null) {
+      _currentSearchCode = null;
+      logDebug('🔍 清除搜索', tag: 'TakeawayController');
+      
+      // 重新加载数据
+      refreshData(0);
+      refreshData(1);
     }
   }
 }

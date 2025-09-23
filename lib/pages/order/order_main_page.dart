@@ -5,6 +5,7 @@ import 'package:order_app/pages/order/tabs/order_dish_tab.dart';
 import 'package:order_app/pages/order/tabs/ordered_tab.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/pages/order/components/more_options_modal_widget.dart';
+import 'package:order_app/pages/takeaway/components/menu_selection_modal_widget.dart';
 
 // 简单的控制器来管理主页面状态
 class OrderMainPageController extends GetxController {
@@ -87,7 +88,29 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
 
   /// 处理返回按钮点击
   void _handleBackPressed() async {
-    await NavigationManager.backToTablePage();
+    // 判断是否来自外卖页面
+    if (controller.source.value == 'takeaway') {
+      // 返回外卖页面
+      Get.back();
+    } else {
+      // 返回桌台页面
+      await NavigationManager.backToTablePage();
+    }
+  }
+
+  /// 显示更换菜单弹窗
+  void _showChangeMenuModal() async {
+    final selectedMenu = await MenuSelectionModalWidget.showMenuSelectionModal(
+      context,
+      currentMenu: controller.menu.value,
+    );
+    
+    if (selectedMenu != null && selectedMenu.menuId != controller.menu.value?.menuId) {
+      // 更新菜单信息
+      controller.menu.value = selectedMenu;
+      // 重新加载菜品数据
+      controller.refreshOrderData();
+    }
   }
 
   /// 构建顶部导航
@@ -123,43 +146,75 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                GestureDetector(
-                  onTap: () => _tabController.animateTo(0),
-                  child: _buildNavButton('点餐', _tabController.index == 0),
-                ),
-                SizedBox(width: 20),
-                GestureDetector(
-                  onTap: () {
-                    // 切换到已点页面前先刷新数据
-                    controller.loadCurrentOrder();
-                    _tabController.animateTo(1);
-                  },
-                  child: _buildNavButton('已点', _tabController.index == 1),
-                ),
+                // 根据来源显示不同的导航
+                if (controller.source.value == 'takeaway') ...[
+                  // 外卖页面只显示"外卖"
+                  _buildNavButton('外卖', true),
+                ] else ...[
+                  // 桌台页面显示"点餐"和"已点"
+                  GestureDetector(
+                    onTap: () => _tabController.animateTo(0),
+                    child: _buildNavButton('点餐', _tabController.index == 0),
+                  ),
+                  SizedBox(width: 20),
+                  GestureDetector(
+                    onTap: () {
+                      // 切换到已点页面前先刷新数据
+                      controller.loadCurrentOrder();
+                      _tabController.animateTo(1);
+                    },
+                    child: _buildNavButton('已点', _tabController.index == 1),
+                  ),
+                ],
               ],
             ),
           ),
-          // 右侧更多按钮
-          GestureDetector(
-            onTap: () {
-              MoreOptionsModalWidget.showMoreModal(context);
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Text(
-                '更多',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+          // 右侧按钮
+          if (controller.source.value == 'takeaway') ...[
+            // 外卖页面显示更换按钮
+            GestureDetector(
+              onTap: () {
+                _showChangeMenuModal();
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '更换',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
             ),
-          ),
+          ] else ...[
+            // 桌台页面显示更多按钮
+            GestureDetector(
+              onTap: () {
+                MoreOptionsModalWidget.showMoreModal(context);
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Text(
+                  '更多',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -199,15 +254,17 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
           ),
           // Tab内容
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                // 点餐页面
-                OrderDishTab(),
-                // 已点页面
-                OrderedTab(),
-              ],
-            ),
+            child: controller.source.value == 'takeaway' 
+              ? OrderDishTab() // 外卖页面只显示点餐页面
+              : TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // 点餐页面
+                    OrderDishTab(),
+                    // 已点页面
+                    OrderedTab(),
+                  ],
+                ),
           ),
         ],
       ),

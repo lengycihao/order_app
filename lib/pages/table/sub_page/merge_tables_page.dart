@@ -9,7 +9,6 @@ import 'package:order_app/pages/table/sub_page/select_menu_page.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/table/card/table_card.dart';
-import 'package:order_app/utils/screen_adaptation.dart';
 
 class MergeTablesPage extends StatefulWidget {
   final List<List<TableListModel>> allTabTables;
@@ -376,7 +375,7 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Tab Row
+            // Tab Row - 与桌台页面相同的样式
             Container(
               color: Colors.transparent,
               child: SingleChildScrollView(
@@ -388,9 +387,8 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
                     final hallName = halls[index].hallName ?? '未知';
                     return Row(
                       children: [
-                        SizedBox(width: context.adaptWidth(12)),
+                        SizedBox(width: 12),
                         _tabButton(
-                          context,
                           hallName,
                           index,
                           halls[index].tableCount ?? 0,
@@ -401,13 +399,12 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
                 ),
               ),
             ),
-            // PageView
+            // TabBarView
             Expanded(
               child: TabBarView(
                 controller: _tabController,
                 children: List.generate(halls.length, (index) {
                   return _buildRefreshableGrid(
-                    context,
                     tabDataList[index],
                     index,
                   );
@@ -420,8 +417,8 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
     );
   }
   
-  /// Tab 按钮
-  Widget _tabButton(BuildContext context, String title, int index, int tableCount) {
+  /// Tab 按钮 - 与桌台页面相同的样式
+  Widget _tabButton(String title, int index, int tableCount) {
     return Obx(() {
       bool selected = selectedTab.value == index;
       return GestureDetector(
@@ -430,10 +427,7 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
           _fetchDataForTab(index);
         },
         child: Container(
-          padding: EdgeInsets.symmetric(
-            vertical: context.adaptHeight(6), 
-            horizontal: context.adaptWidth(8)
-          ),
+          padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -441,17 +435,17 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
                 '$title($tableCount)',
                 style: TextStyle(
                   color: selected ? Colors.orange : Colors.black,
-                  fontSize: context.adaptFontSize(16),
+                  fontSize: 16,
                   fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
-              SizedBox(height: context.adaptHeight(4)),
+              SizedBox(height: 4),
               Container(
-                width: context.adaptWidth(60),
-                height: context.adaptHeight(2),
+                width: 60,
+                height: 2,
                 decoration: BoxDecoration(
                   color: selected ? Colors.orange : Colors.transparent,
-                  borderRadius: BorderRadius.circular(context.adaptWidth(1)),
+                  borderRadius: BorderRadius.circular(1),
                 ),
               ),
             ],
@@ -461,135 +455,101 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
     });
   }
   
-  /// 构建可刷新的网格
-  Widget _buildRefreshableGrid(BuildContext context, RxList<TableListModel> tableList, int tabIndex) {
+  /// 构建可刷新的网格 - 与桌台页面相同的样式
+  Widget _buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
-      if (isLoading.value && tableList.isEmpty) {
-        return Center(
-          child: CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(Color(0xffFF9027)),
-          ),
-        );
-      }
-      
-      if (hasError.value && tableList.isEmpty) {
-        return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: Colors.grey[400],
-              ),
-              SizedBox(height: 16),
-              Text(
-                errorMessage.value,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey[600],
-                ),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () => _fetchDataForTab(tabIndex),
-                child: Text('重试'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xffFF9027),
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        );
-      }
-      
-      if (tableList.isEmpty) {
-        return Center(
-          child: Text(
-            '暂无桌台',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
-        );
-      }
-      
-      // 过滤出可用的桌台
-      final availableTables = tableList.where((table) {
-        final status = table.businessStatus.toInt();
-        return status != 5 && status != 6; // 排除不可用和维修中的桌台
-      }).toList();
-      
-      if (availableTables.isEmpty) {
-        return Center(
-          child: Text(
-            '没有可用的桌台',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-            ),
-          ),
-        );
-      }
-      
       return RefreshIndicator(
-        onRefresh: () => _fetchDataForTab(tabIndex),
-        color: Color(0xffFF9027),
-        child: GridView.builder(
-          padding: EdgeInsets.symmetric(horizontal: context.adaptWidth(16), vertical: context.adaptHeight(8)),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 2,
-            mainAxisSpacing: context.adaptHeight(10),
-            crossAxisSpacing: context.adaptWidth(13),
-            childAspectRatio: 1.33, // 和首页桌台卡片一样的比例
-          ),
-          itemCount: availableTables.length,
-          itemBuilder: (context, index) {
-            final table = availableTables[index];
-            final isSelected = selectedTableIds.contains(table.tableId.toString());
-            
-            return GestureDetector(
-              onTap: () => _toggleTableSelection(table.tableId.toString()),
-              child: Stack(
-                children: [
-                  // 使用首页的桌台卡片组件
-                  TableCard(
-                    table: table,
-                    tableModelList: widget.menuModelList,
-                    isSelected: isSelected,
-                    isMergeMode: true,
-                  ),
-                  // 选中状态覆盖层
-                  if (isSelected)
-                    Positioned.fill(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Color(0xffFF9027).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(context.adaptWidth(12)),
-                          border: Border.all(color: Color(0xffFF9027), width: 2),
-                        ),
+        onRefresh: () async {
+          await _fetchDataForTab(tabIndex);
+        },
+        child: CustomScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          slivers: [
+            SliverPadding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              sliver: data.isEmpty
+                  ? SliverFillRemaining(
+                      child: isLoading.value
+                          ? Center(child: CircularProgressIndicator())
+                          : (hasError.value ? _buildNetworkErrorState() : _buildEmptyState()),
+                    )
+                  : SliverGrid(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        mainAxisSpacing: 10,
+                        crossAxisSpacing: 13,
+                        childAspectRatio: 1.2,
+                      ),
+                      delegate: SliverChildBuilderDelegate(
+                        (context, index) {
+                          final table = data[index];
+                          final isSelected = selectedTableIds.contains(table.tableId.toString());
+                          
+                          return GestureDetector(
+                            onTap: () => _toggleTableSelection(table.tableId.toString()),
+                            child: TableCard(
+                              table: table,
+                              tableModelList: widget.menuModelList,
+                              isSelected: isSelected,
+                              isMergeMode: true,
+                            ),
+                          );
+                        },
+                        childCount: data.length,
                       ),
                     ),
-                  // 选中状态图标 - 右下角
-                  if (isSelected)
-                    Positioned(
-                      right: 0,
-                      bottom: 0,
-                      child: Image.asset(
-                        'assets/order_table_bz_sel.webp',
-                        width: context.adaptWidth(30),
-                        height: context.adaptHeight(30),
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
+            ),
+          ],
         ),
       );
     });
+  }
+  
+  /// 构建空状态
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/order_empty.webp',
+            width: 180,
+            height: 100,
+          ),
+          SizedBox(height: 8),
+          Text(
+            '暂无桌台',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFFFF9027),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建网络错误状态
+  Widget _buildNetworkErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/order_nonet.webp',
+            width: 180,
+            height: 100,
+          ),
+          SizedBox(height: 8),
+          Text(
+            '暂无网络',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xFFFF9027),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

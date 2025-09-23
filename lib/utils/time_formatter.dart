@@ -28,6 +28,21 @@ class TimeFormatter {
     }
   }
   
+  /// 将秒数转换为桌台时间格式 (23h43m)
+  static String formatTableTime(int seconds) {
+    if (seconds < 0) return "0h0m";
+    
+    final hours = seconds ~/ 3600;
+    final minutes = (seconds % 3600) ~/ 60;
+    
+    return "${hours}h${minutes}m";
+  }
+  
+  /// 将数字类型的时间戳转换为桌台时间格式
+  static String formatTableTimeFromNum(num duration) {
+    return formatTableTime(duration.toInt());
+  }
+  
   /// 将数字类型的时间戳转换为格式化字符串
   static String formatDurationFromNum(num duration) {
     return formatDuration(duration.toInt());
