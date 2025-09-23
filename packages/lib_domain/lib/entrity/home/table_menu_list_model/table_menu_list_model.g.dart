@@ -15,6 +15,9 @@ TableMenuListModel _$TableMenuListModelFromJson(Map<String, dynamic> json) =>
       adultPackagePrice: json['adult_package_price'] as String?,
       childPackagePrice: json['child_package_price'] as String?,
       weekRange: json['week_range'] as String?,
+      menuFixedCosts: (json['menu_fixed_costs'] as List<dynamic>?)
+          ?.map((e) => MenuFixedCost.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$TableMenuListModelToJson(TableMenuListModel instance) =>
@@ -26,4 +29,5 @@ Map<String, dynamic> _$TableMenuListModelToJson(TableMenuListModel instance) =>
       'adult_package_price': instance.adultPackagePrice,
       'child_package_price': instance.childPackagePrice,
       'week_range': instance.weekRange,
+      'menu_fixed_costs': instance.menuFixedCosts,
     };

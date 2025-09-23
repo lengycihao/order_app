@@ -26,4 +26,6 @@ class ApiRequest {
   static const submitOrder = '/api/waiter/cart/submit_order';
 
   static const currentOrder = '/api/waiter/order/current';
+
+  static const mergeTable = '/api/waiter/table/merge';
 }

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- 允许HTTP请求的域名 -->
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+        <!-- 您的API服务器IP地址 -->
+        <domain includeSubdomains="true">129.204.154.113</domain>
+    </domain-config>
+    
+    <!-- 允许所有HTTP请求（仅用于开发环境，生产环境建议使用HTTPS） -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+</network-security-config>

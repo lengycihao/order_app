@@ -8,13 +8,15 @@ part of 'ordered_dish_model.dart';
 
 OrderedDishModel _$OrderedDishModelFromJson(Map<String, dynamic> json) =>
     OrderedDishModel(
-      id: json['id'] as int?,
-      dishId: json['dish_id'] as int?,
+      id: (json['id'] as num?)?.toInt(),
+      dishId: (json['dish_id'] as num?)?.toInt(),
       name: json['name'] as String?,
-      quantity: json['quantity'] as int?,
+      quantity: (json['quantity'] as num?)?.toInt(),
       price: const StringToDoubleConverter().fromJson(json['price']),
       menuPrice: const StringToDoubleConverter().fromJson(json['menu_price']),
-      priceIncrement: const StringToDoubleConverter().fromJson(json['price_increment']),
+      priceIncrement: const StringToDoubleConverter().fromJson(
+        json['price_increment'],
+      ),
       unitPrice: const StringToDoubleConverter().fromJson(json['unit_price']),
       taxRate: const StringToDoubleConverter().fromJson(json['tax_rate']),
       image: json['image'] as String?,
@@ -24,9 +26,9 @@ OrderedDishModel _$OrderedDishModelFromJson(Map<String, dynamic> json) =>
       optionsStr: json['options_str'] as String?,
       roundStr: json['round_str'] as String?,
       quantityStr: json['quantity_str'] as String?,
-      cookingStatus: json['cooking_status'] as int?,
+      cookingStatus: (json['cooking_status'] as num?)?.toInt(),
       cookingStatusName: json['cooking_status_name'] as String?,
-      processStatus: json['process_status'] as int?,
+      processStatus: (json['process_status'] as num?)?.toInt(),
       processStatusName: json['process_status_name'] as String?,
       cookingTimeout: json['cooking_timeout'] as String?,
     );
@@ -39,7 +41,9 @@ Map<String, dynamic> _$OrderedDishModelToJson(OrderedDishModel instance) =>
       'quantity': instance.quantity,
       'price': const StringToDoubleConverter().toJson(instance.price),
       'menu_price': const StringToDoubleConverter().toJson(instance.menuPrice),
-      'price_increment': const StringToDoubleConverter().toJson(instance.priceIncrement),
+      'price_increment': const StringToDoubleConverter().toJson(
+        instance.priceIncrement,
+      ),
       'unit_price': const StringToDoubleConverter().toJson(instance.unitPrice),
       'tax_rate': const StringToDoubleConverter().toJson(instance.taxRate),
       'image': instance.image,

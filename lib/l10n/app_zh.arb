@@ -1,0 +1,499 @@
+{
+  "@@locale": "zh",
+  "appTitle": "欧华餐饮系统(服务员)",
+  "@appTitle": {
+    "description": "应用程序标题"
+  },
+  "pleaseEnterLoginName": "请输入登录名",
+  "@pleaseEnterLoginName": {
+    "description": "请输入登录名"
+  },
+  "pleaseEnterPassword": "请输入密码",
+  "@pleaseEnterPassword": {
+    "description": "请输入密码"
+  },
+  "login": "登录",
+  "@login": {
+    "description": "登录"
+  },
+  "copyright": "©2025 欧华智创（杭州）科技有限公司",
+  "@copyright": {
+    "description": "版权信息"
+  },
+  "loginNameCannotBeEmpty": "登录名不能为空",
+  "@loginNameCannotBeEmpty": {
+    "description": "登录名不能为空"
+  },
+  "passwordCannotBeEmpty": "密码不能为空",
+  "@passwordCannotBeEmpty": {
+    "description": "密码不能为空"
+  },
+  "incorrectPassword": "用户名或密码错误",
+  "@incorrectPassword": {
+    "description": "用户名或密码错误"
+  },
+  "loginSuccessful": "登录成功",
+  "@loginSuccessful": {
+    "description": "登录成功"
+  },
+  "loginFailedPleaseRetry": "登录失败，请重试",
+  "@loginFailedPleaseRetry": {
+    "description": "登录失败，请重试"
+  },
+  "accountLoggedInOnAnotherDevice": "账号已在其他设备登录",
+  "@accountLoggedInOnAnotherDevice": {
+    "description": "账号已在其他设备登录"
+  },
+  "table": "桌子",
+  "@table": {
+    "description": "桌子"
+  },
+  "more": "更多",
+  "@more": {
+    "description": "更多"
+  },
+  "mergeTables": "并桌",
+  "@mergeTables": {
+    "description": "并桌"
+  },
+  "clearTable": "撤桌",
+  "@clearTable": {
+    "description": "撤桌"
+  },
+  "closeTable": "关桌",
+  "@closeTable": {
+    "description": "关桌"
+  },
+  "confirm": "确认",
+  "@confirm": {
+    "description": "确认"
+  },
+  "includingTables": "包含桌台",
+  "@includingTables": {
+    "description": "包含桌台"
+  },
+  "selectTable": "选择桌子",
+  "@selectTable": {
+    "description": "选择桌子"
+  },
+  "reason": "原因",
+  "@reason": {
+    "description": "原因"
+  },
+  "cancel": "取消",
+  "@cancel": {
+    "description": "取消"
+  },
+  "tablePeople": "本桌人数",
+  "@tablePeople": {
+    "description": "本桌人数"
+  },
+  "adults": "大人",
+  "@adults": {
+    "description": "大人"
+  },
+  "children": "小孩",
+  "@children": {
+    "description": "小孩"
+  },
+  "selectMenu": "选择菜单",
+  "@selectMenu": {
+    "description": "选择菜单"
+  },
+  "startOrdering": "开始点餐",
+  "@startOrdering": {
+    "description": "开始点餐"
+  },
+  "currentTableUnavailable": "当前桌台不可用",
+  "@currentTableUnavailable": {
+    "description": "当前桌台不可用"
+  },
+  "onlyOneNonFreeTableCanBeSelected": "仅可选择一张以下非空闲状态桌子",
+  "@onlyOneNonFreeTableCanBeSelected": {
+    "description": "仅可选择一张以下非空闲状态桌子"
+  },
+  "pleaseSelectNumberOfDiners": "请选择就餐人数",
+  "@pleaseSelectNumberOfDiners": {
+    "description": "请选择就餐人数"
+  },
+  "standardAdultsForThisTable": "本桌标准大人人数:[4]",
+  "@standardAdultsForThisTable": {
+    "description": "本桌标准大人人数:[4]"
+  },
+  "standardChildrenForThisTable": "本桌标准小孩人数:[5]",
+  "@standardChildrenForThisTable": {
+    "description": "本桌标准小孩人数:[5]"
+  },
+  "pleaseSelectMenu": "请选择菜单",
+  "@pleaseSelectMenu": {
+    "description": "请选择菜单"
+  },
+  "mergeSuccessful": "合并成功",
+  "@mergeSuccessful": {
+    "description": "合并成功"
+  },
+  "mergeFailedPleaseRetry": "合并失败，请重试",
+  "@mergeFailedPleaseRetry": {
+    "description": "合并失败，请重试"
+  },
+  "oneTableMustRemainWhenRemoving": "撤桌必须留下一张桌子",
+  "@oneTableMustRemainWhenRemoving": {
+    "description": "撤桌必须留下一张桌子"
+  },
+  "tableRemovalSuccessful": "撤桌成功",
+  "@tableRemovalSuccessful": {
+    "description": "撤桌成功"
+  },
+  "tableRemovalFailedPleaseRetry": "撤桌失败，请重试",
+  "@tableRemovalFailedPleaseRetry": {
+    "description": "撤桌失败，请重试"
+  },
+  "tableClosingSuccessful": "关桌成功",
+  "@tableClosingSuccessful": {
+    "description": "关桌成功"
+  },
+  "tableClosingFailedPleaseRetry": "关桌失败，请重试",
+  "@tableClosingFailedPleaseRetry": {
+    "description": "关桌失败，请重试"
+  },
+  "tableOpeningSuccessful": "开桌成功",
+  "@tableOpeningSuccessful": {
+    "description": "开桌成功"
+  },
+  "tableOpeningFailedPleaseRetry": "开桌失败，请重试",
+  "@tableOpeningFailedPleaseRetry": {
+    "description": "开桌失败，请重试"
+  },
+  "pleaseEnterLast4DigitsOfReservedPhone": "请输入预留手机号码后 4 位？/取消/确认",
+  "@pleaseEnterLast4DigitsOfReservedPhone": {
+    "description": "请输入预留手机号码后 4 位？/取消/确认"
+  },
+  "numberIncorrectPleaseReenter": "号码不正确，请重新输入",
+  "@numberIncorrectPleaseReenter": {
+    "description": "号码不正确，请重新输入"
+  },
+  "numberCorrectEnjoyYourMeal": "号码正确，祝你用餐愉快",
+  "@numberCorrectEnjoyYourMeal": {
+    "description": "号码正确，祝你用餐愉快"
+  },
+  "menu": "菜单",
+  "@menu": {
+    "description": "菜单"
+  },
+  "ordered": "已点",
+  "@ordered": {
+    "description": "已点"
+  },
+  "enterDishCodeOrName": "输入菜品编码或名称",
+  "@enterDishCodeOrName": {
+    "description": "输入菜品编码或名称"
+  },
+  "max1PerPerson": "限1份/人",
+  "@max1PerPerson": {
+    "description": "限1份/人"
+  },
+  "twoLeft": "剩2份",
+  "@twoLeft": {
+    "description": "剩2份"
+  },
+  "selectSpecification": "选规格",
+  "@selectSpecification": {
+    "description": "选规格"
+  },
+  "placeOrder": "下单",
+  "@placeOrder": {
+    "description": "下单"
+  },
+  "clear": "清空",
+  "@clear": {
+    "description": "清空"
+  },
+  "allergens": "敏感物",
+  "@allergens": {
+    "description": "敏感物"
+  },
+  "excludeDishesWithAllergens": "去除含有指定敏感物的菜品",
+  "@excludeDishesWithAllergens": {
+    "description": "去除含有指定敏感物的菜品"
+  },
+  "selected": "已选：",
+  "@selected": {
+    "description": "已选："
+  },
+  "cart": "购物车",
+  "@cart": {
+    "description": "购物车"
+  },
+  "changeTable": "更换桌子",
+  "@changeTable": {
+    "description": "更换桌子"
+  },
+  "changeMenu": "更换菜单",
+  "@changeMenu": {
+    "description": "更换菜单"
+  },
+  "increaseNumberOfPeople": "增加人数",
+  "@increaseNumberOfPeople": {
+    "description": "增加人数"
+  },
+  "roundQuantity": "轮次：",
+  "@roundQuantity": {
+    "description": "轮次："
+  },
+  "noRelevantDishesFound": "未找到相关菜品",
+  "@noRelevantDishesFound": {
+    "description": "未找到相关菜品"
+  },
+  "dishSoldOutPleaseChooseAnother": "[某菜名]已售罄，请选择其他菜品",
+  "@dishSoldOutPleaseChooseAnother": {
+    "description": "[某菜名]已售罄，请选择其他菜品"
+  },
+  "dishQuantityExceedsLimit": "[某菜名]数量超出限制,限1份/人",
+  "@dishQuantityExceedsLimit": {
+    "description": "[某菜名]数量超出限制,限1份/人"
+  },
+  "dishInsufficientStock": "[某菜名]库存不足，剩2份",
+  "@dishInsufficientStock": {
+    "description": "[某菜名]库存不足，剩2份"
+  },
+  "nextRoundTimeNotReached": "下一轮次时间未到",
+  "@nextRoundTimeNotReached": {
+    "description": "下一轮次时间未到"
+  },
+  "dishPlusOne": "[某菜品]+1",
+  "@dishPlusOne": {
+    "description": "[某菜品]+1"
+  },
+  "cartHasNewChanges": "购物车有新的变动",
+  "@cartHasNewChanges": {
+    "description": "购物车有新的变动"
+  },
+  "orderPlacedSuccessfully": "下单成功",
+  "@orderPlacedSuccessfully": {
+    "description": "下单成功"
+  },
+  "orderPlacementFailedContactWaiter": "下单失败，请联系服务员",
+  "@orderPlacementFailedContactWaiter": {
+    "description": "下单失败，请联系服务员"
+  },
+  "clearShoppingCart": "是否清空购物车？/取消/确认",
+  "@clearShoppingCart": {
+    "description": "是否清空购物车？/取消/确认"
+  },
+  "dishQuantityExceedsLimitPlaceAtOriginalPrice": "[某菜名]数量超出限制，是否以原价下单",
+  "@dishQuantityExceedsLimitPlaceAtOriginalPrice": {
+    "description": "[某菜名]数量超出限制，是否以原价下单"
+  },
+  "takeaway": "外卖",
+  "@takeaway": {
+    "description": "外卖"
+  },
+  "unsettled": "未结帐",
+  "@unsettled": {
+    "description": "未结帐"
+  },
+  "settled": "已结帐",
+  "@settled": {
+    "description": "已结帐"
+  },
+  "pleaseEnterPickupCode": "请输入取餐码",
+  "@pleaseEnterPickupCode": {
+    "description": "请输入取餐码"
+  },
+  "orderInformation": "订单信息",
+  "@orderInformation": {
+    "description": "订单信息"
+  },
+  "pickupCode": "取餐码",
+  "@pickupCode": {
+    "description": "取餐码"
+  },
+  "pickupTime": "取餐时间",
+  "@pickupTime": {
+    "description": "取餐时间"
+  },
+  "remarks": "备注",
+  "@remarks": {
+    "description": "备注"
+  },
+  "orderSource": "订单来源",
+  "@orderSource": {
+    "description": "订单来源"
+  },
+  "orderPlacementTime": "下单时间",
+  "@orderPlacementTime": {
+    "description": "下单时间"
+  },
+  "checkoutTime": "结账时间",
+  "@checkoutTime": {
+    "description": "结账时间"
+  },
+  "productInformation": "商品信息",
+  "@productInformation": {
+    "description": "商品信息"
+  },
+  "additionalInformation": "其他信息",
+  "@additionalInformation": {
+    "description": "其他信息"
+  },
+  "otherTime": "其他时间",
+  "@otherTime": {
+    "description": "其他时间"
+  },
+  "pleaseSelectPickupTime": "请选择取餐时间",
+  "@pleaseSelectPickupTime": {
+    "description": "请选择取餐时间"
+  },
+  "pickupTimeMustBeAtLeast30MinutesLater": "取餐时间至少30分钟后",
+  "@pickupTimeMustBeAtLeast30MinutesLater": {
+    "description": "取餐时间至少30分钟后"
+  },
+  "profile": "我的",
+  "@profile": {
+    "description": "我的"
+  },
+  "account": "账号",
+  "@account": {
+    "description": "账号"
+  },
+  "expirationDate": "到期日期",
+  "@expirationDate": {
+    "description": "到期日期"
+  },
+  "remainingDays": "剩余天数",
+  "@remainingDays": {
+    "description": "剩余天数"
+  },
+  "changePassword": "修改密码",
+  "@changePassword": {
+    "description": "修改密码"
+  },
+  "language": "语言",
+  "@language": {
+    "description": "语言"
+  },
+  "systemVersion": "系统版本",
+  "@systemVersion": {
+    "description": "系统版本"
+  },
+  "update": "更新",
+  "@update": {
+    "description": "更新"
+  },
+  "logout": "退出登录",
+  "@logout": {
+    "description": "退出登录"
+  },
+  "newPassword": "新密码",
+  "@newPassword": {
+    "description": "新密码"
+  },
+  "anyCharactersOf8OrMoreDigits": "任意8位以上字符",
+  "@anyCharactersOf8OrMoreDigits": {
+    "description": "任意8位以上字符"
+  },
+  "pleaseEnterNewPassword": "请输入新密码",
+  "@pleaseEnterNewPassword": {
+    "description": "请输入新密码"
+  },
+  "confirmPassword": "确认密码",
+  "@confirmPassword": {
+    "description": "确认密码"
+  },
+  "pleaseReenterNewPassword": "请再次输入新密码",
+  "@pleaseReenterNewPassword": {
+    "description": "请再次输入新密码"
+  },
+  "submit": "提交",
+  "@submit": {
+    "description": "提交"
+  },
+  "passwordUpdatedSuccessfully": "密码修改成功",
+  "@passwordUpdatedSuccessfully": {
+    "description": "密码修改成功"
+  },
+  "passwordChangeFailedPleaseRetry": "密码修改失败，请重试",
+  "@passwordChangeFailedPleaseRetry": {
+    "description": "密码修改失败，请重试"
+  },
+  "languageSwitchedSuccessfully": "切换语言成功",
+  "@languageSwitchedSuccessfully": {
+    "description": "切换语言成功"
+  },
+  "languageSwitchFailedPleaseRetry": "切换语言失败，请重试",
+  "@languageSwitchFailedPleaseRetry": {
+    "description": "切换语言失败，请重试"
+  },
+  "networkErrorPleaseTryAgain": "网络错误，请重试",
+  "@networkErrorPleaseTryAgain": {
+    "description": "网络错误，请重试"
+  },
+  "operationTooFrequentPleaseTryAgainLater": "操作频繁 请稍后再试",
+  "@operationTooFrequentPleaseTryAgainLater": {
+    "description": "操作频繁 请稍后再试"
+  },
+  "selectLanguage": "选择语言",
+  "@selectLanguage": {
+    "description": "选择语言"
+  },
+  "chinese": "中文",
+  "@chinese": {
+    "description": "中文"
+  },
+  "english": "英语",
+  "@english": {
+    "description": "英语"
+  },
+  "italian": "意大利语",
+  "@italian": {
+    "description": "意大利语"
+  },
+  "systemTitle": "欧华餐饮系统",
+  "@systemTitle": {
+    "description": "系统标题"
+  },
+  "noData": "暂无数据",
+  "@noData": {
+    "description": "暂无数据"
+  },
+  "pending": "待处理",
+  "@pending": {
+    "description": "待处理"
+  },
+  "quantity": "数量",
+  "@quantity": {
+    "description": "数量"
+  },
+  "specifications": "规格",
+  "@specifications": {
+    "description": "规格"
+  },
+  "info": "信息",
+  "@info": {
+    "description": "信息"
+  },
+  "home": "首页",
+  "@home": {
+    "description": "首页"
+  },
+  "order": "订单",
+  "@order": {
+    "description": "订单"
+  },
+  "moreDishesComingSoon": "更多菜品即将推出",
+  "@moreDishesComingSoon": {
+    "description": "更多菜品即将推出"
+  },
+  "switchLanguage": "切换语言",
+  "@switchLanguage": {
+    "description": "切换语言"
+  },
+  "authDebug": "认证调试",
+  "@authDebug": {
+    "description": "认证调试"
+  },
+  "welcomeToUse": "欢迎使用",
+  "@welcomeToUse": {
+    "description": "欢迎使用"
+  }
+}

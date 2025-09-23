@@ -215,4 +215,25 @@ class BaseApi {
       return result.convert();
     }
   }
+
+  /// 并桌
+  Future<HttpResultN<TableListModel>> mergeTables({
+    required List<int> tableIds,
+  }) async {
+    final params = {
+      "table_ids": tableIds,
+    };
+    final result = await HttpManagerN.instance.executePost(
+      ApiRequest.mergeTable,
+      jsonParam: params,
+    );
+    
+    if (result.isSuccess) {
+      return result.convert(
+        data: TableListModel.fromJson(result.getDataJson()),
+      );
+    } else {
+      return result.convert();
+    }
+  }
 }

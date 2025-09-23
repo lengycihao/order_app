@@ -1,0 +1,445 @@
+import 'package:flutter/material.dart';
+import 'package:order_app/cons/table_status.dart';
+import 'package:order_app/pages/table/card/animate_hour.dart';
+import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
+import 'package:marquee/marquee.dart';
+import 'package:order_app/pages/table/sub_page/select_menu_page.dart';
+import 'package:order_app/pages/table/tools/change_table_status_dialog.dart';
+import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
+import 'package:get/get.dart';
+import 'package:order_app/pages/table/table_controller.dart';
+import 'package:order_app/pages/order/order_main_page.dart';
+import 'package:order_app/utils/snackbar_utils.dart';
+import 'package:order_app/utils/screen_adaptation.dart';
+
+class TableCard extends StatefulWidget {
+  final TableListModel table;
+  final List<TableMenuListModel> tableModelList;
+  final bool isSelected; // 添加选中状态参数
+  final bool isMergeMode; // 添加并桌模式参数
+  
+  static const int _debounceDelay = 500; // 500ms防抖，更合理的响应时间
+
+  const TableCard({
+    Key? key,
+    required this.table,
+    required this.tableModelList,
+    this.isSelected = false,
+    this.isMergeMode = false,
+  }) : super(key: key);
+
+  @override
+  State<TableCard> createState() => _TableCardState();
+}
+
+class _TableCardState extends State<TableCard> {
+  // 防抖处理 - 每个桌台实例独立的防抖时间
+  int _lastClickTime = 0;
+
+  Color _getStatusColor(TableStatus status) {
+    switch (status) {
+      case TableStatus.Unavailable:
+        return Color(0xff999999);
+      case TableStatus.PendingBill:
+        return Color(0xffF47E97);
+      case TableStatus.PreBilled:
+        return Color(0xff77DD77);
+      case TableStatus.WaitingOrder:
+        return Color(0xffFFD700);
+      case TableStatus.Empty:
+        return Colors.white;
+      case TableStatus.Occupied:
+        return Color(0xff999999);
+      case TableStatus.Maintenance:
+        return Color(0xff999999);
+      case TableStatus.Reserved:
+        return Color(0xff999999);
+    }
+  }
+
+  Color _getStatusBottomColor(TableStatus status) {
+    switch (status) {
+      case TableStatus.Unavailable:
+        return Color(0xff666666);
+      case TableStatus.PendingBill:
+        return Color(0xffFF6B8B);
+      case TableStatus.PreBilled:
+        return Color(0xff55CB55);
+      case TableStatus.WaitingOrder:
+        return Color(0xffEAC500);
+      case TableStatus.Empty:
+        return Color(0xffE4E4E4);
+      case TableStatus.Occupied:
+        return Color(0xff666666);
+      case TableStatus.Maintenance:
+        return Color(0xff666666);
+      case TableStatus.Reserved:
+        return Color(0xff666666);
+    }
+  }
+
+  TableStatus _getStatus(int status) {
+    switch (status) {
+      case 0:
+        return TableStatus.Empty;
+      case 1:
+        return TableStatus.Occupied;
+      case 2:
+        return TableStatus.WaitingOrder;
+      case 3:
+        return TableStatus.PendingBill;
+      case 4:
+        return TableStatus.PreBilled;
+      case 5:
+        return TableStatus.Unavailable; // 修复：5应该是不可用状态
+      case 6:
+        return TableStatus.Maintenance;
+      case 7:
+        return TableStatus.Reserved;
+    }
+    return TableStatus.Empty;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _getStatus(widget.table.businessStatus.toInt());
+    // final canMerge = status != TableStatus.Unavailable && status != TableStatus.Maintenance;
+    return GestureDetector(
+      onLongPress: widget.isMergeMode ? null : () {
+        showDialog(
+          context: context,
+          builder: (_) => ChangeTableStatusDialog(
+            tableNo: widget.table.tableName ?? "",
+            status: status,
+            onClose: () => Navigator.of(context).pop(),
+            onChangeStatus: (newStatus) async {
+              Navigator.of(context).pop();
+              
+              // 获取TableController实例
+              final controller = Get.find<TableController>();
+              
+              // 调用API切换桌台状态
+              await controller.changeTableStatus(
+                tableId: widget.table.tableId.toInt(),
+                newStatus: newStatus,
+              );
+            },
+          ),
+        );
+      },
+      onTap: widget.isMergeMode ? null : () async {
+        // 防抖处理
+        final currentTime = DateTime.now().millisecondsSinceEpoch;
+        if (currentTime - _lastClickTime < TableCard._debounceDelay) {
+          print('🚫 点击过于频繁，忽略此次点击');
+          return;
+        }
+        _lastClickTime = currentTime;
+        
+        try {
+          // 直接使用当前桌台数据，不请求详情
+          final currentTable = widget.table;
+          final status = _getStatus(currentTable.businessStatus.toInt());
+          
+          // 如果是不可用或维修状态的桌台，显示提示信息
+          if (status == TableStatus.Unavailable || status == TableStatus.Maintenance) {
+            String message = status == TableStatus.Unavailable ? '该桌台当前不可用' : '该桌台正在维修中';
+            SnackbarUtils.showWarning(context, message);
+            return;
+          }
+          
+          // 根据状态决定跳转页面
+          if (currentTable.businessStatus == 0) {
+            // 状态0：进入菜单选择页面
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SelectMenuPage(),
+                settings: RouteSettings(
+                  arguments: {
+                    'table': currentTable,
+                    'menu': widget.tableModelList,
+                    'table_id': currentTable.tableId,
+                  },
+                ),
+              ),
+            );
+          } else {
+            // 其他状态（除了5,6）：直接进入点餐页面
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OrderMainPage(),
+                settings: RouteSettings(
+                  arguments: {
+                    'table_id': currentTable.tableId,
+                    // 修复人数数据传递逻辑：优先使用当前人数，如果为0则使用标准人数
+                    'adult_count': currentTable.currentAdult > 0 ? currentTable.currentAdult.toInt() : currentTable.standardAdult.toInt(),
+                    'child_count': currentTable.currentChild.toInt(),
+                    'menu': widget.tableModelList, // 添加菜单列表，用于获取菜品数据
+                  },
+                ),
+              ),
+            );
+          }
+        } catch (e) {
+          print('桌台点击处理异常: $e');
+          SnackbarUtils.showError(context, '操作失败，请重试');
+        }
+      },
+      child: Container(
+        width: context.adaptWidth(165),
+        height: context.adaptHeight(124),
+        decoration: BoxDecoration(
+          color: _getStatusColor(status),
+          borderRadius: BorderRadius.circular(context.adaptWidth(12)), // 增加圆角
+          border: widget.isSelected && widget.isMergeMode 
+            ? Border.all(
+                color: Color(0xffFF9027), 
+                width: 2.0
+              ) 
+            : null,
+          boxShadow: [
+            BoxShadow(
+              offset: Offset(0, context.adaptHeight(1)),
+              blurRadius: context.adaptWidth(3),
+              spreadRadius: 0,
+              color: Color(0x33000000), // 000000 20% 透明度
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 桌号 & 人数
+            Container(
+              padding: EdgeInsets.all(context.adaptWidth(8)),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 桌名 - 支持多行显示，最多2行
+                  Expanded(
+                    flex: 2,
+                    child: Text(
+                      widget.table.tableName ?? "桌台${widget.table.tableId}",
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: context.adaptFontSize(14),
+                        color: Colors.black, // 确保文字颜色可见
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(width: context.adaptWidth(8)), // 添加间距
+                  // 人数信息 - 固定在右侧
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      // 成人人数
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                        Image.asset(
+                          'assets/order_table_person_icon.webp',
+                          width: context.adaptWidth(8),
+                          height: context.adaptHeight(8),
+                        ),
+                        SizedBox(width: context.adaptWidth(3)),
+                        (widget.table.currentAdult > 0)
+                            ? Text(
+                                '${widget.table.currentAdult}/${widget.table.standardAdult}',
+                                style: TextStyle(
+                                  fontSize: context.adaptFontSize(10),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              )
+                            : Text(
+                                widget.table.standardAdult.toString(),
+                                style: TextStyle(
+                                  fontSize: context.adaptFontSize(10),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                          ],
+                        ),
+                      if (widget.table.standardChild > 0)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Image.asset(
+                              'assets/order_table_child_icon.webp',
+                              width: context.adaptWidth(8),
+                              height: context.adaptHeight(8),
+                            ),
+                            SizedBox(width: context.adaptWidth(3)),
+                            (widget.table.currentChild > 0)
+                                ? Text(
+                                    '${widget.table.currentChild}/${widget.table.standardChild}',
+                                    style: TextStyle(
+                                      fontSize: context.adaptFontSize(10),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  )
+                                : Text(
+                                    widget.table.standardChild.toString(),
+                                    style: TextStyle(
+                                      fontSize: context.adaptFontSize(10),
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              // 使用Expanded和Center来将金额放在正中央
+              Expanded(
+                child: widget.table.businessStatus == 3
+                    ? Center(
+                        child: Text(
+                          '€ ${widget.table.orderAmount.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: context.adaptFontSize(18),
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      )
+                    : SizedBox(),
+              ),
+              // 状态 & 时间 - 固定在底部
+              _getStatusLabel(context, status),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _getStatusLabel(BuildContext context, TableStatus status) {
+    // 状态 & 时间
+    return Container(
+      height: context.adaptHeight(28), // 增加高度确保内容可见
+      padding: EdgeInsets.symmetric(horizontal: context.adaptWidth(10), vertical: context.adaptHeight(4)),
+      decoration: BoxDecoration(
+        color: _getStatusBottomColor(status),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(context.adaptWidth(8)),
+          bottomRight: Radius.circular(context.adaptWidth(8)),
+        ),
+      ),
+      child: Row(
+        children: [
+          // 左侧：状态文字
+          Expanded(
+            child: _buildStatusText(context, status),
+          ),
+          // 右侧：时间显示
+          if (widget.table.businessStatus == 1 ||
+              widget.table.businessStatus == 2 ||
+              widget.table.businessStatus == 3) ...[
+            SizedBox(width: context.adaptWidth(8)),
+            AnimatedHourglass(
+              initialDuration: widget.table.openDuration,
+              tableId: widget.table.tableId.toString(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatusText(BuildContext context, TableStatus status) {
+    String text = '';
+    switch (status) {
+      case TableStatus.Empty:
+        text = '空闲';
+        break;
+      case TableStatus.Occupied:
+        text = '已占用';
+        break;
+      case TableStatus.WaitingOrder:
+        text = '等待点餐';
+        break;
+      case TableStatus.PendingBill:
+        text = '待结账';
+        break;
+      case TableStatus.PreBilled:
+        text = '预结账';
+        break;
+      case TableStatus.Unavailable:
+        text = '不可用';
+        break;
+      case TableStatus.Maintenance:
+        text = '维修中';
+        break;
+      case TableStatus.Reserved:
+        text = '已预订';
+        break;
+    }
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 限制最大宽度为父容器的 3/4
+        final maxWidth = constraints.maxWidth * 0.75;
+
+        // 用 TextPainter 计算文字宽度
+        final textPainter = TextPainter(
+          text: TextSpan(
+            text: text,
+            style: TextStyle(
+              fontSize: context.adaptFontSize(12), 
+              color: Colors.black
+            ),
+          ),
+          maxLines: 1,
+          textDirection: TextDirection.ltr,
+        )..layout(minWidth: 0, maxWidth: double.infinity);
+
+        final textWidth = textPainter.size.width;
+
+        // 如果文字宽度小于最大宽度，直接显示
+        if (textWidth <= maxWidth) {
+          return Text(
+            text,
+            style: TextStyle(
+              fontSize: context.adaptFontSize(12), 
+              color: Colors.black,
+              fontWeight: FontWeight.w500, // 增加字体粗细
+            ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          );
+        } else {
+          // 否则使用跑马灯效果
+          return SizedBox(
+            width: maxWidth,
+            height: context.adaptHeight(20), // 固定高度，避免跳动
+            child: Marquee(
+              text: text,
+              style: TextStyle(
+                fontSize: context.adaptFontSize(12), 
+                color: Colors.black,
+                fontWeight: FontWeight.w500, // 增加字体粗细
+              ),
+              scrollAxis: Axis.horizontal,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              blankSpace: context.adaptWidth(30.0),
+              velocity: 30.0,
+              startPadding: context.adaptWidth(5.0),
+              pauseAfterRound: const Duration(seconds: 1),
+              showFadingOnlyWhenScrolling: true,
+              fadingEdgeStartFraction: 0.1,
+              fadingEdgeEndFraction: 0.1,
+            ),
+          );
+        }
+      },
+    );
+  }
+}

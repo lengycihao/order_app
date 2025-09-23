@@ -1,0 +1,499 @@
+{
+  "@@locale": "en",
+  "appTitle": "OUHUA RISTOO(Waiter)",
+  "@appTitle": {
+    "description": "Application title"
+  },
+  "pleaseEnterLoginName": "Please enter your login name",
+  "@pleaseEnterLoginName": {
+    "description": "Please enter your login name"
+  },
+  "pleaseEnterPassword": "Please enter the password",
+  "@pleaseEnterPassword": {
+    "description": "Please enter the password"
+  },
+  "login": "Login",
+  "@login": {
+    "description": "Login"
+  },
+  "copyright": "©2025 Ouhua Zhichuang (Hangzhou) Technology Co., Ltd.",
+  "@copyright": {
+    "description": "Copyright information"
+  },
+  "loginNameCannotBeEmpty": "Login name cannot be empty",
+  "@loginNameCannotBeEmpty": {
+    "description": "Login name cannot be empty"
+  },
+  "passwordCannotBeEmpty": "Password cannot be empty.",
+  "@passwordCannotBeEmpty": {
+    "description": "Password cannot be empty."
+  },
+  "incorrectPassword": "Incorrect Password",
+  "@incorrectPassword": {
+    "description": "Incorrect Password"
+  },
+  "loginSuccessful": "Login Successful",
+  "@loginSuccessful": {
+    "description": "Login Successful"
+  },
+  "loginFailedPleaseRetry": "Login failed, please retry",
+  "@loginFailedPleaseRetry": {
+    "description": "Login failed, please retry"
+  },
+  "accountLoggedInOnAnotherDevice": "The account has been logged in on another device",
+  "@accountLoggedInOnAnotherDevice": {
+    "description": "The account has been logged in on another device"
+  },
+  "table": "Table",
+  "@table": {
+    "description": "Table"
+  },
+  "more": "More",
+  "@more": {
+    "description": "More"
+  },
+  "mergeTables": "Merge Tables",
+  "@mergeTables": {
+    "description": "Merge Tables"
+  },
+  "clearTable": "Clear Table",
+  "@clearTable": {
+    "description": "Clear Table"
+  },
+  "closeTable": "Close Table",
+  "@closeTable": {
+    "description": "Close Table"
+  },
+  "confirm": "Confirm",
+  "@confirm": {
+    "description": "Confirm"
+  },
+  "includingTables": "Including Tables",
+  "@includingTables": {
+    "description": "Including Tables"
+  },
+  "selectTable": "Select Table",
+  "@selectTable": {
+    "description": "Select Table"
+  },
+  "reason": "Reason",
+  "@reason": {
+    "description": "Reason"
+  },
+  "cancel": "Cancel",
+  "@cancel": {
+    "description": "Cancel"
+  },
+  "tablePeople": "Table People",
+  "@tablePeople": {
+    "description": "Table People"
+  },
+  "adults": "Adults",
+  "@adults": {
+    "description": "Adults"
+  },
+  "children": "Children",
+  "@children": {
+    "description": "Children"
+  },
+  "selectMenu": "Select Menu",
+  "@selectMenu": {
+    "description": "Select Menu"
+  },
+  "startOrdering": "Start Ordering",
+  "@startOrdering": {
+    "description": "Start Ordering"
+  },
+  "currentTableUnavailable": "The current table is unavailable",
+  "@currentTableUnavailable": {
+    "description": "The current table is unavailable"
+  },
+  "onlyOneNonFreeTableCanBeSelected": "Only one of the following non - free tables can be selected.",
+  "@onlyOneNonFreeTableCanBeSelected": {
+    "description": "Only one of the following non - free tables can be selected."
+  },
+  "pleaseSelectNumberOfDiners": "Please select the number of diners",
+  "@pleaseSelectNumberOfDiners": {
+    "description": "Please select the number of diners"
+  },
+  "standardAdultsForThisTable": "Standard number of adults for this table: [4]",
+  "@standardAdultsForThisTable": {
+    "description": "Standard number of adults for this table: [4]"
+  },
+  "standardChildrenForThisTable": "Standard number of children for this table:[5]",
+  "@standardChildrenForThisTable": {
+    "description": "Standard number of children for this table:[5]"
+  },
+  "pleaseSelectMenu": "Please select a menu",
+  "@pleaseSelectMenu": {
+    "description": "Please select a menu"
+  },
+  "mergeSuccessful": "Merge successful",
+  "@mergeSuccessful": {
+    "description": "Merge successful"
+  },
+  "mergeFailedPleaseRetry": "Merge failed, please retry.",
+  "@mergeFailedPleaseRetry": {
+    "description": "Merge failed, please retry."
+  },
+  "oneTableMustRemainWhenRemoving": "When removing tables, one table must remain.",
+  "@oneTableMustRemainWhenRemoving": {
+    "description": "When removing tables, one table must remain."
+  },
+  "tableRemovalSuccessful": "Table removal successful",
+  "@tableRemovalSuccessful": {
+    "description": "Table removal successful"
+  },
+  "tableRemovalFailedPleaseRetry": "Table removal failed, please retry",
+  "@tableRemovalFailedPleaseRetry": {
+    "description": "Table removal failed, please retry"
+  },
+  "tableClosingSuccessful": "Table closing successful",
+  "@tableClosingSuccessful": {
+    "description": "Table closing successful"
+  },
+  "tableClosingFailedPleaseRetry": "Table closing failed, please retry",
+  "@tableClosingFailedPleaseRetry": {
+    "description": "Table closing failed, please retry"
+  },
+  "tableOpeningSuccessful": "Table opening successful",
+  "@tableOpeningSuccessful": {
+    "description": "Table opening successful"
+  },
+  "tableOpeningFailedPleaseRetry": "Table opening failed, please retry",
+  "@tableOpeningFailedPleaseRetry": {
+    "description": "Table opening failed, please retry"
+  },
+  "pleaseEnterLast4DigitsOfReservedPhone": "Please enter the last 4 digits of the reserved phone number?/Cancel/Confirm",
+  "@pleaseEnterLast4DigitsOfReservedPhone": {
+    "description": "Please enter the last 4 digits of the reserved phone number?/Cancel/Confirm"
+  },
+  "numberIncorrectPleaseReenter": "The number is incorrect, please re-enter",
+  "@numberIncorrectPleaseReenter": {
+    "description": "The number is incorrect, please re-enter"
+  },
+  "numberCorrectEnjoyYourMeal": "The number is correct. Enjoy your meal!",
+  "@numberCorrectEnjoyYourMeal": {
+    "description": "The number is correct. Enjoy your meal!"
+  },
+  "menu": "Menu",
+  "@menu": {
+    "description": "Menu"
+  },
+  "ordered": "Ordered",
+  "@ordered": {
+    "description": "Ordered"
+  },
+  "enterDishCodeOrName": "Enter dish code or name",
+  "@enterDishCodeOrName": {
+    "description": "Enter dish code or name"
+  },
+  "max1PerPerson": "Max 1/pers.",
+  "@max1PerPerson": {
+    "description": "Max 1/pers."
+  },
+  "twoLeft": "2 left",
+  "@twoLeft": {
+    "description": "2 left"
+  },
+  "selectSpecification": "Variante",
+  "@selectSpecification": {
+    "description": "Variante"
+  },
+  "placeOrder": "Order",
+  "@placeOrder": {
+    "description": "Order"
+  },
+  "clear": "Clear",
+  "@clear": {
+    "description": "Clear"
+  },
+  "allergens": "Allergens",
+  "@allergens": {
+    "description": "Allergens"
+  },
+  "excludeDishesWithAllergens": "Exclude dishes containing the specified allergens",
+  "@excludeDishesWithAllergens": {
+    "description": "Exclude dishes containing the specified allergens"
+  },
+  "selected": "Selected:",
+  "@selected": {
+    "description": "Selected:"
+  },
+  "cart": "Cart",
+  "@cart": {
+    "description": "Cart"
+  },
+  "changeTable": "Change Table",
+  "@changeTable": {
+    "description": "Change Table"
+  },
+  "changeMenu": "Change Menu",
+  "@changeMenu": {
+    "description": "Change Menu"
+  },
+  "increaseNumberOfPeople": "Increase Number of People",
+  "@increaseNumberOfPeople": {
+    "description": "Increase Number of People"
+  },
+  "roundQuantity": "Round: 1/2; Quantity: 4/6",
+  "@roundQuantity": {
+    "description": "Round: 1/2; Quantity: 4/6"
+  },
+  "noRelevantDishesFound": "No relevant dishes found",
+  "@noRelevantDishesFound": {
+    "description": "No relevant dishes found"
+  },
+  "dishSoldOutPleaseChooseAnother": "[某菜名] is sold out. Please choose another dish.",
+  "@dishSoldOutPleaseChooseAnother": {
+    "description": "[某菜名] is sold out. Please choose another dish."
+  },
+  "dishQuantityExceedsLimit": "[某菜名]Quantity exceeds limit, Max 1/person",
+  "@dishQuantityExceedsLimit": {
+    "description": "[某菜名]Quantity exceeds limit, Max 1/person"
+  },
+  "dishInsufficientStock": "[某菜名]Insufficient stock,2 left",
+  "@dishInsufficientStock": {
+    "description": "[某菜名]Insufficient stock,2 left"
+  },
+  "nextRoundTimeNotReached": "Next round time not reached",
+  "@nextRoundTimeNotReached": {
+    "description": "Next round time not reached"
+  },
+  "dishPlusOne": "[某菜品]+1",
+  "@dishPlusOne": {
+    "description": "[某菜品]+1"
+  },
+  "cartHasNewChanges": "Cart has new changes",
+  "@cartHasNewChanges": {
+    "description": "Cart has new changes"
+  },
+  "orderPlacedSuccessfully": "Order placed successfully",
+  "@orderPlacedSuccessfully": {
+    "description": "Order placed successfully"
+  },
+  "orderPlacementFailedContactWaiter": "Order Placement Failed, Please Contact the Waiter",
+  "@orderPlacementFailedContactWaiter": {
+    "description": "Order Placement Failed, Please Contact the Waiter"
+  },
+  "clearShoppingCart": "Clear shopping cart?/Cancel/Confirm",
+  "@clearShoppingCart": {
+    "description": "Clear shopping cart?/Cancel/Confirm"
+  },
+  "dishQuantityExceedsLimitPlaceAtOriginalPrice": "[某菜名]Quantity exceeds the limit. Place order at original price?",
+  "@dishQuantityExceedsLimitPlaceAtOriginalPrice": {
+    "description": "[某菜名]Quantity exceeds the limit. Place order at original price?"
+  },
+  "takeaway": "Takeaway",
+  "@takeaway": {
+    "description": "Takeaway"
+  },
+  "unsettled": "Unsettled",
+  "@unsettled": {
+    "description": "Unsettled"
+  },
+  "settled": "Settled",
+  "@settled": {
+    "description": "Settled"
+  },
+  "pleaseEnterPickupCode": "Please enter pickup code",
+  "@pleaseEnterPickupCode": {
+    "description": "Please enter pickup code"
+  },
+  "orderInformation": "Order Information",
+  "@orderInformation": {
+    "description": "Order Information"
+  },
+  "pickupCode": "Pickup Code",
+  "@pickupCode": {
+    "description": "Pickup Code"
+  },
+  "pickupTime": "Pickup Time",
+  "@pickupTime": {
+    "description": "Pickup Time"
+  },
+  "remarks": "Remarks",
+  "@remarks": {
+    "description": "Remarks"
+  },
+  "orderSource": "Order Source",
+  "@orderSource": {
+    "description": "Order Source"
+  },
+  "orderPlacementTime": "Order Placement Time",
+  "@orderPlacementTime": {
+    "description": "Order Placement Time"
+  },
+  "checkoutTime": "Checkout Time",
+  "@checkoutTime": {
+    "description": "Checkout Time"
+  },
+  "productInformation": "Product Information",
+  "@productInformation": {
+    "description": "Product Information"
+  },
+  "additionalInformation": "Additional Information",
+  "@additionalInformation": {
+    "description": "Additional Information"
+  },
+  "otherTime": "Other Time",
+  "@otherTime": {
+    "description": "Other Time"
+  },
+  "pleaseSelectPickupTime": "Please select a pickup time",
+  "@pleaseSelectPickupTime": {
+    "description": "Please select a pickup time"
+  },
+  "pickupTimeMustBeAtLeast30MinutesLater": "The pickup time must be at least 30 minutes later.",
+  "@pickupTimeMustBeAtLeast30MinutesLater": {
+    "description": "The pickup time must be at least 30 minutes later."
+  },
+  "profile": "Profile",
+  "@profile": {
+    "description": "Profile"
+  },
+  "account": "Account",
+  "@account": {
+    "description": "Account"
+  },
+  "expirationDate": "Expiration Date",
+  "@expirationDate": {
+    "description": "Expiration Date"
+  },
+  "remainingDays": "Remaining Days",
+  "@remainingDays": {
+    "description": "Remaining Days"
+  },
+  "changePassword": "Change Password",
+  "@changePassword": {
+    "description": "Change Password"
+  },
+  "language": "Language",
+  "@language": {
+    "description": "Language"
+  },
+  "systemVersion": "System Version",
+  "@systemVersion": {
+    "description": "System Version"
+  },
+  "update": "Update",
+  "@update": {
+    "description": "Update"
+  },
+  "logout": "Logout",
+  "@logout": {
+    "description": "Logout"
+  },
+  "newPassword": "New Password",
+  "@newPassword": {
+    "description": "New Password"
+  },
+  "anyCharactersOf8OrMoreDigits": "Any characters of 8 or more digits",
+  "@anyCharactersOf8OrMoreDigits": {
+    "description": "Any characters of 8 or more digits"
+  },
+  "pleaseEnterNewPassword": "Please enter new password",
+  "@pleaseEnterNewPassword": {
+    "description": "Please enter new password"
+  },
+  "confirmPassword": "Confirm Password",
+  "@confirmPassword": {
+    "description": "Confirm Password"
+  },
+  "pleaseReenterNewPassword": "Please re-enter new password",
+  "@pleaseReenterNewPassword": {
+    "description": "Please re-enter new password"
+  },
+  "submit": "Submit",
+  "@submit": {
+    "description": "Submit"
+  },
+  "passwordUpdatedSuccessfully": "Password updated successfully",
+  "@passwordUpdatedSuccessfully": {
+    "description": "Password updated successfully"
+  },
+  "passwordChangeFailedPleaseRetry": "Password change failed, please retry.",
+  "@passwordChangeFailedPleaseRetry": {
+    "description": "Password change failed, please retry."
+  },
+  "languageSwitchedSuccessfully": "Language switched successfully",
+  "@languageSwitchedSuccessfully": {
+    "description": "Language switched successfully"
+  },
+  "languageSwitchFailedPleaseRetry": "Language switch failed, please retry.",
+  "@languageSwitchFailedPleaseRetry": {
+    "description": "Language switch failed, please retry."
+  },
+  "networkErrorPleaseTryAgain": "Network error, please try again",
+  "@networkErrorPleaseTryAgain": {
+    "description": "Network error, please try again"
+  },
+  "operationTooFrequentPleaseTryAgainLater": "Operation is too frequent, please try again later.",
+  "@operationTooFrequentPleaseTryAgainLater": {
+    "description": "Operation is too frequent, please try again later."
+  },
+  "selectLanguage": "Select Language",
+  "@selectLanguage": {
+    "description": "Select Language"
+  },
+  "chinese": "Chinese",
+  "@chinese": {
+    "description": "Chinese"
+  },
+  "english": "English",
+  "@english": {
+    "description": "English"
+  },
+  "italian": "Italian",
+  "@italian": {
+    "description": "Italian"
+  },
+  "systemTitle": "OUHUA Restaurant System",
+  "@systemTitle": {
+    "description": "System title"
+  },
+  "noData": "No Data",
+  "@noData": {
+    "description": "No Data"
+  },
+  "pending": "Pending",
+  "@pending": {
+    "description": "Pending"
+  },
+  "quantity": "Quantity",
+  "@quantity": {
+    "description": "Quantity"
+  },
+  "specifications": "Specifications",
+  "@specifications": {
+    "description": "Specifications"
+  },
+  "info": "Info",
+  "@info": {
+    "description": "Info"
+  },
+  "home": "Home",
+  "@home": {
+    "description": "Home"
+  },
+  "order": "Order",
+  "@order": {
+    "description": "Order"
+  },
+  "moreDishesComingSoon": "More dishes coming soon",
+  "@moreDishesComingSoon": {
+    "description": "More dishes coming soon"
+  },
+  "switchLanguage": "Switch Language",
+  "@switchLanguage": {
+    "description": "Switch Language"
+  },
+  "authDebug": "Auth Debug",
+  "@authDebug": {
+    "description": "Auth Debug"
+  },
+  "welcomeToUse": "Welcome to Use",
+  "@welcomeToUse": {
+    "description": "Welcome to Use"
+  }
+}

@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:order_app/pages/takeaway/model/tabelaway_item_model.dart';
-
+import 'package:get/get.dart';
+import 'package:order_app/pages/takeaway/model/takeaway_order_model.dart';
+import 'package:order_app/pages/takeaway/order_detail_page.dart';
+ 
+import 'package:order_app/utils/screen_adaptation.dart';
 class TakeawayItem extends StatelessWidget {
-  final TabelawayItemModel order; // 直接接收订单模型对象
+  final TakeawayOrderModel order; // 直接接收订单模型对象
 
   const TakeawayItem({super.key, required this.order});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: () => _navigateToOrderDetail(),
+      child: Container(
       width: double.infinity,
       // margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 1),
       padding: const EdgeInsets.only(top: 6, left: 16, bottom: 20, right: 16),
@@ -32,9 +37,9 @@ class TakeawayItem extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                order.orderNumber,
+                order.pickupCode ?? order.orderNo ?? 'N/A',
                 style: const TextStyle(
-                  fontSize: 36,
+                  fontSize: 15,
                   fontWeight: FontWeight.bold,
                   color: Colors.black87,
                 ),
@@ -47,7 +52,7 @@ class TakeawayItem extends StatelessWidget {
                 ),
                 child: Text(
                   _getStatusString(),
-                  style: TextStyle(fontSize: 14, color: _getStatusLabelColor()),
+                  style: TextStyle(fontSize: 15, color: _getStatusLabelColor()),
                 ),
               ),
             ],
@@ -66,76 +71,132 @@ class TakeawayItem extends StatelessWidget {
                     width: 16,
                     height: 16,
                   ),
+                  const SizedBox(width: 4),
                   Text(
-                    order.time,
+                    order.formattedOrderTime,
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       color: Color(0xff333333),
                     ),
                   ),
                 ],
               ),
               Text(
-                order.price,
+                order.formattedTotalAmount,
                 style: const TextStyle(
-                  fontSize: 16,
+                  fontSize: 15,
                   fontWeight: FontWeight.w500,
                   color: Color(0xff333333),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Divider(height: 0.4, color: Color(0x8d999999)),
-          // 备注信息（如果存在则显示）
+          
+          // // 预计取餐时间（如果有�?
+          // if (order.formattedEstimatePickupTime.isNotEmpty) ...[
+          //   const SizedBox(height: 8),
+          //   Row(
+          //     children: [
+          //       const Icon(Icons.access_time, size: 16, color: Colors.orange),
+          //       const SizedBox(width: 4),
+          //       Text(
+          //         '预计取餐�?{order.formattedEstimatePickupTime}',
+          //         style: const TextStyle(
+          //           fontSize: context.adaptFontSize(),
+          //           color: Colors.orange,
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ],
+          
+          // const SizedBox(height: 8),
+          // const Divider(height: 0.4, color: Color(0x8d999999)),
+          
+          // // 订单状态信�?
+          // if (order.orderStatusName != null && order.orderStatusName!.isNotEmpty)
+          //   Padding(
+          //     padding: const EdgeInsets.only(top: 8),
+          //     child: Row(
+          //       children: [
+          //         const Icon(Icons.restaurant, size: 16, color: Color(0xff666666)),
+          //         const SizedBox(width: 4),
+          //         Text(
+          //           '状态：${order.orderStatusName}',
+          //           style: const TextStyle(
+          //             fontSize: context.adaptFontSize(),
+          //             color: Color(0xff666666),
+          //           ),
+          //         ),
+          //       ],
+          //     ),
+          //   ),
+          
+          // 备注信息（如果存在则显示�?
           if (order.remark != null && order.remark!.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Text(
-                '备注：${order.remark}',
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xff666666),
-                  // fontStyle: FontStyle.italic,
-                ),
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // const Icon(Icons.note, size: 16, color: Color(0xff666666)),
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      '备注${order.remark}',
+                      style: const TextStyle(
+                        fontSize: 15,
+                        color: Color(0xff666666),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
         ],
       ),
+      ),
     );
   }
 
-  // 根据状态返回不同的背景色
+  /// 跳转到订单详情页�?
+  void _navigateToOrderDetail() {
+    Get.to(
+      () => const OrderDetailPage(),
+      arguments: {
+        'orderId': order.id, // 外卖订单ID
+      },
+    );
+  }
+
+  // 根据结账状态返回不同的背景�?
   Color _getStatusColor() {
-    switch (order.status) {
-      case 1:
-        return Color(0xffFFE8DF);
-      case 2:
-        return Color(0xffE6FFDF);
-      default:
-        return Colors.grey;
+    if (order.isPaid) {
+      return const Color(0xffE6FFDF); // 已结�?- 绿色
+    } else if (order.isUnpaid) {
+      return const Color(0xffFFE8DF); // 未结�?- 橙色
+    } else {
+      return Colors.grey; // 其他状�?
     }
   }
 
   Color _getStatusLabelColor() {
-    switch (order.status) {
-      case 1:
-        return Color(0xffFF9027);
-      case 2:
-        return Color(0xff04BE02);
-      default:
-        return Colors.grey;
+    if (order.isPaid) {
+      return const Color(0xff04BE02); // 已结�?- 绿色文字
+    } else if (order.isUnpaid) {
+      return const Color(0xffFF9027); // 未结�?- 橙色文字
+    } else {
+      return Colors.grey; // 其他状�?
     }
   }
 
   String _getStatusString() {
-    switch (order.status) {
-      case 1:
-        return '未结账';
-      case 2:
-        return '已结账';
-      default:
-        return '处理中';
+    if (order.isPaid) {
+      return '已结账';
+    } else if (order.isUnpaid) {
+      return '未结账';
+    } else {
+      return order.checkoutStatusName ?? '处理中';
     }
   }
 }

@@ -4,6 +4,7 @@ class OrderConstants {
   static const int debounceTimeMs = 500;
   static const int cartDebounceTimeMs = 300;
   static const int addDebounceTimeMs = 300;
+  static const int websocketBatchDebounceMs = 300;
   
   // 超时配置
   static const int dishLoadingTimeoutSeconds = 5;
@@ -47,6 +48,7 @@ enum OperationType {
   add('add'),
   update('update'),
   delete('delete'),
+  decrease('decrease'),
   clear('clear');
   
   const OperationType(this.value);

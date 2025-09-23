@@ -9,7 +9,7 @@ part of 'allergen_model.dart';
 AllergenModel _$AllergenModelFromJson(Map<String, dynamic> json) =>
     AllergenModel(
       label: json['label'] as String?,
-      id: json['id'] as int?,
+      id: (json['id'] as num?)?.toInt(),
       icon: json['icon'] as String?,
     );
 

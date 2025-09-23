@@ -1,4 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
+import 'menu_fixed_cost.dart';
 
 part 'table_menu_list_model.g.dart';
 
@@ -18,6 +19,8 @@ class TableMenuListModel {
   String? childPackagePrice;
   @JsonKey(name: 'week_range')
   String? weekRange;
+  @JsonKey(name: 'menu_fixed_costs')
+  List<MenuFixedCost>? menuFixedCosts;
 
   TableMenuListModel({
     this.menuId,
@@ -27,6 +30,7 @@ class TableMenuListModel {
     this.adultPackagePrice,
     this.childPackagePrice,
     this.weekRange,
+    this.menuFixedCosts,
   });
 
   factory TableMenuListModel.fromJson(Map<String, dynamic> json) {

@@ -6,14 +6,13 @@ part of 'payment_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-PaymentModel _$PaymentModelFromJson(Map<String, dynamic> json) =>
-    PaymentModel(
-      id: json['id'] as int?,
-      paymentMethod: json['payment_method'] as String?,
-      amount: (json['amount'] as num?)?.toDouble(),
-      status: json['status'] as int?,
-      createdAt: json['created_at'] as String?,
-    );
+PaymentModel _$PaymentModelFromJson(Map<String, dynamic> json) => PaymentModel(
+  id: (json['id'] as num?)?.toInt(),
+  paymentMethod: json['payment_method'] as String?,
+  amount: (json['amount'] as num?)?.toDouble(),
+  status: (json['status'] as num?)?.toInt(),
+  createdAt: json['created_at'] as String?,
+);
 
 Map<String, dynamic> _$PaymentModelToJson(PaymentModel instance) =>
     <String, dynamic>{
