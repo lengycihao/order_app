@@ -10,6 +10,7 @@ import 'package:order_app/pages/order/components/specification_modal_widget.dart
 import 'package:order_app/pages/order/components/more_options_modal_widget.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
 import 'package:order_app/pages/order/components/quantity_input_widget.dart';
+import 'package:order_app/pages/order/components/keyboard_quantity_input_widget.dart';
 import 'package:order_app/pages/order/ordered_page.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/utils/focus_manager.dart';
@@ -32,6 +33,18 @@ class _OrderDishPageState extends State<OrderDishPage> {
   // 每个类目在列表中的位置信息
   List<double> _categoryPositions = [];
   bool _isClickCategory = false;
+  
+  // 键盘输入组件状态
+  CartItem? _editingCartItem;
+  int _editingQuantity = 0;
+  
+  /// 开始编辑数量
+  void _startEditingQuantity(CartItem cartItem, int currentQuantity) {
+    setState(() {
+      _editingCartItem = cartItem;
+      _editingQuantity = currentQuantity;
+    });
+  }
 
   @override
   void initState() {
@@ -314,16 +327,35 @@ class _OrderDishPageState extends State<OrderDishPage> {
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false, // 防止键盘抬起时购物车跟随移动
-      body: Column(
+      body: Stack(
         children: [
-          // 顶部导航栏
-          _buildTopNavigation(),
-          // 搜索 + 排序
-          _buildSearchAndFilter(),
-          // // 主体内容区域
-          _buildMainContent(),
-          // 底部购物车
-          _buildBottomCart(),
+          Column(
+            children: [
+              // 顶部导航栏
+              _buildTopNavigation(),
+              // 搜索 + 排序
+              _buildSearchAndFilter(),
+              // // 主体内容区域
+              _buildMainContent(),
+              // 底部购物车
+              _buildBottomCart(),
+            ],
+          ),
+          // 键盘输入组件
+          if (_editingCartItem != null)
+            KeyboardQuantityInputWidget(
+              cartItem: _editingCartItem!,
+              currentQuantity: _editingQuantity,
+              onQuantityChanged: () {
+                setState(() {});
+              },
+              onDismiss: () {
+                setState(() {
+                  _editingCartItem = null;
+                  _editingQuantity = 0;
+                });
+              },
+            ),
         ],
       ),
     );
@@ -729,6 +761,10 @@ class _OrderDishPageState extends State<OrderDishPage> {
       onRemoveTap: () {
         print('➖ 减少菜品: ${dish.name}');
         controller.removeFromCart(dish);
+      },
+      onDishTap: () {
+        // 跳转到菜品详情页面
+        Get.toNamed('/dish-detail-route', arguments: {'dish': dish});
       },
     );
   }
@@ -1466,6 +1502,7 @@ class _CartItem extends StatelessWidget {
                       // 刷新购物车UI
                       controller.forceRefreshCartUI();
                     },
+                    onStartEditing: _startEditingQuantity,
                   ),
                   SizedBox(width: 12),
                   GestureDetector(

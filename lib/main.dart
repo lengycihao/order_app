@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:order_app/pages/login/login_page.dart';
 import 'package:order_app/pages/nav/screen_nav_page.dart';
+import 'package:order_app/pages/dish/dish_detail_route_page.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:lib_base/config/app_configN.dart';
 import 'package:lib_base/network/interceptor/api_business_interceptor.dart';
@@ -73,6 +74,7 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/login', page: () => LoginPage()), // 登录页面路由
         // 在这里可以添加其他页面路由
         GetPage(name: '/home', page: () => ScreenNavPage()), // 示例其他页面路由
+        GetPage(name: '/dish-detail-route', page: () => DishDetailRoutePage()), // 菜品详情路由页面
       ],
     );
   }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' as gg;
+import 'package:order_app/utils/toast_component.dart';
 
 /// 401未授权错误处理器
 /// 提供统一的401错误处理逻辑，支持自定义配置
@@ -88,24 +89,8 @@ class UnauthorizedHandler {
     try {
       final displayMessage = message ?? _defaultMessage;
       
-      // 使用Get.snackbar显示提示
-      gg.Get.snackbar(
-        _defaultTitle,
-        displayMessage,
-        snackPosition: gg.SnackPosition.TOP,
-        duration: _snackbarDuration,
-        backgroundColor: _getErrorBackgroundColor(),
-        colorText: _getErrorTextColor(),
-        icon: const Icon(
-          Icons.warning_amber_rounded,
-          color: Colors.orange,
-        ),
-        margin: const EdgeInsets.all(16),
-        borderRadius: 8,
-        isDismissible: true,
-        forwardAnimationCurve: Curves.easeOutBack,
-        reverseAnimationCurve: Curves.easeInBack,
-      );
+      // 使用ToastUtils显示提示
+      ToastUtils.showError(gg.Get.context!, displayMessage);
       
       print('💬 已显示401提示消息');
     } catch (e) {
@@ -153,15 +138,7 @@ class UnauthorizedHandler {
   void _handleNavigationFailure() {
     try {
       // 显示错误提示
-      gg.Get.snackbar(
-        '系统错误',
-        '无法跳转到登录页，请手动重启应用',
-        snackPosition: gg.SnackPosition.BOTTOM,
-        duration: const Duration(seconds: 5),
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red,
-        icon: const Icon(Icons.error, color: Colors.red),
-      );
+      ToastUtils.showError(gg.Get.context!, '无法跳转到登录页，请手动重启应用');
     } catch (e) {
       print('❌ 显示导航失败提示也失败: $e');
     }

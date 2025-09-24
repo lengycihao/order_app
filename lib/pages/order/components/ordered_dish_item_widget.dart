@@ -102,7 +102,7 @@ class OrderedDishItemWidget extends StatelessWidget {
            // 选项信息
         if (dish.optionsStr != null && dish.optionsStr!.isNotEmpty)
           Text(
-            '规格：${dish.optionsStr!}',
+            dish.optionsStr!,
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
@@ -111,8 +111,6 @@ class OrderedDishItemWidget extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         SizedBox(height: 4),
-        // 烹饪状态
-        _buildCookingStatus(),
       ],
     );
   }
@@ -152,55 +150,6 @@ class OrderedDishItemWidget extends StatelessWidget {
     );
   }
 
-  /// 构建烹饪状态
-  Widget _buildCookingStatus() {
-    String statusText = '配菜中';
-    Color statusColor = Colors.orange;
-    
-    if (dish.cookingStatusName != null && dish.cookingStatusName!.isNotEmpty) {
-      statusText = dish.cookingStatusName!;
-    }
-    
-    // 根据状态设置颜色
-    switch (dish.cookingStatus) {
-      case 0:
-        statusText = '待处理';
-        statusColor = Colors.grey;
-        break;
-      case 1:
-        statusText = '配菜中';
-        statusColor = Colors.orange;
-        break;
-      case 2:
-        statusText = '制作中';
-        statusColor = Colors.blue;
-        break;
-      case 3:
-        statusText = '已完成';
-        statusColor = Colors.green;
-        break;
-    }
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: statusColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        // border: Border.all(
-        //   color: statusColor.withOpacity(0.3),
-        //   width: 0.5,
-        // ),
-      ),
-      child: Text(
-        statusText,
-        style: TextStyle(
-          fontSize: 11,
-          color: statusColor,
-          fontWeight: FontWeight.w500,
-        ),
-      ),
-    );
-  }
 
   /// 构建价格和数量
   Widget _buildPriceAndQuantity() {
@@ -209,7 +158,7 @@ class OrderedDishItemWidget extends StatelessWidget {
       children: [
         // 价格
         Text(
-          '¥${_formatPrice(dish.price ?? dish.unitPrice ?? 0)}',
+          '¥${_formatPrice(dish.unitPrice ?? 0)}',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.bold,

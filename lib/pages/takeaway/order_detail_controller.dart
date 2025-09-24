@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
+import 'package:order_app/utils/toast_component.dart';
 
 class OrderItem {
   final String name;
@@ -79,14 +80,7 @@ class OrderDetailController extends GetxController {
 
   // 再来一单
   void reorder() {
-    Get.snackbar(
-      '提示',
-      '已将商品加入购物车',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-    );
+    ToastUtils.showSuccess(Get.context!, '已将商品加入购物车');
     
     // 跳转到外卖页面
     Get.back();
@@ -108,14 +102,7 @@ class OrderDetailController extends GetxController {
             onPressed: () {
               Get.back();
               // 这里可以调用拨号功能
-              Get.snackbar(
-                '提示',
-                '正在拨打电话...',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: Colors.blue,
-                colorText: Colors.white,
-                duration: const Duration(seconds: 2),
-              );
+              ToastUtils.showSuccess(Get.context!, '正在拨打电话...');
             },
             child: const Text('拨打'),
           ),
@@ -126,14 +113,7 @@ class OrderDetailController extends GetxController {
 
   // 分享订单
   void shareOrder() {
-    Get.snackbar(
-      '提示',
-      '订单分享功能开发中...',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-    );
+    ToastUtils.showSuccess(Get.context!, '订单分享功能开发中...');
   }
 
   // 申请退款
@@ -150,14 +130,7 @@ class OrderDetailController extends GetxController {
           TextButton(
             onPressed: () {
               Get.back();
-              Get.snackbar(
-                '提示',
-                '退款申请已提交',
-                snackPosition: SnackPosition.TOP,
-                backgroundColor: Colors.green,
-                colorText: Colors.white,
-                duration: const Duration(seconds: 2),
-              );
+              ToastUtils.showSuccess(Get.context!, '退款申请已提交');
             },
             child: const Text('确定'),
           ),

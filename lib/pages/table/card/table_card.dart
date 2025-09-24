@@ -10,6 +10,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/table/table_controller.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:lib_domain/api/base_api.dart';
+import 'package:order_app/utils/toast_component.dart';
 
 class TableCard extends StatelessWidget {
   final TableListModel table;
@@ -142,14 +143,7 @@ class TableCard extends StatelessWidget {
           final result = await baseApi.getTableDetail(tableId: table.tableId.toInt());
           
           if (!result.isSuccess || result.data == null) {
-            Get.snackbar(
-              '错误',
-              '获取桌台信息失败',
-              snackPosition: SnackPosition.TOP,
-              backgroundColor: Colors.red.withOpacity(0.9),
-              colorText: Colors.white,
-              duration: Duration(seconds: 2),
-            );
+            ToastUtils.showError(Get.context!, '获取桌台信息失败');
             return;
           }
           
@@ -160,15 +154,7 @@ class TableCard extends StatelessWidget {
           // 如果是不可用或维修状态的桌台，显示提示信息
           if (status == TableStatus.Unavailable || status == TableStatus.Maintenance) {
             String message = status == TableStatus.Unavailable ? '该桌台当前不可用' : '该桌台正在维修中';
-            Get.snackbar(
-              '提示',
-              message,
-              snackPosition: SnackPosition.TOP,
-              backgroundColor: Colors.orange.withOpacity(0.9),
-              colorText: Colors.white,
-              duration: Duration(seconds: 2),
-              margin: EdgeInsets.all(16),
-            );
+            ToastUtils.showError(Get.context!, message);
             return;
           }
           
@@ -203,14 +189,7 @@ class TableCard extends StatelessWidget {
             Get.back();
           }
           
-          Get.snackbar(
-            '错误',
-            '获取桌台信息失败: ${e.toString()}',
-            snackPosition: SnackPosition.TOP,
-            backgroundColor: Colors.red.withOpacity(0.9),
-            colorText: Colors.white,
-            duration: Duration(seconds: 2),
-          );
+          ToastUtils.showError(Get.context!, '获取桌台信息失败: ${e.toString()}');
         }
       },
       child: Container(

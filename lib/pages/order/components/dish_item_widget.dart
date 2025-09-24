@@ -12,6 +12,7 @@ class DishItemWidget extends StatelessWidget {
   final VoidCallback? onSpecificationTap;
   final VoidCallback? onAddTap;
   final VoidCallback? onRemoveTap;
+  final VoidCallback? onDishTap;
 
   const DishItemWidget({
     Key? key,
@@ -19,6 +20,7 @@ class DishItemWidget extends StatelessWidget {
     this.onSpecificationTap,
     this.onAddTap,
     this.onRemoveTap,
+    this.onDishTap,
   }) : super(key: key);
 
   @override
@@ -33,42 +35,46 @@ class DishItemWidget extends StatelessWidget {
         }
       }
       
-      return Container(
-        height: 116,
-        color: Colors.white,
-        padding: EdgeInsets.only(left: 10, right: 15),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            // 菜品图片
-            _buildDishImage(),
-            SizedBox(width: 8),
-            // 菜品信息
-            Expanded(
-              child: SizedBox(
-                height: 100,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 菜品名称
-                    Text(
-                      dish.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+      return GestureDetector(
+        onTap: onDishTap,
+        child: Container(
+          height: 116,
+          color: Colors.white,
+          padding: EdgeInsets.only(left: 10, right: 15),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              // 菜品图片
+              _buildDishImage(),
+              SizedBox(width: 8),
+              // 菜品信息
+              Expanded(
+                child: SizedBox(
+                  height: 100,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 菜品名称
+                      Text(
+                        dish.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    // 过敏图标
-                    _buildAllergenIcons(),
-                    Spacer(),
-                    // 价格和操作按钮
-                    _buildPriceAndActions(count),
-                  ],
+                      const SizedBox(height: 4),
+                      // 过敏图标
+                      _buildAllergenIcons(),
+                      const SizedBox(height: 6),
+                      Spacer(),
+                      // 价格和操作按钮
+                      _buildPriceAndActions(count),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       );
     });

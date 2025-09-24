@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
-import 'package:order_app/pages/order/components/error_notification_manager.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 /// 规格选择弹窗组件
 class SpecificationModalWidget {
@@ -439,11 +439,7 @@ class _SpecificationModalContentState
       Navigator.of(context).pop();
       // 移除本地成功提示，等待服务器确认后再显示
     } else {
-      ErrorNotificationManager().showWarningNotification(
-        title: '提示', 
-        message: '请选择$missingOptionName',
-        warningCode: 'missing_required_option',
-      );
+      GlobalToast.error('请选择$missingOptionName');
     }
   }
 }

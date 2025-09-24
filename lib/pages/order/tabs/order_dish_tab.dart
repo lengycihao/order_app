@@ -591,6 +591,10 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       onRemoveTap: () {
         controller.removeFromCart(dish);
       },
+      onDishTap: () {
+        // 跳转到菜品详情页面
+        Get.toNamed('/dish-detail-route', arguments: {'dish': dish});
+      },
     );
   }
 

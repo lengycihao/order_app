@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:get/get.dart' as gg;
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:order_app/service/service_locator.dart';
+import 'package:order_app/services/language_service.dart';
 
 /// 请求头拦截器 - 负责添加认证信息
 class ApiResponseInterceptor extends Interceptor {
@@ -41,6 +42,18 @@ class ApiResponseInterceptor extends Interceptor {
       options.headers['W-Token'] = 
           "ChCQ_nVvpUKhvJiyMZDFWJMDuReETt8uwCez7tkXKi0Lh2lTe2Tw_yuHurJ8PIkybynfIUG0vDI_bJJ99wlbB5SChuBO8zAlDYhZKUDWhOlHABJ-pp8uoE9-tTWBKlkFf6SDlmKt86SlTlJKuUQwjTXcTUVzWv1P1LCEodT3C1Y=";
       print('🔑 异常情况使用默认token: $e');
+    }
+
+    // 添加语言头
+    try {
+      final languageService = getIt<LanguageService>();
+      final languageCode = languageService.currentLocale.languageCode;
+      options.headers['Language'] = languageCode;
+      print('🌐 添加语言头: $languageCode');
+    } catch (e) {
+      // 如果无法获取LanguageService，使用默认语言
+      options.headers['Language'] = 'zh';
+      print('🌐 无法获取LanguageService，使用默认语言: zh, 错误: $e');
     }
 
     super.onRequest(options, handler);

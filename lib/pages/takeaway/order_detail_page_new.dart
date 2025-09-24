@@ -13,10 +13,14 @@ class OrderDetailPageNew extends StatelessWidget {
       builder: (controller) {
         return Scaffold(
           appBar: AppBar(
-            title: const Text('订单详情'),
+            title: const Text('未结账/已结账'),
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
             elevation: 0,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_ios),
+              onPressed: () => Get.back(),
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.refresh),
@@ -151,14 +155,61 @@ class OrderDetailPageNew extends StatelessWidget {
 
   /// 构建订单基本信息卡片
   Widget _buildOrderInfoCard(order) {
-    return _buildInfoCard([
-      _buildInfoRow('订单号', order.orderNo ?? 'N/A'),
-      _buildInfoRow('下单时间', order.formattedOrderTime),
-      _buildInfoRow('预计取餐时间', order.formattedEstimatePickupTime),
-      if (order.pickupCode != null)
-        _buildInfoRow('取单码', order.pickupCode!),
-      _buildInfoRow('订单来源', order.sourceName ?? '未知'),
-    ]);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 订单信息标题
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '订单信息',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          // 订单信息内容
+          _buildInfoRow('取餐码', order.pickupCode ?? '1324'),
+          const SizedBox(height: 8),
+          _buildInfoRow('取餐时间', order.formattedEstimatePickupTime ?? '9999-99-99 00:00:00'),
+          const SizedBox(height: 8),
+          _buildInfoRow('备注', order.remark ?? '海鲜过敏、小份、不要香菜、不要葱姜蒜'),
+          const SizedBox(height: 8),
+          _buildInfoRow('订单编号', order.orderNo ?? '132805345879601452014'),
+          const SizedBox(height: 8),
+          _buildInfoRow('单据来源', order.sourceName ?? '点餐机/服务员/收银端'),
+          const SizedBox(height: 8),
+          _buildInfoRow('下单时间', order.formattedOrderTime ?? '9999-99-99 00:00:00'),
+        ],
+      ),
+    );
   }
 
   /// 构建商品列表卡片
@@ -181,8 +232,28 @@ class OrderDetailPageNew extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildSectionTitle('商品明细'),
-          const SizedBox(height: 12),
+          // 商品信息标题
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.orange,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                '商品信息',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
           if (order.details != null && order.details!.isNotEmpty)
             ...order.details!.map((item) {
               return Container(
@@ -225,12 +296,29 @@ class OrderDetailPageNew extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            item.name ?? '未知商品',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          Row(
+                            children: [
+                              Text(
+                                item.name ?? '未知商品',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              // 过敏原图标
+                              if (item.allergens != null && item.allergens!.isNotEmpty)
+                                ...item.allergens!.take(3).map((allergen) {
+                                  return Container(
+                                    margin: const EdgeInsets.only(right: 4),
+                                    child: Icon(
+                                      Icons.warning,
+                                      size: 16,
+                                      color: Colors.orange,
+                                    ),
+                                  );
+                                }).toList(),
+                            ],
                           ),
                           const SizedBox(height: 4),
                           if (item.optionsStr != null && item.optionsStr!.isNotEmpty)
@@ -266,11 +354,11 @@ class OrderDetailPageNew extends StatelessWidget {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          item.formattedPrice,
+                          '¥${item.price?.toStringAsFixed(0) ?? '34'}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                            color: Colors.black,
                           ),
                         ),
                       ],
@@ -288,17 +376,42 @@ class OrderDetailPageNew extends StatelessWidget {
 
   /// 构建费用明细卡片
   Widget _buildCostDetailsCard(OrderDetailControllerNew controller) {
-    return _buildInfoCard([
-      _buildInfoRow('商品总价', '€${controller.subtotal.toStringAsFixed(2)}'),
-      _buildInfoRow('配送费', '€${controller.deliveryFee.toStringAsFixed(2)}'),
-      _buildInfoRow('包装费', '€${controller.packagingFee.toStringAsFixed(2)}'),
-      const Divider(),
-      _buildInfoRow(
-        '实付金额',
-        '€${controller.totalAmount.toStringAsFixed(2)}',
-        isTotal: true,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
-    ]);
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          const Text(
+            '合计',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Text(
+            '€999',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// 构建配送信息卡片

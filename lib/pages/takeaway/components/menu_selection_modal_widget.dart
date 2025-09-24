@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
-import 'package:order_app/pages/order/components/error_notification_manager.dart';
+import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/menu_fixed_cost.dart';
 import 'package:lib_domain/api/base_api.dart';
@@ -87,11 +87,7 @@ class _MenuSelectionModalContentState extends State<_MenuSelectionModalContent> 
         _isLoading = false;
       });
       
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误',
-        message: '加载菜单失败',
-        errorCode: 'load_menu_exception',
-      );
+      GlobalToast.error('加载菜单失败');
     }
   }
 

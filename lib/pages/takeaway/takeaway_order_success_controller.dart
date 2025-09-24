@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:lib_domain/entrity/takeout/takeout_time_option_model.dart';
+import 'package:order_app/utils/toast_component.dart';
 
 class TakeawayOrderSuccessController extends GetxController {
   // 桌台ID
@@ -75,10 +76,10 @@ class TakeawayOrderSuccessController extends GetxController {
           _updateSelectedTime(0);
         }
       } else {
-        Get.snackbar('错误', '加载时间选项失败', backgroundColor: Colors.red, colorText: Colors.white);
+        ToastUtils.showError(Get.context!, '加载时间选项失败');
       }
     } catch (e) {
-      Get.snackbar('错误', '加载时间选项失败', backgroundColor: Colors.red, colorText: Colors.white);
+      ToastUtils.showError(Get.context!, '加载时间选项失败');
     } finally {
       isLoading.value = false;
     }
@@ -202,12 +203,12 @@ class TakeawayOrderSuccessController extends GetxController {
     
     // 验证必填项
     if (tableId.value <= 0) {
-      Get.snackbar('错误', '桌台ID不能为空', backgroundColor: Colors.red, colorText: Colors.white);
+      ToastUtils.showError(Get.context!, '桌台ID不能为空');
       return;
     }
     
     if (selectedDateTime.value == null) {
-      Get.snackbar('错误', '请选择取餐时间', backgroundColor: Colors.red, colorText: Colors.white);
+      ToastUtils.showError(Get.context!, '请选择取餐时间');
       return;
     }
     
@@ -233,14 +234,14 @@ class TakeawayOrderSuccessController extends GetxController {
       );
       
       if (result.isSuccess) {
-        Get.snackbar('成功', '订单提交成功', backgroundColor: Colors.green, colorText: Colors.white);
+        ToastUtils.showSuccess(Get.context!, '订单提交成功');
         // 跳转到订单成功页面或返回上一页
         Get.back();
       } else {
-        Get.snackbar('错误', '订单提交失败', backgroundColor: Colors.red, colorText: Colors.white);
+        ToastUtils.showError(Get.context!, '订单提交失败');
       }
     } catch (e) {
-      Get.snackbar('错误', '订单提交失败', backgroundColor: Colors.red, colorText: Colors.white);
+      ToastUtils.showError(Get.context!, '订单提交失败');
     } finally {
       isSubmitting.value = false;
     }

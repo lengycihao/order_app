@@ -7,14 +7,16 @@ import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 
 class DishDetailController extends GetxController {
-  final int dishId;
-  final int menuId;
+  final int? dishId;
+  final int? menuId;
   final int? initialCartCount;
+  final Dish? dishData; // 直接传入的菜品数据
 
   DishDetailController({
-    required this.dishId,
-    required this.menuId,
+    this.dishId,
+    this.menuId,
     this.initialCartCount,
+    this.dishData,
   });
 
   // 响应式数据
@@ -26,8 +28,42 @@ class DishDetailController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadDishDetail();
+    if (dishData != null) {
+      // 如果直接传入了菜品数据，直接使用
+      _loadDishFromData();
+    } else {
+      // 否则通过API加载
+      _loadDishDetail();
+    }
     _initCartCountListener();
+  }
+
+  /// 从传入的菜品数据加载
+  void _loadDishFromData() {
+    if (dishData == null) return;
+    
+    try {
+      // 将Dish模型转换为Item模型
+      final item = Item(
+        id: int.tryParse(dishData!.id),
+        name: dishData!.name,
+        price: dishData!.price.toString(),
+        image: dishData!.image,
+        description: '', // Dish模型没有description字段
+        allergens: [], // 暂时不转换过敏原数据
+        options: [], // 暂时不转换选项数据
+        tags: dishData!.tags ?? [],
+        hasOptions: dishData!.hasOptions,
+      );
+      
+      dish.value = item;
+      isLoading.value = false;
+      errorMessage.value = '';
+    } catch (e) {
+      logDebug('❌ 加载菜品数据失败: $e', tag: 'DishDetailController');
+      errorMessage.value = '加载菜品数据失败';
+      isLoading.value = false;
+    }
   }
 
   /// 初始化购物车数量监听

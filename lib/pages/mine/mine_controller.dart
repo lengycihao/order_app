@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/login/login_page.dart';
+import 'package:order_app/utils/toast_component.dart';
+import 'package:order_app/service/service_locator.dart';
+import 'package:lib_base/network/interceptor/auth_service.dart';
 // import '../../service/cart_cache_service.dart'; // 已泣释：不再需要缓存功能
 
 class MineController extends GetxController {
@@ -12,6 +15,8 @@ class MineController extends GetxController {
   final remainMonth = 3.obs;
   final remainDay = 12.obs;
   final version = 'V1.0.0'.obs;
+
+  final AuthService _authService = getIt<AuthService>();
 
   // 处理点击事件的业务逻辑
   void onTapLoginOut() async {
@@ -38,23 +43,20 @@ class MineController extends GetxController {
       
       print('🔓 开始退出登录...');
       
-      // 不再需要缓存功能，直接退出
-      // final nonIdleTables = CartCacheService.instance.getNonIdleTableIds();
-      // if (nonIdleTables.isNotEmpty) {
-      //   print('📁 保留 ${nonIdleTables.length} 个桌台的数据: $nonIdleTables');
-      // }
+      // 清除登录信息缓存
+      await _authService.logout();
       
       // 进入登录页面
       Get.offAll(() => LoginPage());
       
-      Get.snackbar('提示', '退出登录成功');
+      ToastUtils.showSuccess(Get.context!, '退出登录成功');
       
       print('✅ 退出登录成功');
       
     } catch (e) {
       // 关闭加载对话框
       Get.back();
-      Get.snackbar('错误', '退出登录失败: $e');
+      ToastUtils.showError(Get.context!, '退出登录失败: $e');
       print('❌ 退出登录失败: $e');
     }
   }

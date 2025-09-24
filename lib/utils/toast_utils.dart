@@ -9,12 +9,14 @@ class Toast {
     String message, {
     Duration duration = const Duration(seconds: 2),
   }) {
-    ToastUtils.showError(
-      context,
-      message,
-      duration: duration,
-      position: ToastPosition.center,
-    );
+    if (context.mounted) {
+      ToastUtils.showError(
+        context,
+        message,
+        duration: duration,
+        position: ToastPosition.center,
+      );
+    }
   }
 
   /// 显示成功提示
@@ -23,12 +25,14 @@ class Toast {
     String message, {
     Duration duration = const Duration(seconds: 2),
   }) {
-    ToastUtils.showSuccess(
-      context,
-      message,
-      duration: duration,
-      position: ToastPosition.center,
-    );
+    if (context.mounted) {
+      ToastUtils.showSuccess(
+        context,
+        message,
+        duration: duration,
+        position: ToastPosition.center,
+      );
+    }
   }
 
   /// 显示信息提示
@@ -37,17 +41,24 @@ class Toast {
     String message, {
     Duration duration = const Duration(seconds: 2),
   }) {
-    ToastUtils.showError(
-      context,
-      message,
-      duration: duration,
-      position: ToastPosition.center,
-    );
+    if (context.mounted) {
+      ToastUtils.showError(
+        context,
+        message,
+        duration: duration,
+        position: ToastPosition.center,
+      );
+    }
   }
 
   /// 隐藏当前Toast
   static void hide() {
     ToastUtils.hide();
+  }
+
+  /// 清除Toast队列
+  static void clearQueue() {
+    ToastUtils.clearQueue();
   }
 }
 
@@ -62,14 +73,14 @@ class GlobalToast {
 
   /// 显示错误提示
   static void error(String message, {Duration duration = const Duration(seconds: 2)}) {
-    if (_context != null) {
+    if (_context != null && _context!.mounted) {
       Toast.error(_context!, message, duration: duration);
     }
   }
 
   /// 显示成功提示
   static void success(String message, {Duration duration = const Duration(seconds: 2)}) {
-    if (_context != null) {
+    if (_context != null && _context!.mounted) {
       Toast.success(_context!, message, duration: duration);
     }
   }
@@ -77,5 +88,10 @@ class GlobalToast {
   /// 隐藏当前Toast
   static void hide() {
     ToastUtils.hide();
+  }
+
+  /// 清除Toast队列
+  static void clearQueue() {
+    ToastUtils.clearQueue();
   }
 }

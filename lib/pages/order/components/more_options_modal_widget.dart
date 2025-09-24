@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
-import 'package:order_app/pages/order/components/error_notification_manager.dart';
+import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/menu_fixed_cost.dart';
@@ -50,24 +50,33 @@ class _MoreOptionsModalContent extends StatelessWidget {
                   _MoreOptionItem(
                     title: '更换桌子',
                     onTap: () {
-                      Get.back();
-                      _showChangeTableModal(context);
+                      Navigator.of(context).pop(); // 关闭更多选项弹窗
+                      // 延迟显示更换桌台弹窗，确保导航栈稳定
+                      Future.delayed(Duration(milliseconds: 100), () {
+                        _showChangeTableModal(context);
+                      });
                     },
                   ),
                   SizedBox(height: 30),
                   _MoreOptionItem(
                     title: '更换菜单',
                     onTap: () {
-                      Get.back();
-                      _showChangeMenuModal(context);
+                      Navigator.of(context).pop(); // 关闭更多选项弹窗
+                      // 延迟显示更换菜单弹窗，确保导航栈稳定
+                      Future.delayed(Duration(milliseconds: 100), () {
+                        _showChangeMenuModal(context);
+                      });
                     },
                   ),
                   SizedBox(height: 30),
                   _MoreOptionItem(
                     title: '更换人数',
                     onTap: () {
-                      Get.back();
-                      _showChangePeopleModal(context);
+                      Navigator.of(context).pop(); // 关闭更多选项弹窗
+                      // 延迟显示更换人数弹窗，确保导航栈稳定
+                      Future.delayed(Duration(milliseconds: 100), () {
+                        _showChangePeopleModal(context);
+                      });
                     },
                   ),
                   SizedBox(height: 20),
@@ -209,32 +218,20 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         setState(() {
           _isLoading = false;
         });
-        ErrorNotificationManager().showErrorNotification(
-          title: '错误', 
-          message: '获取桌台列表失败',
-          errorCode: 'get_table_list_failed',
-        );
+        GlobalToast.error('获取桌台列表失败');
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '获取桌台列表异常：$e',
-        errorCode: 'get_table_list_exception',
-      );
+      GlobalToast.error('获取桌台列表异常：$e');
     }
   }
 
   /// 执行换桌操作
   Future<void> _performChangeTable() async {
     if (_selectedTableId == null) {
-      ErrorNotificationManager().showWarningNotification(
-        title: '提示', 
-        message: '请选择需要更换的桌台',
-        warningCode: 'no_table_selected',
-      );
+      GlobalToast.error('请选择需要更换的桌台');
       return;
     }
 
@@ -242,11 +239,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
     final currentTableId = controller.table.value?.tableId.toInt();
 
     if (currentTableId == null) {
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '当前桌台信息错误',
-        errorCode: 'invalid_table_info',
-      );
+      GlobalToast.error('当前桌台信息错误');
       return;
     }
 
@@ -257,7 +250,9 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
       );
 
       // 无论成功失败都先关闭弹窗
-      Get.back();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
       if (result.isSuccess) {
         // 更新controller中的桌台信息
@@ -266,26 +261,16 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         );
         controller.table.value = newTable;
 
-        ErrorNotificationManager().showSuccessNotification(
-          title: '成功', 
-          message: '已成功更换桌台',
-          successCode: 'change_table_success',
-        );
+        GlobalToast.success('已成功更换桌台');
       } else {
-        ErrorNotificationManager().showErrorNotification(
-          title: '失败', 
-          message: result.msg ?? '换桌失败',
-          errorCode: 'change_table_failed',
-        );
+        GlobalToast.error(result.msg ?? '换桌失败');
       }
     } catch (e) {
       // 异常情况下也要关闭弹窗
-      Get.back();
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '换桌操作异常：$e',
-        errorCode: 'change_table_exception',
-      );
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+      GlobalToast.error('换桌操作异常：$e');
     }
   }
 
@@ -559,21 +544,13 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
         setState(() {
           _isLoading = false;
         });
-        ErrorNotificationManager().showErrorNotification(
-          title: '错误', 
-          message: '获取菜单列表失败',
-          errorCode: 'get_menu_list_failed',
-        );
+        GlobalToast.error('获取菜单列表失败');
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '获取菜单列表异常：$e',
-        errorCode: 'get_menu_list_exception',
-      );
+      GlobalToast.error('获取菜单列表异常：$e');
     }
   }
 
@@ -610,11 +587,9 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
   /// 执行更换菜单操作
   Future<void> _performChangeMenu() async {
     if (_selectedMenuId == null) {
-      ErrorNotificationManager().showWarningNotification(
-        title: '提示', 
-        message: '请选择需要更换的菜单',
-        warningCode: 'no_menu_selected',
-      );
+      if (mounted) {
+        Toast.error(context, '请选择需要更换的菜单');
+      }
       return;
     }
 
@@ -622,11 +597,9 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
     final currentTableId = controller.table.value?.tableId.toInt();
 
     if (currentTableId == null) {
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '当前桌台信息错误',
-        errorCode: 'invalid_table_info',
-      );
+      if (mounted) {
+        Toast.error(context, '当前桌台信息错误');
+      }
       return;
     }
 
@@ -637,7 +610,9 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
       );
 
       // 无论成功失败都先关闭弹窗
-      Get.back();
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
       if (result.isSuccess) {
         // 更新controller中的菜单信息
@@ -649,26 +624,20 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
         // 刷新点餐页面数据
         await controller.refreshOrderData();
 
-        ErrorNotificationManager().showSuccessNotification(
-          title: '成功', 
-          message: '已成功更换菜单',
-          successCode: 'change_menu_success',
-        );
+        if (mounted) {
+          Toast.success(context, '更换成功');
+        }
       } else {
-        ErrorNotificationManager().showErrorNotification(
-          title: '失败', 
-          message: result.msg ?? '更换菜单失败',
-          errorCode: 'change_menu_failed',
-        );
+        if (mounted) {
+          Toast.error(context, result.msg ?? '更换失败');
+        }
       }
     } catch (e) {
       // 异常情况下也要关闭弹窗
-      Get.back();
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '更换菜单操作异常：$e',
-        errorCode: 'change_menu_exception',
-      );
+      if (mounted) {
+        Navigator.of(context).pop();
+        Toast.error(context, '操作异常：$e');
+      }
     }
   }
 
@@ -984,34 +953,32 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
     final currentTableId = controller.table.value?.tableId.toInt();
 
     if (currentTableId == null) {
-      Get.back(); // 关闭弹窗
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '当前桌台信息错误',
-        errorCode: 'invalid_table_info',
-      );
+      if (mounted) {
+        Navigator.of(context).pop(); // 关闭弹窗
+      }
+      GlobalToast.error('当前桌台信息错误');
       return;
     }
 
     // 检查人数是否有变化，如果没有变化直接关闭弹窗
     if (adultCount == controller.adultCount.value &&
         childCount == controller.childCount.value) {
-      Get.back(); // 关闭弹窗
+      if (mounted) {
+        Navigator.of(context).pop(); // 关闭弹窗
+      }
       return;
     }
 
     // 先关闭弹窗
-    Get.back();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
 
     try {
       // 直接调用桌台详情API更新数据
       await _updateTableDetailAndRefresh(currentTableId);
     } catch (e) {
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '更换人数操作异常：$e',
-        errorCode: 'update_people_exception',
-      );
+      GlobalToast.error('更换人数操作异常：$e');
     }
   }
 
@@ -1035,24 +1002,12 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
         // 刷新点餐页面数据
         await controller.refreshOrderData();
 
-        ErrorNotificationManager().showSuccessNotification(
-          title: '成功', 
-          message: '已成功更新人数',
-          successCode: 'update_people_success',
-        );
+        GlobalToast.success('已成功更新人数');
       } else {
-        ErrorNotificationManager().showErrorNotification(
-          title: '失败', 
-          message: '获取桌台详情失败',
-          errorCode: 'get_table_detail_failed',
-        );
+        GlobalToast.error('获取桌台详情失败');
       }
     } catch (e) {
-      ErrorNotificationManager().showErrorNotification(
-        title: '错误', 
-        message: '更新桌台数据异常：$e',
-        errorCode: 'update_table_data_exception',
-      );
+      GlobalToast.error('更新桌台数据异常：$e');
     }
   }
 
@@ -1093,11 +1048,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
                       } else if (!_hasShownAdultMaxToast) {
                         // 只在第一次达到上限时显示提示
                         _hasShownAdultMaxToast = true;
-                        ErrorNotificationManager().showWarningNotification(
-                          title: '提示',
-                          message: '成人数量不能超过$maxAdultCount人',
-                          warningCode: 'adult_max_exceeded',
-                        );
+                        GlobalToast.error('成人数量不能超过$maxAdultCount人');
                       }
                     },
                     onDecrement: () {
@@ -1130,11 +1081,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
                       } else if (!_hasShownChildMaxToast) {
                         // 只在第一次达到上限时显示提示
                         _hasShownChildMaxToast = true;
-                        ErrorNotificationManager().showWarningNotification(
-                          title: '提示',
-                          message: '儿童数量不能超过$maxChildCount人',
-                          warningCode: 'child_max_exceeded',
-                        );
+                        GlobalToast.error('儿童数量不能超过$maxChildCount人');
                       }
                     },
                     onDecrement: () {

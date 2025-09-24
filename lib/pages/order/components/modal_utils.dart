@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:order_app/utils/toast_component.dart';
 
 /// 弹窗工具类
 class ModalUtils {
@@ -83,17 +84,31 @@ class ModalUtils {
     Color? textColor,
     Duration duration = const Duration(seconds: 2),
   }) {
-    Get.snackbar(
-      title,
-      message,
-      backgroundColor: backgroundColor ?? Colors.orange.withOpacity(0.1),
-      colorText: textColor ?? Colors.orange,
-      duration: duration,
-      snackPosition: SnackPosition.TOP,
-      margin: EdgeInsets.all(16),
-      borderRadius: 8,
-      isDismissible: true,
-    );
+    // 使用安全的Toast显示方式
+    _showToastSafely(message);
+  }
+
+  /// 安全地显示Toast
+  static void _showToastSafely(String message) {
+    final context = Get.context;
+    if (context == null || !context.mounted) {
+      print('Context not available for Toast display');
+      return;
+    }
+
+    // 使用延迟显示，确保弹窗完全关闭后再显示Toast
+    Future.delayed(const Duration(milliseconds: 300), () {
+      final newContext = Get.context;
+      if (newContext != null && newContext.mounted) {
+        try {
+          // 直接尝试显示Toast，如果失败就静默处理
+          ToastUtils.showSuccess(newContext, message);
+        } catch (e) {
+          // 如果Toast显示失败，静默处理，只在控制台记录
+          debugPrint('Toast显示失败，错误信息: $message');
+        }
+      }
+    });
   }
 }
 

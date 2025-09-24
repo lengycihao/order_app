@@ -104,6 +104,21 @@ class AuthService {
     }
   }
 
+  /// 修改密码
+  Future<HttpResultN<void>> changePassword({
+    required String newPassword,
+  }) async {
+    final result = await _authApi.changePassword(newPassword: newPassword);
+    
+    if (result.isSuccess) {
+      logger.info('密码修改成功', tag: 'AuthService');
+    } else {
+      logger.error('密码修改失败: ${result.msg}', tag: 'AuthService');
+    }
+    
+    return result;
+  }
+
   /// 登出
   Future<void> logout() async {
     _currentUser = null;

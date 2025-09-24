@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:order_app/services/language_service.dart';
+import 'package:order_app/service/service_locator.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 class ChangeLanPage extends StatefulWidget {
   @override
@@ -6,18 +9,44 @@ class ChangeLanPage extends StatefulWidget {
 }
 
 class _ChangeLanPageState extends State<ChangeLanPage> {
+  late LanguageService _languageService;
   int _selectedIndex = 0;
 
-  final List<String> _languages = ['中文（简体）', 'Italiano', 'English'];
+  final List<Map<String, String>> _languages = [
+    {'code': 'zh', 'name': '中文（简体）'},
+    {'code': 'en', 'name': 'English'},
+    {'code': 'it', 'name': 'Italia'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _languageService = getIt<LanguageService>();
+    // 根据当前语言设置选中索引
+    final currentLang = _languageService.currentLocale.languageCode;
+    _selectedIndex = _languages.indexWhere((lang) => lang['code'] == currentLang);
+    if (_selectedIndex == -1) _selectedIndex = 0;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('选择语言'),
+        title: Text('语言', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+        centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
+        leading: GestureDetector(
+          onTap: () => Navigator.of(context).pop(),
+          child: Container(
+            margin: EdgeInsets.all(12),
+            child: Image.asset(
+              'assets/order_arrow_back.webp',
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -39,8 +68,8 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
                       color: isSelected ? Color(0x33FF9027) : Colors.white,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: Text(
-                      _languages[index],
+                  child: Text(
+                    _languages[index]['name']!,
                       style: TextStyle(
                         color: isSelected ? Color(0xFFFF9027) : Colors.black,
                         fontSize: 16,
@@ -80,8 +109,21 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pop(_selectedIndex);
+                  onPressed: () async {
+                    final selectedLang = _languages[_selectedIndex];
+                    final newLocale = Locale(selectedLang['code']!);
+                    
+                    try {
+                      await _languageService.changeLanguage(newLocale);
+                      if (mounted) {
+                        Toast.success(context, '语言切换成功');
+                        Navigator.of(context).pop();
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        Toast.error(context, '语言切换失败：$e');
+                      }
+                    }
                   },
                   child: Text(
                     '确认',

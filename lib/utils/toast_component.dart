@@ -80,10 +80,29 @@ enum ToastPosition {
   bottom,
 }
 
+/// Toast请求类
+class _ToastRequest {
+  final BuildContext context;
+  final String message;
+  final ToastType type;
+  final Duration duration;
+  final ToastPosition position;
+
+  _ToastRequest({
+    required this.context,
+    required this.message,
+    required this.type,
+    required this.duration,
+    required this.position,
+  });
+}
+
 /// Toast工具类
 class ToastUtils {
   static OverlayEntry? _currentOverlay;
   static bool _isShowing = false;
+  static final List<_ToastRequest> _toastQueue = [];
+  static bool _isProcessingQueue = false;
 
   /// 显示错误提示
   static void showError(
@@ -92,7 +111,7 @@ class ToastUtils {
     Duration duration = const Duration(seconds: 2),
     ToastPosition position = ToastPosition.center,
   }) {
-    _showToast(
+    _addToastToQueue(
       context,
       message,
       ToastType.error,
@@ -108,13 +127,74 @@ class ToastUtils {
     Duration duration = const Duration(seconds: 2),
     ToastPosition position = ToastPosition.center,
   }) {
-    _showToast(
+    _addToastToQueue(
       context,
       message,
       ToastType.success,
       duration: duration,
       position: position,
     );
+  }
+
+  /// 添加Toast到队列
+  static void _addToastToQueue(
+    BuildContext context,
+    String message,
+    ToastType type, {
+    Duration duration = const Duration(seconds: 2),
+    ToastPosition position = ToastPosition.center,
+  }) {
+    // 检查Context是否有效
+    if (!context.mounted) {
+      debugPrint('Toast: Context is not mounted, skipping toast');
+      return;
+    }
+
+    // 创建Toast请求
+    final request = _ToastRequest(
+      context: context,
+      message: message,
+      type: type,
+      duration: duration,
+      position: position,
+    );
+
+    // 添加到队列
+    _toastQueue.add(request);
+
+    // 开始处理队列
+    _processQueue();
+  }
+
+  /// 处理Toast队列
+  static void _processQueue() {
+    if (_isProcessingQueue || _toastQueue.isEmpty) {
+      return;
+    }
+
+    _isProcessingQueue = true;
+
+    // 处理队列中的第一个Toast
+    final request = _toastQueue.removeAt(0);
+    
+    // 检查Context是否仍然有效
+    if (!request.context.mounted) {
+      debugPrint('Toast: Context is no longer mounted, skipping toast');
+      _isProcessingQueue = false;
+      _processQueue(); // 继续处理下一个
+      return;
+    }
+
+    // 显示Toast
+    _showToast(
+      request.context,
+      request.message,
+      request.type,
+      duration: request.duration,
+      position: request.position,
+    );
+
+    _isProcessingQueue = false;
   }
 
   /// 显示Toast
@@ -125,41 +205,104 @@ class ToastUtils {
     Duration duration = const Duration(seconds: 2),
     ToastPosition position = ToastPosition.center,
   }) {
-    // 如果已经有Toast在显示，先隐藏
-    if (_isShowing) {
-      hide();
-    }
+    try {
+      // 检查Context是否有效
+      if (!context.mounted) {
+        debugPrint('Toast: Context is not mounted, skipping toast display');
+        return;
+      }
 
-    _isShowing = true;
+      // 如果已经有Toast在显示，先隐藏
+      if (_isShowing && _currentOverlay != null) {
+        hide();
+      }
 
-    // 创建OverlayEntry
-    _currentOverlay = OverlayEntry(
-      builder: (context) => _ToastOverlay(
-        message: message,
-        type: type,
-        position: position,
-        onDismiss: () {
+      _isShowing = true;
+
+      // 创建OverlayEntry
+      _currentOverlay = OverlayEntry(
+        builder: (context) => _ToastOverlay(
+          message: message,
+          type: type,
+          position: position,
+          onDismiss: () {
+            hide();
+          },
+        ),
+      );
+
+      // 显示Toast - 使用安全的Overlay访问
+      try {
+        // 首先尝试获取根级Overlay
+        OverlayState? overlay;
+        try {
+          overlay = Overlay.of(context, rootOverlay: true);
+        } catch (e) {
+          // 如果根级Overlay获取失败，尝试普通Overlay
+          try {
+            overlay = Overlay.of(context);
+          } catch (e2) {
+            debugPrint('Toast: Cannot access any Overlay: $e2');
+            _isShowing = false;
+            _currentOverlay = null;
+            return;
+          }
+        }
+        
+        if (overlay.mounted) {
+          overlay.insert(_currentOverlay!);
+        } else {
+          debugPrint('Toast: Overlay is not mounted, cannot insert toast');
+          _isShowing = false;
+          _currentOverlay = null;
+          return;
+        }
+      } catch (e) {
+        debugPrint('Toast: Unexpected error inserting overlay: $e');
+        _isShowing = false;
+        _currentOverlay = null;
+        return;
+      }
+
+      // 自动隐藏
+      Future.delayed(duration, () {
+        if (_isShowing) {
           hide();
-        },
-      ),
-    );
-
-    // 显示Toast
-    Overlay.of(context).insert(_currentOverlay!);
-
-    // 自动隐藏
-    Future.delayed(duration, () {
-      hide();
-    });
+        }
+      });
+    } catch (e) {
+      debugPrint('Toast: Error showing toast: $e');
+      _isShowing = false;
+      _currentOverlay = null;
+    }
   }
 
   /// 隐藏Toast
   static void hide() {
     if (_currentOverlay != null && _isShowing) {
-      _currentOverlay!.remove();
-      _currentOverlay = null;
-      _isShowing = false;
+      try {
+        _currentOverlay!.remove();
+      } catch (e) {
+        // 如果Overlay已经被销毁，忽略错误
+        debugPrint('Toast overlay already disposed: $e');
+      } finally {
+        _currentOverlay = null;
+        _isShowing = false;
+        _isProcessingQueue = false;
+        
+        // 处理队列中的下一个Toast
+        Future.delayed(const Duration(milliseconds: 100), () {
+          _processQueue();
+        });
+      }
     }
+  }
+
+  /// 清除所有Toast队列
+  static void clearQueue() {
+    _toastQueue.clear();
+    _isProcessingQueue = false;
+    hide();
   }
 }
 
@@ -266,9 +409,9 @@ class _ToastOverlayState extends State<_ToastOverlay>
             right: 0,
             top: widget.position == ToastPosition.top
                 ? MediaQuery.of(context).padding.top + 20
-                : widget.position == ToastPosition.bottom
-                    ? null
-                    : null,
+                : widget.position == ToastPosition.center
+                ? MediaQuery.of(context).size.height / 2 - 50
+                : null,
             bottom: widget.position == ToastPosition.bottom
                 ? MediaQuery.of(context).padding.bottom + 20
                 : null,

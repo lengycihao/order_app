@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import '../model/dish.dart';
 import 'order_constants.dart';
 import 'models.dart';
+import '../../../utils/toast_component.dart';
 
 /// WebSocket消息处理器
 class WebSocketHandler {
@@ -238,17 +239,11 @@ class WebSocketHandler {
   /// 显示错误消息
   void _showErrorMessage(String title, String message) {
     try {
-      Get.snackbar(
-        title,
-        message,
-        snackPosition: SnackPosition.TOP,
-        duration: Duration(seconds: 3),
-        backgroundColor: Colors.red.withOpacity(0.1),
-        colorText: Colors.red,
-        icon: Icon(Icons.error, color: Colors.red),
-        margin: EdgeInsets.all(16),
-        borderRadius: 8,
-      );
+      // 使用ToastUtils显示错误消息
+      final context = Get.context;
+      if (context != null) {
+        ToastUtils.showError(context, message);
+      }
     } catch (e) {
       logDebug('❌ 显示错误消息失败: $e', tag: _logTag);
     }

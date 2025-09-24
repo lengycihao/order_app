@@ -26,8 +26,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:order_app/service/service_locator.dart';
+import 'package:order_app/pages/login/login_page.dart';
+import 'package:order_app/utils/toast_utils.dart';
+import 'package:lib_base/network/interceptor/auth_service.dart';
 
-// 控制器代码保持不变
 class ChangePasswordController extends GetxController {
   final RxString newPassword = ''.obs;
   final RxString confirmPassword = ''.obs;
@@ -35,28 +38,53 @@ class ChangePasswordController extends GetxController {
   final RxBool showNewPassword = false.obs;
   final RxBool showConfirmPassword = false.obs;
 
-  void submit() {
-    // 提交逻辑...
+  final AuthService _authService = getIt<AuthService>();
+
+  void submit() async {
+    // 验证输入
+    if (newPassword.value.isEmpty) {
+      Toast.error(Get.context!, '请输入新密码');
+      return;
+    }
+    
+    if (confirmPassword.value.isEmpty) {
+      Toast.error(Get.context!, '请确认新密码');
+      return;
+    }
+    
+    if (newPassword.value != confirmPassword.value) {
+      Toast.error(Get.context!, '两次输入的密码不一致');
+      return;
+    }
+    
+    if (newPassword.value.length < 6) {
+      Toast.error(Get.context!, '密码长度不能少于6位');
+      return;
+    }
+
     isLoading.value = true;
-    Future.delayed(const Duration(seconds: 2), () {
+    
+    try {
+      // 调用修改密码接口
+      final result = await _authService.changePassword(
+        newPassword: newPassword.value,
+      );
+      
+      if (result.isSuccess) {
+        Toast.success(Get.context!, '密码修改成功');
+        
+        // 清除登录信息缓存并跳转到登录页面
+        await _authService.logout();
+        
+        // 跳转到登录页面
+        Get.offAll(() => LoginPage());
+      } else {
+        Toast.error(Get.context!, result.msg ?? '密码修改失败');
+      }
+    } catch (e) {
+      Toast.error(Get.context!, '密码修改失败: $e');
+    } finally {
       isLoading.value = false;
-      // 验证逻辑示例
-      if (newPassword.value.isEmpty) {
-        Get.showSnackbar(
-          const GetSnackBar(message: '请输入新密码', duration: Duration(seconds: 2)),
-        );
-        return;
-      }
-      if (newPassword.value != confirmPassword.value) {
-        Get.showSnackbar(
-          const GetSnackBar(
-            message: '两次输入的密码不一致',
-            duration: Duration(seconds: 2),
-          ),
-        );
-        return;
-      }
-      Get.back(result: true);
-    });
+    }
   }
 }

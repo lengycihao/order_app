@@ -36,4 +36,7 @@ class ApiRequest {
   
   // 虚拟开桌接口
   static const openVirtualTable = '/api/waiter/table/open_virtual';
+  
+  // 修改密码接口
+  static const changePassword = '/api/waiter/change/password';
 }

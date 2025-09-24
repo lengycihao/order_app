@@ -75,4 +75,25 @@ class AuthApi {
   //   // 转换为AuthAccountModel
   //   return result.asModel<AuthAccountModel>(AuthAccountModel.fromJson);
   // }
+
+  /// 修改密码
+  Future<HttpResultN<void>> changePassword({
+    required String newPassword,
+  }) async {
+    final params = {
+      "new_password": newPassword,
+    };
+    
+    final result = await HttpManagerN.instance.executePost(
+      ApiRequest.changePassword,
+      jsonParam: params,
+      paramEncrypt: false,
+    );
+
+    if (result.isSuccess) {
+      return result.convert();
+    } else {
+      return result.convert();
+    }
+  }
 }

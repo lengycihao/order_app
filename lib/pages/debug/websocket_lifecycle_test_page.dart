@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:order_app/utils/websocket_lifecycle_manager.dart';
+import 'package:order_app/utils/toast_component.dart';
 
 /// WebSocket生命周期测试页面
 class WebSocketLifecycleTestPage extends StatelessWidget {
@@ -299,13 +300,6 @@ class WebSocketLifecycleTestPage extends StatelessWidget {
 
   /// 显示提示信息
   void _showSnackBar(String message) {
-    Get.snackbar(
-      '操作完成',
-      message,
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.black87,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 2),
-    );
+    ToastUtils.showSuccess(Get.context!, message);
   }
 }

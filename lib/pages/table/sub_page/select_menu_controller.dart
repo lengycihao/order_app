@@ -8,6 +8,7 @@ import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:order_app/utils/toast_component.dart';
 
 class SelectMenuController extends GetxController {
   // 传入的数据
@@ -137,7 +138,7 @@ class SelectMenuController extends GetxController {
       
     } catch (e) {
       logError('❌ 加载菜品数据失败: $e', tag: 'SelectMenuController');
-      Get.snackbar('错误', '加载菜品数据失败');
+      ToastUtils.showError(Get.context!, '加载菜品数据失败');
     } finally {
       isLoadingDishes.value = false;
     }
@@ -196,14 +197,7 @@ class SelectMenuController extends GetxController {
       adultCount.value++;
     } else {
       // 达到最大时再增加提示
-      Get.snackbar(
-        '提示', 
-        '成人数量不能超过桌台上限 ${maxAdult} 人',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.orange.withOpacity(0.9),
-        colorText: Colors.white,
-        duration: Duration(seconds: 2),
-      );
+      ToastUtils.showError(Get.context!, '成人数量不能超过桌台上限 ${maxAdult} 人');
     }
   }
 
@@ -221,14 +215,7 @@ class SelectMenuController extends GetxController {
       childCount.value++;
     } else {
       // 达到最大时再增加提示
-      Get.snackbar(
-        '提示', 
-        '儿童数量不能超过桌台上限 ${maxChild} 人',
-        snackPosition: SnackPosition.TOP,
-        backgroundColor: Colors.orange.withOpacity(0.9),
-        colorText: Colors.white,
-        duration: Duration(seconds: 2),
-      );
+      ToastUtils.showError(Get.context!, '儿童数量不能超过桌台上限 ${maxChild} 人');
     }
   }
 
@@ -250,18 +237,18 @@ class SelectMenuController extends GetxController {
   /// 开始点餐
   void startOrdering() async {
     if (getSelectedMenu() == null) {
-      Get.snackbar('提示', '请选择菜单');
+      ToastUtils.showError(Get.context!, '请选择菜单');
       return;
     }
 
     if (isLoadingDishes.value) {
-      Get.snackbar('提示', '菜品数据加载中，请稍后');
+      ToastUtils.showError(Get.context!, '菜品数据加载中，请稍后');
       return;
     }
 
     // 检查菜品数据是否有效
     if (selectedMenuIndex.value >= dishListModelList.length) {
-      Get.snackbar('提示', '菜品数据还未加载完成');
+      ToastUtils.showError(Get.context!, '菜品数据还未加载完成');
       return;
     }
 
@@ -280,10 +267,10 @@ class SelectMenuController extends GetxController {
         _navigateToOrderPage();
       } else {
         // 开桌失败，显示错误信息
-        Get.snackbar('开桌失败', result.msg ?? '未知错误');
+        ToastUtils.showError(Get.context!, result.msg ?? '未知错误');
       }
     } catch (e) {
-      Get.snackbar('开桌失败', '网络错误: $e');
+      ToastUtils.showError(Get.context!, '网络错误: $e');
     }
   }
 
@@ -291,7 +278,7 @@ class SelectMenuController extends GetxController {
   void _navigateToOrderPage() {
     // 额外安全检查
     if (selectedMenuIndex.value >= dishListModelList.length) {
-      Get.snackbar('错误', '菜品数据异常，请重试');
+      ToastUtils.showError(Get.context!, '菜品数据异常，请重试');
       return;
     }
     

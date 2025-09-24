@@ -6,6 +6,9 @@ import 'package:order_app/pages/order/tabs/ordered_tab.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/pages/order/components/more_options_modal_widget.dart';
 import 'package:order_app/pages/takeaway/components/menu_selection_modal_widget.dart';
+import 'package:order_app/utils/toast_utils.dart';
+import 'package:lib_domain/api/base_api.dart';
+import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 
 // 简单的控制器来管理主页面状态
 class OrderMainPageController extends GetxController {
@@ -106,10 +109,39 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
     );
     
     if (selectedMenu != null && selectedMenu.menuId != controller.menu.value?.menuId) {
-      // 更新菜单信息
-      controller.menu.value = selectedMenu;
-      // 重新加载菜品数据
-      controller.refreshOrderData();
+      // 调用API更换菜单
+      await _performChangeMenu(selectedMenu);
+    }
+  }
+
+  /// 执行更换菜单操作
+  Future<void> _performChangeMenu(TableMenuListModel selectedMenu) async {
+    final currentTableId = controller.table.value?.tableId.toInt();
+
+    if (currentTableId == null) {
+      Toast.error(context, '当前桌台信息错误');
+      return;
+    }
+
+    try {
+      final result = await BaseApi().changeMenu(
+        tableId: currentTableId,
+        menuId: selectedMenu.menuId!,
+      );
+
+      if (result.isSuccess) {
+        // 更新controller中的菜单信息
+        controller.menu.value = selectedMenu;
+        
+        // 刷新点餐页面数据
+        await controller.refreshOrderData();
+
+        Toast.success(context, '已成功更换菜单');
+      } else {
+        Toast.error(context, result.msg ?? '更换菜单失败');
+      }
+    } catch (e) {
+      Toast.error(context, '更换菜单操作异常：$e');
     }
   }
 

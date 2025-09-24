@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:order_app/service/service_locator.dart';
+import 'package:order_app/utils/toast_component.dart';
 
 class AuthTestPage extends StatefulWidget {
   const AuthTestPage({Key? key}) : super(key: key);
@@ -80,7 +81,7 @@ class _AuthTestPageState extends State<AuthTestPage> {
               onPressed: () async {
                 await authService.logout();
                 _refreshUserInfo();
-                Get.snackbar('提示', '已登出');
+                ToastUtils.showSuccess(Get.context!, '已登出');
               },
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
               child: const Text('登出'),

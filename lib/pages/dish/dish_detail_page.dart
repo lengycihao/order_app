@@ -7,22 +7,23 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import '../../constants/global_colors.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
-import 'package:order_app/widgets/keyboard_input_widget.dart';
 import 'package:order_app/pages/order/ordered_page.dart';
 import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
 import 'package:order_app/utils/image_cache_config.dart';
 import 'dish_detail_controller.dart';
 
 class DishDetailPage extends StatefulWidget {
-  final int dishId;
-  final int menuId;
+  final int? dishId;
+  final int? menuId;
   final int? initialCartCount; // 从外部传入的已添加数量
+  final Dish? dishData; // 直接传入的菜品数据
 
   const DishDetailPage({
     super.key,
-    required this.dishId,
-    required this.menuId,
+    this.dishId,
+    this.menuId,
     this.initialCartCount,
+    this.dishData,
   });
 
   @override
@@ -37,6 +38,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
         dishId: widget.dishId, 
         menuId: widget.menuId,
         initialCartCount: widget.initialCartCount,
+        dishData: widget.dishData,
       ),
       builder: (controller) => Scaffold(
         backgroundColor: GlobalColors.primaryBackground,
@@ -321,15 +323,12 @@ class _DishDetailPageState extends State<DishDetailPage> {
             ),
           ),
           const SizedBox(width: 12),
-          GestureDetector(
-            onTap: () => _showQuantityInputDialog(dishModel, cartCount),
-            child: Text(
-              '$cartCount',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: Colors.black,
-              ),
+          Text(
+            '$cartCount',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black,
             ),
           ),
           const SizedBox(width: 12),
@@ -811,162 +810,4 @@ class _DishDetailPageState extends State<DishDetailPage> {
     }
   }
 
-  /// 显示数量输入对话框
-  void _showQuantityInputDialog(Dish dishModel, int currentQuantity) {
-    KeyboardInputManager.show(
-      context: context,
-      initialValue: currentQuantity.toString(),
-      hintText: '请输入数量',
-      dishName: dishModel.name, // 传递菜品名称
-      onConfirm: (inputText) {
-        final newQuantity = int.tryParse(inputText.trim());
-        
-        // 验证输入
-        if (newQuantity == null || newQuantity < 0) {
-          Get.dialog(
-            AlertDialog(
-              title: Text('输入无效'),
-              content: Text('请输入有效的数量（非负整数）'),
-              actions: [
-                TextButton(
-                  onPressed: () => Get.back(),
-                  child: Text('确定'),
-                ),
-              ],
-            ),
-          );
-          return;
-        }
-        
-        if (newQuantity == currentQuantity) {
-          // 数量没有变化，直接返回
-          return;
-        }
-        
-        if (newQuantity == 0) {
-          // 数量为0，删除商品
-          _showDeleteConfirmDialog(dishModel);
-          return;
-        }
-        
-        // 执行数量更新
-        _updateDishQuantity(dishModel, newQuantity);
-      },
-      onCancel: () {
-        // 取消编辑，不做任何操作
-      },
-      keyboardType: TextInputType.number,
-      maxLength: 3, // 限制最大3位数
-    );
-  }
-
-  /// 显示删除确认对话框
-  void _showDeleteConfirmDialog(Dish dishModel) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('删除商品'),
-        content: Text('确定要删除 "${dishModel.name}" 吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back();
-              _deleteDishFromCart(dishModel);
-            },
-            child: Text('删除'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// 删除菜品
-  void _deleteDishFromCart(Dish dishModel) {
-    final orderController = Get.find<OrderController>();
-    
-    // 找到对应的购物车项进行删除
-    CartItem? targetCartItem;
-    for (var entry in orderController.cart.entries) {
-      if (entry.key.dish.id == dishModel.id && entry.key.selectedOptions.isEmpty) {
-        targetCartItem = entry.key;
-        break;
-      }
-    }
-    
-    if (targetCartItem != null) {
-      orderController.removeFromCart(targetCartItem);
-    }
-  }
-
-  /// 更新菜品数量
-  void _updateDishQuantity(Dish dishModel, int newQuantity) {
-    final orderController = Get.find<OrderController>();
-    
-    // 找到对应的购物车项
-    CartItem? targetCartItem;
-    for (var entry in orderController.cart.entries) {
-      if (entry.key.dish.id == dishModel.id && entry.key.selectedOptions.isEmpty) {
-        targetCartItem = entry.key;
-        break;
-      }
-    }
-    
-    if (targetCartItem != null) {
-      // 执行WebSocket操作
-      orderController.updateCartItemQuantity(
-        cartItem: targetCartItem,
-        newQuantity: newQuantity,
-        onSuccess: () {
-          // 更新成功，UI会自动刷新
-        },
-        onError: (code, message) {
-          if (code == 409) {
-            _showDoubleConfirmDialog(dishModel, newQuantity);
-          } else {
-            Get.dialog(
-              AlertDialog(
-                title: Text('操作失败'),
-                content: Text(message),
-                actions: [
-                  TextButton(
-                    onPressed: () => Get.back(),
-                    child: Text('确定'),
-                  ),
-                ],
-              ),
-            );
-          }
-        },
-      );
-    }
-  }
-
-  /// 显示二次确认对话框（409错误）
-  void _showDoubleConfirmDialog(Dish dishModel, int newQuantity) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('操作冲突'),
-        content: Text('检测到其他用户正在修改此商品，是否继续更新数量为 $newQuantity？'),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Get.back();
-              // 延迟执行更新，确保对话框完全关闭
-              Future.delayed(Duration(milliseconds: 100), () {
-                _updateDishQuantity(dishModel, newQuantity);
-              });
-            },
-            child: Text('继续'),
-          ),
-        ],
-      ),
-    );
-  }
 }
