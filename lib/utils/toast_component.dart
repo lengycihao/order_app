@@ -15,6 +15,34 @@ class ToastComponent extends StatelessWidget {
     this.height,
   }) : super(key: key);
 
+  /// 获取背景颜色
+  Color _getBackgroundColor(ToastType type) {
+    switch (type) {
+      case ToastType.error:
+        return const Color(0xFFFFF0F0);
+      case ToastType.success:
+        return const Color(0xFFF0FFF0);
+      case ToastType.warning:
+        return const Color(0xFFFFF4E5);
+      case ToastType.message:
+        return const Color(0xFFE6F7FF);
+    }
+  }
+
+  /// 获取图标路径
+  String _getIconPath(ToastType type) {
+    switch (type) {
+      case ToastType.error:
+        return 'assets/order_error.webp';
+      case ToastType.success:
+        return 'assets/order_success.webp';
+      case ToastType.warning:
+        return 'assets/order_warning_toast.webp';
+      case ToastType.message:
+        return 'assets/order_message_toast.webp';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -25,7 +53,7 @@ class ToastComponent extends StatelessWidget {
         maxWidth: 270,
       ),
       decoration: BoxDecoration(
-        color: type == ToastType.error ? const Color(0xFFFFF0F0) : const Color(0xFFF0FFF0),
+        color: _getBackgroundColor(type),
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
@@ -41,7 +69,7 @@ class ToastComponent extends StatelessWidget {
         children: [
           // 图标
           Image.asset(
-            type == ToastType.error ? 'assets/order_error.webp' : 'assets/order_success.webp',
+            _getIconPath(type),
             width: 16,
             height: 16,
             fit: BoxFit.contain,
@@ -71,6 +99,8 @@ class ToastComponent extends StatelessWidget {
 enum ToastType {
   error,
   success,
+  warning,
+  message,
 }
 
 /// Toast显示位置
@@ -131,6 +161,38 @@ class ToastUtils {
       context,
       message,
       ToastType.success,
+      duration: duration,
+      position: position,
+    );
+  }
+
+  /// 显示警告提示
+  static void showWarning(
+    BuildContext context,
+    String message, {
+    Duration duration = const Duration(seconds: 2),
+    ToastPosition position = ToastPosition.center,
+  }) {
+    _addToastToQueue(
+      context,
+      message,
+      ToastType.warning,
+      duration: duration,
+      position: position,
+    );
+  }
+
+  /// 显示消息提示
+  static void showMessage(
+    BuildContext context,
+    String message, {
+    Duration duration = const Duration(seconds: 2),
+    ToastPosition position = ToastPosition.center,
+  }) {
+    _addToastToQueue(
+      context,
+      message,
+      ToastType.message,
       duration: duration,
       position: position,
     );

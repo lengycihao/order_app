@@ -37,7 +37,7 @@ class _ScreenNavPageState extends State<ScreenNavPage> {
             elevation: 0,
             currentIndex: _currentIndex,
             selectedItemColor: Color(0xFFFF9027),
-            unselectedItemColor: Colors.grey,
+            unselectedItemColor: Color(0xFF000000),
             selectedFontSize: 12,
             unselectedFontSize: 12,
             onTap: (index) {

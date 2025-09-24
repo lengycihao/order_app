@@ -32,6 +32,16 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   // 每个类目在列表中的位置信息
   List<double> _categoryPositions = [];
   bool _isClickCategory = false;
+  
+  // 吸顶相关状态已移除，现在由统一的吸顶头部处理
+  
+  // 性能优化：防抖定时器
+  Timer? _scrollDebounceTimer;
+  Timer? _categoryCalculationTimer;
+  
+  // 性能优化：缓存机制
+  String? _lastFilteredDishesHash;
+  bool _categoryPositionsCalculated = false;
 
   @override
   bool get wantKeepAlive => true; // 保持页面状态
@@ -64,12 +74,39 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     _scrollController.dispose();
     _searchFocusNode.dispose();
     _searchController.dispose();
+    _scrollDebounceTimer?.cancel();
+    _categoryCalculationTimer?.cancel();
     super.dispose();
   }
 
-  /// 计算每个类目在列表中的位置
+  /// 计算每个类目在列表中的位置 - 优化版本，使用防抖
   void _calculateCategoryPositions() {
+    // 取消之前的计算定时器
+    _categoryCalculationTimer?.cancel();
+    
+    // 设置防抖定时器，延迟100ms执行
+    _categoryCalculationTimer = Timer(Duration(milliseconds: 100), () {
+      _performCategoryCalculation();
+    });
+  }
+  
+  /// 执行类目位置计算 - 优化版本，使用缓存机制
+  void _performCategoryCalculation() {
+    // 生成当前过滤菜品的哈希值
+    final currentHash = _generateFilteredDishesHash();
+    
+    // 如果数据没有变化且已经计算过，则跳过
+    if (_categoryPositionsCalculated && _lastFilteredDishesHash == currentHash) {
+      return;
+    }
+    
     _categoryPositions.clear();
+    
+    // 检查数据是否有效
+    if (controller.categories.isEmpty) {
+      return;
+    }
+    
     double currentPosition = 0.0;
     const double itemHeight = 116.0;
     const double categoryHeaderHeight = 40.0;
@@ -86,9 +123,9 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
           .where((d) => d.categoryId == categoryIndex)
           .length;
       
-      // 菜品列表高度 - 确保至少一屏
-      final screenHeight = MediaQuery.of(context).size.height;
-      final minItemsPerScreen = ((screenHeight - 200) / itemHeight).floor();
+      // 菜品列表高度 - 使用固定值避免MediaQuery问题
+      const double defaultScreenHeight = 800.0; // 默认屏幕高度
+      final minItemsPerScreen = ((defaultScreenHeight - 200) / itemHeight).floor();
       final actualItemCount = dishesInCategory > 0 
           ? (dishesInCategory < minItemsPerScreen ? minItemsPerScreen : dishesInCategory)
           : minItemsPerScreen;
@@ -96,87 +133,46 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       currentPosition += actualItemCount * itemHeight;
       currentPosition += categoryBottomSpace;
     }
-  }
-
-  /// 计算列表总项目数
-  int _buildItemCount() {
-    int count = 0;
-    for (int categoryIndex = 0; categoryIndex < controller.categories.length; categoryIndex++) {
-      count++; // 类目标题
-      
-      final dishes = controller.filteredDishes
-          .where((d) => d.categoryId == categoryIndex)
-          .toList();
-      
-      final screenHeight = MediaQuery.of(context).size.height;
-      final minItemsPerScreen = ((screenHeight - 200) / 116).floor();
-      final displayItemCount = dishes.length < minItemsPerScreen ? minItemsPerScreen : dishes.length;
-      
-      count += displayItemCount;
-      count++; // 类目底部空间
-    }
-    return count;
-  }
-
-  /// 构建列表项
-  Widget _buildListItem(int index) {
-    int currentIndex = 0;
     
-    for (int categoryIndex = 0; categoryIndex < controller.categories.length; categoryIndex++) {
-      // 类目标题
-      if (currentIndex == index) {
-        return _buildCategoryHeader(categoryIndex);
-      }
-      currentIndex++;
-      
-      // 该类目的菜品
-      final dishes = controller.filteredDishes
-          .where((d) => d.categoryId == categoryIndex)
-          .toList();
-      
-      // 只显示真实菜品，不填充空白
-      for (int dishIndex = 0; dishIndex < dishes.length; dishIndex++) {
-        if (currentIndex == index) {
-          return _buildDishItem(dishes[dishIndex]);
-        }
-        currentIndex++;
-      }
-      
-      // 类目底部空间
-      if (currentIndex == index) {
-        return _buildCategoryBottomSpace(categoryIndex);
-      }
-      currentIndex++;
-    }
-    
-    return SizedBox.shrink();
+    // 更新缓存状态
+    _lastFilteredDishesHash = currentHash;
+    _categoryPositionsCalculated = true;
+  }
+  
+  /// 生成过滤菜品的哈希值，用于缓存判断
+  String _generateFilteredDishesHash() {
+    final buffer = StringBuffer();
+    buffer.write('categories:${controller.categories.length}');
+    buffer.write('dishes:${controller.filteredDishes.length}');
+    buffer.write('search:${controller.searchKeyword.value}');
+    buffer.write('allergens:${controller.selectedAllergens.length}');
+    buffer.write('sort:${controller.sortType.value}');
+    return buffer.toString();
   }
 
-  /// 构建类目标题
-  Widget _buildCategoryHeader(int categoryIndex) {
-    return Container(
-      height: 40,
-      color: Colors.grey.shade200,
-      padding: EdgeInsets.symmetric(horizontal: 16),
-      alignment: Alignment.centerLeft,
-      child: Text(
-        controller.categories[categoryIndex],
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-        ),
-      ),
-    );
-  }
 
-  /// 滚动监听
+
+  /// 滚动监听 - 优化版本，使用防抖减少频繁计算
   void _onScroll() {
-    if (_isClickCategory || _categoryPositions.isEmpty) return;
+    if (_isClickCategory || _categoryPositions.isEmpty || controller.categories.isEmpty) return;
 
+    // 取消之前的定时器
+    _scrollDebounceTimer?.cancel();
+    
+    // 设置防抖定时器，延迟50ms执行
+    _scrollDebounceTimer = Timer(Duration(milliseconds: 50), () {
+      _performScrollUpdate();
+    });
+  }
+  
+  /// 执行滚动更新逻辑
+  void _performScrollUpdate() {
+    if (!_scrollController.hasClients) return;
+    
     final scrollOffset = _scrollController.offset;
     int newSelectedCategory = 0;
 
+    // 根据滚动位置确定当前选中的分类
     for (int i = _categoryPositions.length - 1; i >= 0; i--) {
       if (scrollOffset >= _categoryPositions[i]) {
         newSelectedCategory = i;
@@ -184,13 +180,18 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       }
     }
 
+    // 只有分类真正改变时才更新
     if (controller.selectedCategory.value != newSelectedCategory) {
       controller.selectedCategory.value = newSelectedCategory;
     }
+    
+    // 吸顶分类状态现在由统一的吸顶头部处理
   }
 
   /// 滚动到指定类目
   void _scrollToCategory(int categoryIndex) async {
+    if (controller.categories.isEmpty) return;
+    
     if (categoryIndex < 0 || 
         categoryIndex >= controller.categories.length) return;
 
@@ -203,11 +204,13 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     controller.selectedCategory.value = categoryIndex;
     
     try {
-      await _scrollController.animateTo(
-        _categoryPositions[categoryIndex],
-        duration: Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-      );
+      if (categoryIndex < _categoryPositions.length) {
+        await _scrollController.animateTo(
+          _categoryPositions[categoryIndex],
+          duration: Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+        );
+      }
     } catch (e) {
       print('❌ 滚动到类目失败: $e');
     } finally {
@@ -255,9 +258,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                                 _searchController.clear();
                                 controller.searchKeyword.value = '';
                                 _searchFocusNode.unfocus();
-                                Future.delayed(Duration(milliseconds: 100), () {
-                                  _calculateCategoryPositions();
-                                });
+                                _calculateCategoryPositions();
                               },
                               child: Icon(
                                 Icons.search,
@@ -273,9 +274,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                     ),
                     onChanged: (v) {
                       controller.searchKeyword.value = v;
-                      Future.delayed(Duration(milliseconds: 100), () {
-                        _calculateCategoryPositions();
-                      });
+                      _calculateCategoryPositions();
                     },
                     onSubmitted: (value) {
                       _searchFocusNode.unfocus();
@@ -331,9 +330,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                                 _searchController.clear();
                                 controller.searchKeyword.value = '';
                                 _searchFocusNode.unfocus();
-                                Future.delayed(Duration(milliseconds: 100), () {
-                                  _calculateCategoryPositions();
-                                });
+                                _calculateCategoryPositions();
                               },
                               child: Icon(
                                 Icons.clear,
@@ -345,9 +342,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                     ),
                     onChanged: (v) {
                       controller.searchKeyword.value = v;
-                      Future.delayed(Duration(milliseconds: 100), () {
-                        _calculateCategoryPositions();
-                      });
+                      _calculateCategoryPositions();
                     },
                     onSubmitted: (value) {
                       _searchFocusNode.unfocus();
@@ -381,9 +376,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                   controller.hideSearchBox();
                   _searchController.clear();
                   _searchFocusNode.unfocus();
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    _calculateCategoryPositions();
-                  });
+                  _calculateCategoryPositions();
                 },
                 child: Container(
                   width: 36,
@@ -556,19 +549,16 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
             child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
                 if (notification is ScrollEndNotification) {
-                  Future.delayed(Duration(milliseconds: 50), () {
-                    _calculateCategoryPositions();
-                  });
+                  // 滚动结束时重新计算位置，使用防抖
+                  _calculateCategoryPositions();
                 }
+                // 移除ScrollUpdateNotification的处理，因为_onScroll已经处理了
                 return false;
               },
-              child: ListView.builder(
+              child: CustomScrollView(
                 controller: _scrollController,
-                padding: EdgeInsets.zero,
-                itemCount: _buildItemCount(),
-                itemBuilder: (context, index) {
-                  return _buildListItem(index);
-                },
+                physics: ClampingScrollPhysics(),
+                slivers: _buildSlivers(),
               ),
             ),
           );
@@ -577,8 +567,131 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     );
   }
 
+  /// 安全获取滚动偏移量
+  double _getScrollOffset() {
+    try {
+      if (_scrollController.hasClients) {
+        return _scrollController.offset;
+      }
+    } catch (e) {
+      print('获取滚动偏移量时出错: $e');
+    }
+    return 0.0;
+  }
+
+  /// 构建Sliver列表 - 优化版本
+  List<Widget> _buildSlivers() {
+    List<Widget> slivers = [];
+    
+    // 检查数据是否有效，添加null检查
+    if (controller.categories.isEmpty || controller.filteredDishes.isEmpty) {
+      return slivers;
+    }
+    
+    // 确保位置信息已计算
+    if (_categoryPositions.isEmpty || !_categoryPositionsCalculated) {
+      _calculateCategoryPositions();
+    }
+    
+    // 添加统一的吸顶分类头
+    slivers.add(
+      SliverPersistentHeader(
+        pinned: true,
+        delegate: _UnifiedStickyHeaderDelegate(
+          height: 40,
+          categoryPositions: _categoryPositions,
+          scrollOffset: _getScrollOffset(),
+          categories: controller.categories,
+          selectedCategory: controller.selectedCategory.value,
+          onScrollOffsetChanged: (offset) {
+            // 当滚动位置变化时，触发重建
+            if (mounted) {
+              setState(() {});
+            }
+          },
+        ),
+      ),
+    );
+    
+    for (int categoryIndex = 0; categoryIndex < controller.categories.length; categoryIndex++) {
+      // 检查索引是否有效
+      if (categoryIndex >= controller.categories.length) break;
+      
+      // 添加该类目的菜品
+      final dishes = controller.filteredDishes
+          .where((d) => d.categoryId == categoryIndex)
+          .toList();
+      
+      if (dishes.isNotEmpty) {
+        // 添加类目标题（第一个类目不显示标题，因为吸顶的就是它）
+        if (categoryIndex > 0) {
+          slivers.add(
+            SliverToBoxAdapter(
+              child: _buildCategoryHeader(categoryIndex),
+            ),
+          );
+        }
+        
+        // 添加该类目的菜品列表
+        slivers.add(
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (index >= dishes.length) return Container();
+                return _buildDishItem(dishes[index]);
+              },
+              childCount: dishes.length,
+            ),
+          ),
+        );
+      }
+      
+      // 添加类目底部空间
+      slivers.add(
+        SliverToBoxAdapter(
+          child: _buildCategoryBottomSpace(categoryIndex),
+        ),
+      );
+    }
+    
+    return slivers;
+  }
+
+
+
+  /// 构建类目标题（用于列表中的类目标题）
+  Widget _buildCategoryHeader(int categoryIndex) {
+    // 检查数据是否有效
+    if (controller.categories.isEmpty || 
+        categoryIndex < 0 || 
+        categoryIndex >= controller.categories.length) {
+      return Container();
+    }
+    
+    final categoryName = controller.categories[categoryIndex].toString();
+    
+    return Container(
+      height: 40,
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        categoryName,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
   /// 构建菜品项
   Widget _buildDishItem(dynamic dish) {
+    // 检查菜品数据是否有效
+    if (dish == null) {
+      return Container(height: 116, color: Colors.grey[100]);
+    }
+    
     return DishItemWidget(
       dish: dish,
       onSpecificationTap: () {
@@ -599,10 +712,17 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
 
   /// 构建类目底部空间
   Widget _buildCategoryBottomSpace(int categoryIndex) {
+    // 检查数据是否有效
+    if (controller.categories.isEmpty) {
+      return Container(height: 100, color: Colors.white);
+    }
+    
     final isLastCategory = categoryIndex == controller.categories.length - 1;
     return Container(
       height: isLastCategory ? 150 : 100,
-      color: Colors.white,
+      decoration: BoxDecoration(
+        color: Colors.white,
+      ),
       child: isLastCategory ? Center(
         child: Text(
           '已经到底啦～',
@@ -864,7 +984,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
               decoration: BoxDecoration(
                 color: Colors.red[50],
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red[200]!),
+                border: Border.all(color: Colors.red[200] ?? Colors.red.shade200),
               ),
               child: Row(
                 children: [
@@ -1028,9 +1148,9 @@ class _UserAvatarWithLoadingState extends State<_UserAvatarWithLoading>
                 // 移除边框
               ),
               child: ClipOval(
-                child: user?.avatar != null && user!.avatar!.isNotEmpty
+                child: user?.avatar != null && user?.avatar?.isNotEmpty == true
                     ? Image.network(
-                        user.avatar!,
+                        user?.avatar ?? '',
                         width: 40,
                         height: 40,
                         fit: BoxFit.cover,
@@ -1266,7 +1386,7 @@ class _CartItem extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: Colors.grey[50],
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[200]!),
+                          border: Border.all(color: Colors.grey[200] ?? Colors.grey.shade200),
                         ),
                         child: Row(
                           children: [
@@ -1400,14 +1520,14 @@ class _CartItem extends StatelessWidget {
                 ),
                 SizedBox(height: 4),
                 // 敏感物图标（只显示图标，不显示文字，去除背景）
-                if (cartItem.dish.allergens != null && cartItem.dish.allergens!.isNotEmpty)
+                if (cartItem.dish.allergens != null && cartItem.dish.allergens?.isNotEmpty == true)
                   Row(
-                    children: cartItem.dish.allergens!.map((allergen) {
+                    children: (cartItem.dish.allergens ?? []).map((allergen) {
                       return Container(
                         margin: EdgeInsets.only(right: 4),
                         child: allergen.icon != null
                             ? CachedNetworkImage(
-                                imageUrl: allergen.icon!,
+                                imageUrl: allergen.icon ?? '',
                                 width: 16,
                                 height: 16,
                                 fit: BoxFit.contain,
@@ -1546,5 +1666,129 @@ class CartModalContainer extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// 统一的吸顶头部委托类
+class _UnifiedStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final double height;
+  final List<double> categoryPositions;
+  final double scrollOffset;
+  final List<dynamic> categories;
+  final int selectedCategory;
+  final Function(double)? onScrollOffsetChanged;
+
+  _UnifiedStickyHeaderDelegate({
+    required this.height,
+    required this.categoryPositions,
+    required this.scrollOffset,
+    required this.categories,
+    required this.selectedCategory,
+    this.onScrollOffsetChanged,
+  });
+
+  @override
+  double get minExtent => height;
+
+  @override
+  double get maxExtent => height;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    // 计算当前应该显示的类目
+    int currentCategoryIndex = _getCurrentCategoryIndex();
+    
+    // 检查索引是否有效
+    if (currentCategoryIndex < 0 || currentCategoryIndex >= categories.length) {
+      return Container(height: height, color: Colors.white);
+    }
+    
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        color: Colors.white, // 统一白色背景
+        boxShadow: overlapsContent ? [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 2,
+            offset: Offset(0, 1),
+          ),
+        ] : null,
+      ),
+      child: _buildCategoryHeader(currentCategoryIndex),
+    );
+  }
+
+  /// 获取当前应该显示的类目索引
+  int _getCurrentCategoryIndex() {
+    if (categoryPositions.isEmpty || categories.isEmpty) return 0;
+    
+    // 根据滚动位置确定当前类目
+    for (int i = categoryPositions.length - 1; i >= 0; i--) {
+      if (scrollOffset >= categoryPositions[i]) {
+        return i;
+      }
+    }
+    
+    return 0;
+  }
+
+  /// 构建类目标题
+  Widget _buildCategoryHeader(int categoryIndex) {
+    if (categoryIndex < 0 || categoryIndex >= categories.length) {
+      return Container();
+    }
+    
+    final categoryName = categories[categoryIndex]?.toString() ?? '未知分类';
+    
+    return Container(
+      height: height,
+      padding: EdgeInsets.symmetric(horizontal: 16),
+      alignment: Alignment.centerLeft,
+      child: Text(
+        categoryName,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+          color: Colors.black87,
+        ),
+      ),
+    );
+  }
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    if (oldDelegate is _UnifiedStickyHeaderDelegate) {
+      // 安全地比较列表，避免null check operator错误
+      bool categoriesChanged = false;
+      if (oldDelegate.categories.length != categories.length) {
+        categoriesChanged = true;
+      } else {
+        for (int i = 0; i < categories.length; i++) {
+          if (oldDelegate.categories[i] != categories[i]) {
+            categoriesChanged = true;
+            break;
+          }
+        }
+      }
+      
+      bool positionsChanged = false;
+      if (oldDelegate.categoryPositions.length != categoryPositions.length) {
+        positionsChanged = true;
+      } else {
+        for (int i = 0; i < categoryPositions.length; i++) {
+          if (oldDelegate.categoryPositions[i] != categoryPositions[i]) {
+            positionsChanged = true;
+            break;
+          }
+        }
+      }
+      
+      return oldDelegate.scrollOffset != scrollOffset ||
+             positionsChanged ||
+             oldDelegate.selectedCategory != selectedCategory ||
+             categoriesChanged;
+    }
+    return true;
   }
 }

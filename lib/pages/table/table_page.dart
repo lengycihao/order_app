@@ -207,7 +207,7 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 13,
-                        childAspectRatio: 1.2,
+                        childAspectRatio: 1.33, // 根据UI设计稿调整：165/124 = 1.33
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => TableCard(

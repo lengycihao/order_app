@@ -51,6 +51,38 @@ class Toast {
     }
   }
 
+  /// 显示警告提示
+  static void warning(
+    BuildContext context,
+    String message, {
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    if (context.mounted) {
+      ToastUtils.showWarning(
+        context,
+        message,
+        duration: duration,
+        position: ToastPosition.center,
+      );
+    }
+  }
+
+  /// 显示消息提示
+  static void message(
+    BuildContext context,
+    String message, {
+    Duration duration = const Duration(seconds: 2),
+  }) {
+    if (context.mounted) {
+      ToastUtils.showMessage(
+        context,
+        message,
+        duration: duration,
+        position: ToastPosition.center,
+      );
+    }
+  }
+
   /// 隐藏当前Toast
   static void hide() {
     ToastUtils.hide();
@@ -82,6 +114,20 @@ class GlobalToast {
   static void success(String message, {Duration duration = const Duration(seconds: 2)}) {
     if (_context != null && _context!.mounted) {
       Toast.success(_context!, message, duration: duration);
+    }
+  }
+
+  /// 显示警告提示
+  static void warning(String message, {Duration duration = const Duration(seconds: 2)}) {
+    if (_context != null && _context!.mounted) {
+      Toast.warning(_context!, message, duration: duration);
+    }
+  }
+
+  /// 显示消息提示
+  static void message(String message, {Duration duration = const Duration(seconds: 2)}) {
+    if (_context != null && _context!.mounted) {
+      Toast.message(_context!, message, duration: duration);
     }
   }
 

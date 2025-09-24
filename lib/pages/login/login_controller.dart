@@ -18,6 +18,7 @@ class LoginController extends GetxController {
   var selectedLanguageIndex = 0.obs; // 当前选中的语言索引
   var isAccountDropdownExpanded = false.obs; // 账号下拉框是否展开
   var recentAccounts = <String>[].obs; // 近期登录账号列表
+  var recentPasswords = <String>[].obs; // 近期登录密码列表
 
   final List<Map<String, String>> languages = [
     {'code': 'zh', 'name': '中文(简体)', 'flag': 'assets/order_login_china.webp'},
@@ -49,6 +50,13 @@ class LoginController extends GetxController {
   // 选择账号
   void selectAccount(String account) {
     usernameController.text = account;
+    
+    // 查找对应的密码并填充
+    final accountIndex = recentAccounts.indexOf(account);
+    if (accountIndex != -1 && accountIndex < recentPasswords.length) {
+      passwordController.text = recentPasswords[accountIndex];
+    }
+    
     isAccountDropdownExpanded.value = false;
   }
 
@@ -57,34 +65,54 @@ class LoginController extends GetxController {
     try {
       final prefs = await SharedPreferences.getInstance();
       final accounts = prefs.getStringList('recent_accounts') ?? [];
+      final passwords = prefs.getStringList('recent_passwords') ?? [];
+      
       recentAccounts.value = accounts;
+      recentPasswords.value = passwords;
       
       // 如果有最近登录的账号，自动填充到输入框
       if (accounts.isNotEmpty) {
         usernameController.text = accounts.first;
+        // 如果有对应的密码，也自动填充
+        if (passwords.isNotEmpty) {
+          passwordController.text = passwords.first;
+        }
       }
     } catch (e) {
       print('加载近期账号失败: $e');
     }
   }
 
-  // 保存账号到近期列表
-  Future<void> _saveRecentAccount(String account) async {
+  // 保存账号和密码到近期列表
+  Future<void> _saveRecentAccount(String account, String password) async {
     try {
       final prefs = await SharedPreferences.getInstance();
       List<String> accounts = prefs.getStringList('recent_accounts') ?? [];
+      List<String> passwords = prefs.getStringList('recent_passwords') ?? [];
       
-      // 移除重复的账号
-      accounts.removeWhere((item) => item == account);
+      // 移除重复的账号和对应的密码
+      final accountIndex = accounts.indexOf(account);
+      if (accountIndex != -1) {
+        accounts.removeAt(accountIndex);
+        if (accountIndex < passwords.length) {
+          passwords.removeAt(accountIndex);
+        }
+      }
+      
       // 添加到列表开头
       accounts.insert(0, account);
-      // 最多保存5个账号
+      passwords.insert(0, password);
+      
+      // 最多保存5个账号和密码
       if (accounts.length > 5) {
         accounts = accounts.take(5).toList();
+        passwords = passwords.take(5).toList();
       }
       
       await prefs.setStringList('recent_accounts', accounts);
+      await prefs.setStringList('recent_passwords', passwords);
       recentAccounts.value = accounts;
+      recentPasswords.value = passwords;
     } catch (e) {
       print('保存近期账号失败: $e');
     }
@@ -135,8 +163,8 @@ class LoginController extends GetxController {
       );
 
       if (result.isSuccess) {
-        // 登录成功后保存账号
-        await _saveRecentAccount(name);
+        // 登录成功后保存账号和密码
+        await _saveRecentAccount(name, psw);
         Toast.success(Get.context!, '登录成功');
         Get.offAll(() => ScreenNavPage());
       } else {

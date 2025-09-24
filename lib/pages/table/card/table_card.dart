@@ -196,7 +196,7 @@ class TableCard extends StatelessWidget {
         // padding: EdgeInsets.all(8),
         decoration: BoxDecoration(
           color: _getStatusColor(status),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           border: isMergeMode && isSelected 
               ? Border.all(color: Color(0xffFF9027), width: 4)
               : null,
@@ -243,7 +243,8 @@ class TableCard extends StatelessWidget {
                             height: 8,
                           ),
                           SizedBox(width: 3),
-                          (table.currentAdult > 0)
+                          // 当桌台非空和不可用时，显示0/10格式
+                          (status != TableStatus.Empty && status != TableStatus.Unavailable)
                               ? Text(
                                   '${table.currentAdult}/${table.standardAdult}',
                                   style: TextStyle(
@@ -270,7 +271,8 @@ class TableCard extends StatelessWidget {
                               height: 8,
                             ),
                             SizedBox(width: 3),
-                            (table.currentChild > 0)
+                            // 当桌台非空和不可用时，显示0/10格式
+                            (status != TableStatus.Empty && status != TableStatus.Unavailable)
                                 ? Text(
                                     '${table.currentChild}/${table.standardChild}',
                                     style: TextStyle(

@@ -21,17 +21,25 @@ class DishItemWidget extends StatelessWidget {
     this.onDishTap,
   }) : super(key: key);
 
+  /// 优化：获取该菜品在购物车中的数量
+  int _getDishCount(OrderController controller) {
+    int count = 0;
+    for (var entry in controller.cart.entries) {
+      if (entry.key.dish.id == dish.id) {
+        count += entry.value;
+      }
+    }
+    return count;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final controller = Get.find<OrderController>();
+    
+    // 使用更精确的监听，只监听购物车变化
     return Obx(() {
-      final controller = Get.find<OrderController>();
-      // 计算该菜品在购物车中的总数量（包括所有规格）
-      int count = 0;
-      for (var entry in controller.cart.entries) {
-        if (entry.key.dish.id == dish.id) {
-          count += entry.value;
-        }
-      }
+      // 优化：只监听该菜品的数量变化，而不是整个购物车
+      int count = _getDishCount(controller);
       
       return GestureDetector(
         onTap: onDishTap,

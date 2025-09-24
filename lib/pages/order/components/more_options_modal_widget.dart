@@ -345,22 +345,25 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
           // 确认按钮
           Container(
             padding: EdgeInsets.all(16),
-            child: GestureDetector(
-              onTap: _performChangeTable,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '确认',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
+            child: Center(
+              child: GestureDetector(
+                onTap: _performChangeTable,
+                child: Container(
+                  width: 180,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '确认',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -685,7 +688,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        childAspectRatio: 150 / 170,
+                        childAspectRatio: 0.85, // 调整比例以适应新的尺寸
                       ),
                       itemCount: _menuList.length,
                       itemBuilder: (context, index) {
@@ -714,22 +717,25 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
           // 确认按钮
           Container(
             padding: EdgeInsets.all(16),
-            child: GestureDetector(
-              onTap: _performChangeMenu,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '确认',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
+            child: Center(
+              child: GestureDetector(
+                onTap: _performChangeMenu,
+                child: Container(
+                  width: 180,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '确认',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -774,11 +780,12 @@ class _MenuItem extends StatelessWidget {
           costWidgets.add(
             Text(
               '${cost.name}: ${cost.amount}/${cost.unit}',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xff666666),
               ),
-              maxLines: 1,
+              textAlign: TextAlign.center,
+              maxLines: 2, // 允许换行
               overflow: TextOverflow.ellipsis,
             ),
           );
@@ -794,28 +801,15 @@ class _MenuItem extends StatelessWidget {
     }
 
     // 如果没有固定费用信息，显示默认的成人和儿童价格
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          '成人: ¥$adultPrice',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        Text(
-          '儿童: ¥$childPrice',
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey.shade600,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-      ],
+    return Text(
+      '成人：$adultPrice/位\n儿童：$childPrice/位',
+      style: const TextStyle(
+        fontSize: 12,
+        color: Color(0xff666666),
+      ),
+      textAlign: TextAlign.center,
+      maxLines: 2, // 允许换行
+      overflow: TextOverflow.ellipsis,
     );
   }
 
@@ -825,91 +819,80 @@ class _MenuItem extends StatelessWidget {
       onTap: onTap,
       child: Stack(
         children: [
-          Container(margin: EdgeInsets.only(top: 10),
+          Container(
+            margin: const EdgeInsets.only(top: 15),
+            width: 157, // 固定宽度157，自适应屏幕
             decoration: BoxDecoration(
-              color: isSelected ? Colors.orange.withOpacity(0.1) : Colors.white,
-              borderRadius: BorderRadius.circular(22),
+              color: Colors.white,
               border: Border.all(
                 color: isSelected ? Colors.orange : Colors.grey.shade300,
                 width: isSelected ? 2 : 1,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+                  color: Color(0x33000000),
+                  blurRadius: 4,
+                  offset: Offset(0, 1),
                 ),
               ],
+              borderRadius: BorderRadius.circular(8),
             ),
-            child: Stack(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Column(
-                  children: [
-                    // 图片区域 - 占用大部分空间，但允许文本自适应
-                    Expanded(
-                      flex: 3,
-                      child: Container(
-                        padding: EdgeInsets.all(8),
-                        width: double.infinity,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CachedNetworkImage(
-                            imageUrl: imageUrl,
-                            fit: BoxFit.cover,
-                            width: double.infinity,
-                            height: double.infinity,
-                            errorWidget: (context, url, error) => Container(
-                              color: Colors.grey.shade100,
-                              child: Icon(
-                                Icons.restaurant_menu,
-                                size: 32,
-                                color: Colors.grey.shade400,
-                              ),
-                            ),
-                          ),
-                        ),
+                // 菜单图片 - 147*88 自适应屏幕
+                Container(
+                  width: 147,
+                  height: 88,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: CachedNetworkImage(
+                      imageUrl: imageUrl,
+                      width: 147,
+                      height: 88,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Image.asset(
+                        'assets/order_menu_placeholder.webp',
+                        width: 147,
+                        height: 88,
+                        fit: BoxFit.cover,
+                      ),
+                      errorWidget: (context, url, error) => Image.asset(
+                        'assets/order_menu_placeholder.webp',
+                        width: 147,
+                        height: 88,
+                        fit: BoxFit.cover,
                       ),
                     ),
-                    // 价格信息 - 自适应内容
-                    Container(
-                      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                      child: _buildPriceInfo(),
-                    ),
-                  ],
+                  ),
                 ),
-                // 菜单名称标签
-                
+                const SizedBox(height: 8),
+
+                // 价格信息 - 文字可换行
+                _buildPriceInfo(),
               ],
             ),
           ),
           Positioned(
-              top: 0,
-              left: 0,
-              child: Container(
-                
-                padding: EdgeInsets.fromLTRB(15, 5, 15, 5),
-                decoration: BoxDecoration(
-                  color: isSelected ? Colors.orange : Color(0xffE4E4E4),
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.elliptical(35, 30), // 左上角椭圆半径
-                    bottomRight: Radius.elliptical(35, 30), // 右下角椭圆半径
-                  ),
-                ),
-                alignment: Alignment.center,
-                child: Center(
-                  child: Text(
-                    menuName,
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: isSelected ? Colors.white : Color(0xff666666),
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
+            left: 0,
+            top: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(15, 3, 15, 3),
+              decoration: BoxDecoration(
+                color: isSelected ? Colors.orange : Colors.grey.shade400,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.elliptical(35, 30), // 左上角椭圆半径
+                  bottomRight: Radius.elliptical(35, 35), // 右下角椭圆半径
                 ),
               ),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                menuName,
+                style: const TextStyle(fontSize: 14, color: Colors.white),
+              ),
             ),
+          ),
         ],
       ),
     );
@@ -1102,22 +1085,25 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
           // 确认按钮
           Container(
             padding: EdgeInsets.all(16),
-            child: GestureDetector(
-              onTap: _performChangePeopleCount,
-              child: Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  '确认',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w500,
+            child: Center(
+              child: GestureDetector(
+                onTap: _performChangePeopleCount,
+                child: Container(
+                  width: 180,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.orange,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Center(
+                    child: Text(
+                      '确认',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                   ),
                 ),
               ),

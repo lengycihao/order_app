@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'select_menu_controller.dart';
 
 class SelectMenuPage extends GetView<SelectMenuController> {
@@ -10,6 +11,7 @@ class SelectMenuPage extends GetView<SelectMenuController> {
     // 确保控制器已初始化
     Get.put(SelectMenuController());
     return Scaffold(
+      backgroundColor: Color(0xffF9F9F9),
       appBar: AppBar(
         leading: IconButton(
           icon: Image.asset(
@@ -26,6 +28,7 @@ class SelectMenuPage extends GetView<SelectMenuController> {
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+        
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -49,34 +52,51 @@ class SelectMenuPage extends GetView<SelectMenuController> {
   /// 构建选择人数卡片
   Widget _buildPersonCountCard() {
     return Card(
+      elevation: 0,
       margin: const EdgeInsets.only(bottom: 16),
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.only(left: 32, right: 32, top: 12, bottom: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            const Text(
-              '选择人数',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            // 标题
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              decoration: BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: Colors.grey.shade300, width: 1),
+                ),
+              ),
+              child: const Text(
+                '选择人数',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF333333),
+                ),
+                textAlign: TextAlign.center,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 18),
 
             // 成人数量选择
             _buildCountRow(
-              '成人',
+              '大人',
               controller.adultCount,
               controller.increaseAdultCount,
               controller.decreaseAdultCount,
             ),
-
+SizedBox(height: 12,),
             // 儿童数量选择
             _buildCountRow(
-              '儿童',
+              '小孩',
               controller.childCount,
               controller.increaseChildCount,
               controller.decreaseChildCount,
-            ),
+            ),SizedBox(height: 10,),
           ],
         ),
       ),
@@ -90,46 +110,156 @@ class SelectMenuPage extends GetView<SelectMenuController> {
     VoidCallback onIncrease,
     VoidCallback onDecrease,
   ) {
-    // 获取最大人数限制
-    final maxCount = label == '成人'
-        ? controller.table.value.standardAdult.toInt()
-        : controller.table.value.standardChild.toInt();
-
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: const TextStyle(fontSize: 15)),
-            Text(
-              '最多$maxCount人',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-            ),
-          ],
-        ),
-        Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.remove_circle_outline),
-              onPressed: onDecrease,
-            ),
-            Obx(
-              () => Text(
-                '${count.value}',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
+        Text(label, style: const TextStyle(fontSize: 15)),
+        _buildStepperWidget(count, onIncrease, onDecrease),
+      ],
+    );
+  }
+
+  /// 构建步进器组件
+  Widget _buildStepperWidget(RxInt count, VoidCallback onIncrease, VoidCallback onDecrease) {
+    return Container(
+      height: 24,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 减少按钮
+          GestureDetector(
+            onTap: onDecrease,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  bottomLeft: Radius.circular(4),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '一',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff666666),
+                  ),
                 ),
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.add_circle_outline),
-              onPressed: onIncrease,
+          ),
+          // 分割线
+          Container(
+            width: 1,
+            height: 40,
+            color: Colors.grey.shade300,
+          ),
+          // 数字显示区域
+          GestureDetector(
+            onTap: () => _showNumberInputDialog(count),
+            child: Container(
+              width: 32,
+              height: 24,
+              color: Colors.white,
+              child: Obx(
+                () => Center(
+                  child: Text(
+                    '${count.value}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // 分割线
+          Container(
+            width: 1,
+            height: 40,
+            color: Colors.grey.shade300,
+          ),
+          // 增加按钮
+          GestureDetector(
+            onTap: onIncrease,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(4),
+                  bottomRight: Radius.circular(4),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '+',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xff666666),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 显示数字输入对话框
+  void _showNumberInputDialog(RxInt count) {
+    final TextEditingController textController = TextEditingController(text: '${count.value}');
+    
+    showDialog(
+      context: Get.context!,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('输入人数'),
+          content: TextField(
+            controller: textController,
+            keyboardType: TextInputType.number,
+            autofocus: true,
+            decoration: InputDecoration(
+              hintText: '请输入人数',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // 点击页面收起键盘
+                FocusScope.of(context).unfocus();
+              },
+              child: Text('取消'),
+            ),
+            TextButton(
+              onPressed: () {
+                final inputValue = int.tryParse(textController.text);
+                if (inputValue != null && inputValue > 0) {
+                  count.value = inputValue;
+                }
+                Navigator.of(context).pop();
+                // 点击页面收起键盘
+                FocusScope.of(context).unfocus();
+              },
+              child: Text('确定'),
             ),
           ],
-        ),
-      ],
+        );
+      },
     );
   }
 
@@ -137,10 +267,11 @@ class SelectMenuPage extends GetView<SelectMenuController> {
   Widget _buildMenuSelectionCard() {
     return Card(
       color: Colors.white,
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 15),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -161,9 +292,10 @@ class SelectMenuPage extends GetView<SelectMenuController> {
                   fontWeight: FontWeight.bold,
                   color: Color(0xFF333333),
                 ),
+                textAlign: TextAlign.center,
               ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 18),
 
             // 菜单网格
             _buildMenuGrid(),
@@ -194,7 +326,7 @@ class SelectMenuPage extends GetView<SelectMenuController> {
           crossAxisCount: 2,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 0.75,
+          childAspectRatio: 0.85, // 调整比例以适应新的尺寸
         ),
         itemBuilder: (context, index) {
           final item = controller.menu[index];
@@ -206,45 +338,58 @@ class SelectMenuPage extends GetView<SelectMenuController> {
               children: [
                 Container(
                   margin: const EdgeInsets.only(top: 15),
+                  width: 157, // 固定宽度157，自适应屏幕
                   decoration: BoxDecoration(
                     color: Colors.white,
+                  
                     border: Border.all(
                       color: controller.getMenuBorderColor(isSelected),
                       width: controller.getMenuBorderWidth(isSelected),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Color(0x33000000),
+                        blurRadius: 4,
+                        offset: Offset(0, 1),
+                      
+                      ),
+                    ],
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  padding: const EdgeInsets.all(12),
+                  
+                  padding: const EdgeInsets.all(8),
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 菜单标签
-
-                      // 菜单图片
-                      Expanded(
-                        child: Image.network(
-                          item.menuImage ?? '',
-                          width: double.infinity,
-                          fit: BoxFit.cover,
-                          loadingBuilder: (context, child, progress) {
-                            if (progress == null) return child;
-                            return Image.asset(
-                              'assets/order_table_menu.webp',
-                              width: double.infinity,
+                      // 菜单图片 - 147*88 自适应屏幕
+                      Container(
+                        width: 147,
+                        height: 88,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: item.menuImage ?? '',
+                            width: 147,
+                            height: 88,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Image.asset(
+                              'assets/order_menu_placeholder.webp',
+                              width: 147,
+                              height: 88,
                               fit: BoxFit.cover,
-                            );
-                          },
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/order_table_menu.webp',
-                              width: double.infinity,
+                            ),
+                            errorWidget: (context, url, error) => Image.asset(
+                              'assets/order_menu_placeholder.webp',
+                              width: 147,
+                              height: 88,
                               fit: BoxFit.cover,
-                            );
-                          },
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 8),
 
-                      // 价格信息
+                      // 价格信息 - 文字可换行
                       _buildPriceInfo(item),
                     ],
                   ),
@@ -317,11 +462,11 @@ class SelectMenuPage extends GetView<SelectMenuController> {
             Text(
               '${cost.name}: ${cost.amount}/${cost.unit}',
               style: const TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 color: Color(0xff666666),
               ),
               textAlign: TextAlign.center,
-              maxLines: 1,
+              maxLines: 2, // 允许换行
               overflow: TextOverflow.ellipsis,
             ),
           );
@@ -340,10 +485,12 @@ class SelectMenuPage extends GetView<SelectMenuController> {
     return Text(
       '成人：${item.adultPackagePrice}/位\n儿童：${item.childPackagePrice}/位',
       style: const TextStyle(
-        fontSize: 14,
+        fontSize: 12,
         color: Color(0xff666666),
       ),
       textAlign: TextAlign.center,
+      maxLines: 2, // 允许换行
+      overflow: TextOverflow.ellipsis,
     );
   }
 }

@@ -80,9 +80,10 @@ class ChangeTableStatusDialog extends StatelessWidget {
             ),
             Divider(height: 24, thickness: 1),
             // 桌号和状态
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // 桌号 - 允许换行
                 RichText(
                   text: TextSpan(
                     text: '桌号：',
@@ -98,7 +99,11 @@ class ChangeTableStatusDialog extends StatelessWidget {
                       ),
                     ],
                   ),
+                  maxLines: null, // 允许换行
+                  overflow: TextOverflow.visible,
                 ),
+                SizedBox(height: 8), // 添加间距
+                // 状态 - 固定显示
                 RichText(
                   text: TextSpan(
                     text: '状态：',

@@ -46,7 +46,7 @@ class MineController extends GetxController {
       // 清除登录信息缓存
       await _authService.logout();
       
-      // 进入登录页面
+      // 进入登录页面，不清除输入框内容
       Get.offAll(() => LoginPage());
       
       ToastUtils.showSuccess(Get.context!, '退出登录成功');
