@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/components/skeleton_widget.dart';
+import 'package:order_app/utils/restaurant_refresh_indicator.dart';
 
 class TablePage extends StatefulWidget {
   @override
@@ -13,12 +14,27 @@ class TablePage extends StatefulWidget {
 
 class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
   final TableController controller = Get.put(TableController());
-  bool _isReturningFromOrder = false;
+  bool _shouldShowSkeleton = true; // 默认显示骨架图
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    
+    // 检查是否应该显示骨架图
+    _checkShouldShowSkeleton();
+  }
+
+  /// 检查是否应该显示骨架图
+  void _checkShouldShowSkeleton() {
+    // 如果已经有数据，说明不是首次进入，不显示骨架图
+    if (controller.tabDataList.isNotEmpty && 
+        controller.tabDataList[controller.selectedTab.value].isNotEmpty) {
+      _shouldShowSkeleton = false;
+      print('✅ 检测到现有数据，不显示骨架图');
+    } else {
+      print('✅ 首次进入或从登录页进入，显示骨架图');
+    }
   }
 
   @override
@@ -31,28 +47,9 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
-      // 应用恢复时，检查是否从点餐页面返回
-      _checkIfReturningFromOrder();
+      // 应用恢复时，检查是否应该显示骨架图
+      _checkShouldShowSkeleton();
     }
-  }
-
-  /// 检查是否从点餐页面返回
-  void _checkIfReturningFromOrder() {
-    // 这里可以通过路由栈或其他方式判断是否从点餐页面返回
-    // 暂时使用一个简单的逻辑：如果当前有数据且不在加载状态，则认为是返回
-    if (controller.tabDataList.isNotEmpty && 
-        controller.tabDataList[controller.selectedTab.value].isNotEmpty &&
-        !controller.isLoading.value) {
-      _isReturningFromOrder = true;
-      // 进行隐式刷新
-      _refreshCurrentTab();
-    }
-  }
-
-  /// 刷新当前tab数据
-  Future<void> _refreshCurrentTab() async {
-    await controller.refreshDataForTab(controller.selectedTab.value);
-    _isReturningFromOrder = false;
   }
 
   @override
@@ -179,15 +176,21 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
   /// 下拉刷新 + 加载状态 + 空数据提示 + Grid 间距优化
   Widget buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
-      // 如果正在加载且没有数据，且不是从点餐页面返回，显示骨架图
-      if (controller.isLoading.value && data.isEmpty && !_isReturningFromOrder) {
+      // 只有在应该显示骨架图且正在加载且没有数据时才显示骨架图
+      if (_shouldShowSkeleton && controller.isLoading.value && data.isEmpty) {
         return const TablePageSkeleton();
       }
       
-      return RefreshIndicator(
+      // 如果数据加载完成，标记不再需要显示骨架图
+      if (data.isNotEmpty) {
+        _shouldShowSkeleton = false;
+      }
+      
+      return RestaurantRefreshIndicator(
         onRefresh: () async {
           await controller.fetchDataForTab(tabIndex);
         },
+        loadingColor: const Color(0xFFFF9027),
         child: CustomScrollView(
           physics: AlwaysScrollableScrollPhysics(),
           slivers: [

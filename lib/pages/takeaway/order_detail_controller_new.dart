@@ -27,14 +27,26 @@ class OrderDetailControllerNew extends GetxController {
       orderId = arguments['orderId'] as int;
       loadOrderDetail();
     } else {
-      Toast.error(Get.context!, '订单ID不能为空');
+      logDebug('❌ 订单ID不能为空', tag: 'OrderDetailControllerNew');
+      // 延迟显示Toast，确保页面已经加载完成
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (Get.context != null) {
+          Toast.error(Get.context!, '订单ID不能为空');
+        }
+      });
     }
   }
 
   /// 加载订单详情
   Future<void> loadOrderDetail() async {
     if (orderId == null) {
-      Toast.error(Get.context!, '订单ID不能为空');
+      logDebug('❌ 订单ID不能为空', tag: 'OrderDetailControllerNew');
+      // 延迟显示Toast，确保页面已经加载完成
+      Future.delayed(const Duration(milliseconds: 100), () {
+        if (Get.context != null) {
+          Toast.error(Get.context!, '订单ID不能为空');
+        }
+      });
       return;
     }
     
@@ -43,14 +55,49 @@ class OrderDetailControllerNew extends GetxController {
     try {
       final result = await _takeoutApi.getTakeoutDetail(id: orderId!);
       
-      if (result.isSuccess && result.data != null) {
-        orderDetail.value = TakeawayOrderDetailResponse.fromJson(result.data!);
+      logDebug('🔍 API返回结果: $result', tag: 'OrderDetailControllerNew');
+      logDebug('🔍 API返回数据: ${result.data}', tag: 'OrderDetailControllerNew');
+      logDebug('🔍 API返回数据类型: ${result.data.runtimeType}', tag: 'OrderDetailControllerNew');
+      if (result.data != null) {
+        logDebug('🔍 API返回数据键: ${(result.data as Map).keys.toList()}', tag: 'OrderDetailControllerNew');
+      }
+      
+      if (result.isSuccess) {
+        try {
+          // 使用dataJson而不是data，因为API返回的数据在dataJson中
+          final jsonData = result.getDataJson();
+          logDebug('🔍 从dataJson获取的数据: $jsonData', tag: 'OrderDetailControllerNew');
+          
+          if (jsonData.isNotEmpty) {
+            orderDetail.value = TakeawayOrderDetailResponse.fromJson(jsonData);
+            logDebug('✅ 数据解析成功: ${orderDetail.value}', tag: 'OrderDetailControllerNew');
+            logDebug('✅ 解析后的订单ID: ${orderDetail.value?.id}', tag: 'OrderDetailControllerNew');
+            logDebug('✅ 解析后的订单号: ${orderDetail.value?.orderNo}', tag: 'OrderDetailControllerNew');
+            logDebug('✅ 解析后的商品数量: ${orderDetail.value?.details?.length}', tag: 'OrderDetailControllerNew');
+          } else {
+            logDebug('❌ dataJson为空，无法解析数据', tag: 'OrderDetailControllerNew');
+            if (Get.context != null) {
+              Toast.error(Get.context!, '订单详情数据为空');
+            }
+          }
+        } catch (parseError) {
+          logDebug('❌ 数据解析失败: $parseError', tag: 'OrderDetailControllerNew');
+          logDebug('❌ 解析错误堆栈: ${parseError.toString()}', tag: 'OrderDetailControllerNew');
+          if (Get.context != null) {
+            Toast.error(Get.context!, '数据解析失败: ${parseError.toString()}');
+          }
+        }
       } else {
-        Toast.error(Get.context!, result.msg ?? '获取订单详情失败');
+        logDebug('❌ API请求失败: ${result.msg}', tag: 'OrderDetailControllerNew');
+        if (Get.context != null) {
+          Toast.error(Get.context!, result.msg ?? '获取订单详情失败');
+        }
       }
     } catch (e) {
       logDebug('❌ 加载订单详情异常: $e', tag: 'OrderDetailControllerNew');
-      Toast.error(Get.context!, '获取订单详情异常');
+      if (Get.context != null) {
+        Toast.error(Get.context!, '获取订单详情异常');
+      }
     } finally {
       isLoading.value = false;
     }

@@ -16,6 +16,7 @@ import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:order_app/pages/order/components/force_update_dialog.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/utils/websocket_lifecycle_manager.dart';
 
 // 导入优化后的类
 import 'order_constants.dart';
@@ -67,6 +68,7 @@ class OrderController extends GetxController {
   // WebSocket相关
   final WebSocketManager _wsManager = wsManager;
   final isWebSocketConnected = false.obs;
+  final WebSocketLifecycleManager _wsLifecycleManager = WebSocketLifecycleManager();
   
   // 管理器
   late final WebSocketHandler _wsHandler;
@@ -83,6 +85,9 @@ class OrderController extends GetxController {
   void onInit() {
     super.onInit();
     logDebug('🔍 OrderController onInit 开始', tag: OrderConstants.logTag);
+    
+    // 设置页面类型为点餐页面
+    _wsLifecycleManager.setCurrentPageType(WebSocketLifecycleManager.PAGE_ORDER);
     
     // 初始化管理器
     _initializeManagers();
@@ -1246,9 +1251,17 @@ class OrderController extends GetxController {
 
   @override
   void onClose() {
+    logDebug('🔍 OrderController onClose 开始', tag: OrderConstants.logTag);
+    
+    // 清理WebSocket连接
     _wsHandler.dispose();
     _wsDebounceManager.dispose();
     _cartManager.dispose();
+    
+    // 清理所有WebSocket连接
+    _wsLifecycleManager.cleanupAllConnections();
+    
+    logDebug('✅ OrderController onClose 完成，WebSocket连接已清理', tag: OrderConstants.logTag);
     super.onClose();
   }
 }

@@ -9,7 +9,6 @@ import 'package:order_app/pages/order/components/dish_item_widget.dart';
 import 'package:order_app/pages/order/components/allergen_filter_widget.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
-import 'package:order_app/pages/order/components/quantity_input_widget.dart';
 import 'package:order_app/utils/focus_manager.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
@@ -1454,13 +1453,13 @@ class _CartItem extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 12),
-                  QuantityInputWidget(
-                    cartItem: cartItem,
-                    currentQuantity: count,
-                    isInCartModal: true,
-                    onQuantityChanged: () {
-                      controller.forceRefreshCartUI();
-                    },
+                  Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                   ),
                   SizedBox(width: 12),
                   GestureDetector(

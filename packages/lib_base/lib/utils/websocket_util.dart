@@ -74,6 +74,9 @@ class WebSocketUtil {
   /// 心跳定时器
   Timer? _heartbeatTimer;
   
+  /// 是否已dispose，防止dispose后继续重连
+  bool _isDisposed = false;
+  
   /// 原始消息监听器（用于接收服务器消息）
   final List<Function(Map<String, dynamic>)> _rawMessageListeners = [];
   
@@ -246,12 +249,16 @@ class WebSocketUtil {
 
   /// 安排重连
   void _scheduleReconnect() {
-    if (_reconnectTimer?.isActive == true) return;
+    if (_reconnectTimer?.isActive == true || _isDisposed) return;
     
     _connectionState.value = WebSocketConnectionState.reconnecting;
     _notifyConnectionStateChange();
     
     _reconnectTimer = Timer(const Duration(seconds: 5), () async {
+      if (_isDisposed) {
+        debugPrint('⚠️ WebSocket已dispose，取消重连');
+        return;
+      }
       debugPrint('🔄 尝试重新连接WebSocket...');
       await _connect();
     });
@@ -317,6 +324,7 @@ class WebSocketUtil {
 
   /// 清理资源
   void dispose() {
+    _isDisposed = true;
     disconnect();
     _rawMessageListeners.clear();
     _connectionStateListeners.clear();

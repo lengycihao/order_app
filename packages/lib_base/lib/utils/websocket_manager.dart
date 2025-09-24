@@ -126,12 +126,13 @@ class WebSocketManager {
   Future<void> disconnectTable(String tableId) async {
     final connection = _tableConnections[tableId];
     if (connection != null) {
-      await connection.disconnect();
+      // 先dispose，确保停止重连
+      connection.dispose();
       _tableConnections.remove(tableId);
       if (_currentActiveTableId == tableId) {
         _currentActiveTableId = null;
       }
-      logDebug('🔌 桌台 $tableId 连接已断开', tag: 'WebSocketManager');
+      logDebug('🔌 桌台 $tableId 连接已断开并清理', tag: 'WebSocketManager');
     }
   }
 

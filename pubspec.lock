@@ -34,7 +34,7 @@ packages:
     source: hosted
     version: "1.6.5"
   async:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: async
       sha256: "758e6d74e971c3e5aceb4110bfd6698efc7f501675bcfe0c775459a8140750eb"
@@ -114,7 +114,7 @@ packages:
     source: hosted
     version: "8.11.1"
   cached_network_image:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: cached_network_image
       sha256: "7c1183e361e5c8b0a0f21a28401eecdbde252441106a9816400dd4c2b2424916"
@@ -178,7 +178,7 @@ packages:
     source: hosted
     version: "1.19.1"
   convert:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: convert
       sha256: b30acd5944035672bc15c6b7a8b47d773e41e2f17de064350988c5d02adb1c68
@@ -209,6 +209,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
+  custom_refresh_indicator:
+    dependency: "direct main"
+    description:
+      name: custom_refresh_indicator
+      sha256: c34dd1dfb1f6b9ee2db9c5972586dba5e4445d79f8431f6ab098a6e963ccd39c
+      url: "https://pub.dev"
+    source: hosted
+    version: "4.0.1"
   dart_style:
     dependency: transitive
     description:
@@ -218,7 +226,7 @@ packages:
     source: hosted
     version: "3.1.2"
   device_info_plus:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: device_info_plus
       sha256: "98f28b42168cc509abc92f88518882fd58061ea372d7999aecc424345c7bff6a"
@@ -234,7 +242,7 @@ packages:
     source: hosted
     version: "7.0.3"
   dio:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: dio
       sha256: d90ee57923d1828ac14e492ca49440f65477f4bb1263575900be731a3dac66a9
@@ -250,7 +258,7 @@ packages:
     source: hosted
     version: "2.1.1"
   encrypt:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: encrypt
       sha256: "62d9aa4670cc2a8798bab89b39fc71b6dfbacf615de6cf5001fb39f7e4a996a2"
@@ -311,7 +319,7 @@ packages:
     source: hosted
     version: "3.4.1"
   flutter_image_compress:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: flutter_image_compress
       sha256: "51d23be39efc2185e72e290042a0da41aed70b14ef97db362a6b5368d0523b27"
@@ -420,7 +428,7 @@ packages:
     source: hosted
     version: "3.1.2"
   flutter_slidable:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: flutter_slidable
       sha256: a857de7ea701f276fd6a6c4c67ae885b60729a3449e42766bb0e655171042801
@@ -428,7 +436,7 @@ packages:
     source: hosted
     version: "3.1.2"
   flutter_staggered_grid_view:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: flutter_staggered_grid_view
       sha256: "19e7abb550c96fbfeb546b23f3ff356ee7c59a019a651f8f102a4ba9b7349395"
@@ -454,7 +462,7 @@ packages:
     source: hosted
     version: "4.0.0"
   get:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: get
       sha256: c79eeb4339f1f3deffd9ec912f8a923834bec55f7b49c9e882b8fef2c139d425
@@ -582,7 +590,7 @@ packages:
     source: hosted
     version: "5.1.1"
   logger:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: logger
       sha256: "55d6c23a6c15db14920e037fe7e0dc32e7cdaf3b64b4b25df2d541b5b6b81c0c"
@@ -598,7 +606,7 @@ packages:
     source: hosted
     version: "1.3.0"
   marquee:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: marquee
       sha256: a87e7e80c5d21434f90ad92add9f820cf68be374b226404fe881d2bba7be0862
@@ -654,7 +662,7 @@ packages:
     source: hosted
     version: "2.2.0"
   package_info_plus:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: package_info_plus
       sha256: "16eee997588c60225bda0488b6dcfac69280a6b7a3cf02c741895dd370a02968"
@@ -678,7 +686,7 @@ packages:
     source: hosted
     version: "1.9.1"
   path_provider:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: path_provider
       sha256: "50c5dd5b6e1aaf6fb3a78b33f6aa3afca52bf903a8a5298f53101fdaee55bbcd"
@@ -782,7 +790,7 @@ packages:
     source: hosted
     version: "0.28.0"
   shared_preferences:
-    dependency: "direct dev"
+    dependency: "direct main"
     description:
       name: shared_preferences
       sha256: "6e8bf70b7fef813df4e9a36f658ac46d107db4b4cfe1048b477d4e453a8159f5"

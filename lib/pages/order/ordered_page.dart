@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/order_module_widget.dart';
-import 'package:order_app/pages/order/components/custom_refresh_indicator.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/components/skeleton_widget.dart';
+import 'package:order_app/utils/restaurant_refresh_indicator.dart';
 
 class OrderedPage extends StatefulWidget {
   const OrderedPage({super.key});
@@ -131,10 +131,9 @@ class _OrderedPageState extends State<OrderedPage> {
         }
 
         if (controller.currentOrder.value == null) {
-          return CustomRefreshIndicator(
+          return RestaurantRefreshIndicator(
             onRefresh: _loadOrderedData,
-            color: Colors.orange,
-            backgroundColor: Colors.white,
+            loadingColor: const Color(0xFFFF9027),
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
               child: Container(
@@ -175,10 +174,9 @@ class _OrderedPageState extends State<OrderedPage> {
 
         final order = controller.currentOrder.value!;
         if (order.details == null || order.details!.isEmpty) {
-          return CustomRefreshIndicator(
+          return RestaurantRefreshIndicator(
             onRefresh: _loadOrderedData,
-            color: Colors.orange,
-            backgroundColor: Colors.white,
+            loadingColor: const Color(0xFFFF9027),
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
               child: Container(
@@ -217,10 +215,9 @@ class _OrderedPageState extends State<OrderedPage> {
           );
         }
 
-        return CustomRefreshIndicator(
+        return RestaurantRefreshIndicator(
           onRefresh: _loadOrderedData,
-          color: Colors.orange,
-          backgroundColor: Colors.white,
+          loadingColor: const Color(0xFFFF9027),
           child: ListView.builder(
             padding: EdgeInsets.all(16),
             physics: AlwaysScrollableScrollPhysics(),

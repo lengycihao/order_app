@@ -9,6 +9,8 @@ import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_mo
 import 'package:order_app/components/skeleton_widget.dart';
 import 'takeaway_controller.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/utils/restaurant_refresh_indicator.dart';
+import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 
 class TakeawayPage extends StatelessWidget {
   final TakeawayController controller = Get.put(TakeawayController());
@@ -49,9 +51,9 @@ class TakeawayPage extends StatelessWidget {
   Widget _buildSearchBar() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 30, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
       child: Container(
-        height: 28,
+        height: 30,
         decoration: BoxDecoration(
           color: Color(0xffF5F5F5),
           borderRadius: BorderRadius.circular(18),
@@ -85,28 +87,24 @@ class TakeawayPage extends StatelessWidget {
               vertical: 0, // 垂直内边距设为0，让textAlignVertical.center生效
             ),
             isDense: true, // 减少内部间距
-            suffixIcon: controller.searchController.text.isNotEmpty
-                ? GestureDetector(
-                    onTap: () {
-                      controller.searchController.clear();
-                      controller.clearSearch();
-                    },
-                    child: Icon(
-                      Icons.clear,
-                      color: Colors.grey.shade500,
-                      size: 18,
-                    ),
-                  )
-                : null,
+            
           ),
           onChanged: (value) {
-            if (value.isEmpty) {
-              controller.clearSearch();
+            try {
+              if (value.isEmpty) {
+                controller.clearSearch();
+              }
+            } catch (e) {
+              print('Controller disposed during onChanged: $e');
             }
           },
           onSubmitted: (value) {
-            if (value.isNotEmpty) {
-              controller.searchByPickupCode(value);
+            try {
+              if (value.isNotEmpty) {
+                controller.searchByPickupCode(value);
+              }
+            } catch (e) {
+              print('Controller disposed during onSubmitted: $e');
             }
           },
         ),
@@ -180,43 +178,42 @@ class TakeawayPage extends StatelessWidget {
       final hasMore = tabIndex == 0 ? controller.hasMoreUnpaid.value : controller.hasMorePaid.value;
       final hasNetworkError = tabIndex == 0 ? controller.hasNetworkErrorUnpaid.value : controller.hasNetworkErrorPaid.value;
 
-      // 如果是首次加载且没有数据，显示骨架图
-      if (orders.isEmpty && !isRefreshing && !hasNetworkError) {
+      // 如果是首次加载且没有数据，显示骨架图（仅对未结账页面）
+      if (orders.isEmpty && !isRefreshing && !hasNetworkError && tabIndex == 0) {
         return const TakeawayPageSkeleton();
       }
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Stack(
-          children: [
-            RefreshIndicator(
-              onRefresh: () => controller.refreshData(tabIndex),
-              child: orders.isEmpty && !isRefreshing
-                  ? (hasNetworkError ? _buildNetworkErrorView() : _buildEmptyView())
-                  : ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      itemCount: orders.length + (hasMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index == orders.length) {
-                          // 加载更多指示器
-                          return _buildLoadMoreIndicator(tabIndex);
-                        }
-                        return TakeawayItem(order: orders[index]);
-                      },
-                      separatorBuilder: (context, index) => 
-                          const SizedBox(height: 10),
-                    ),
-            ),
-            if (isRefreshing && orders.isEmpty)
-              const Center(child: CircularProgressIndicator()),
-            if (isRefreshing)
-              const Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: LinearProgressIndicator(),
-              ),
-          ],
+        child: RestaurantRefreshIndicator(
+          onRefresh: () => controller.refreshData(tabIndex),
+          loadingColor: const Color(0xFFFF9027),
+          child: orders.isEmpty && !isRefreshing
+              ? (hasNetworkError ? _buildNetworkErrorView() : _buildEmptyView())
+              : NotificationListener<ScrollNotification>(
+                  onNotification: (ScrollNotification scrollInfo) {
+                    // 当滚动到底部时自动加载更多
+                    if (scrollInfo.metrics.pixels == scrollInfo.metrics.maxScrollExtent &&
+                        hasMore && 
+                        !controller.isLoadingMore.value) {
+                      controller.loadMore(tabIndex);
+                    }
+                    return false;
+                  },
+                  child: ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    itemCount: orders.length + (hasMore ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (index == orders.length) {
+                        // 加载更多指示器
+                        return _buildLoadMoreIndicator(tabIndex);
+                      }
+                      return TakeawayItem(order: orders[index]);
+                    },
+                    separatorBuilder: (context, index) => 
+                        const SizedBox(height: 10),
+                  ),
+                ),
         ),
       );
     });
@@ -272,20 +269,22 @@ class TakeawayPage extends StatelessWidget {
 
   /// 构建加载更多指示器
   Widget _buildLoadMoreIndicator(int tabIndex) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      alignment: Alignment.center,
-      child: InkWell(
-        onTap: () => controller.loadMore(tabIndex),
-        child: const Text(
-          '加载更多',
-          style: TextStyle(
-            color: Colors.blue,
-            fontSize: 14,
+    return Obx(() {
+      final isLoadingMore = controller.isLoadingMore.value;
+      
+      if (isLoadingMore) {
+        return Container(
+          padding: const EdgeInsets.all(16),
+          alignment: Alignment.center,
+          child: const RestaurantLoadingWidget(
+            size: 30,
+            color: Color(0xFFFF9027),
           ),
-        ),
-      ),
-    );
+        );
+      } else {
+        return const SizedBox.shrink(); // 不显示任何内容
+      }
+    });
   }
 }
 

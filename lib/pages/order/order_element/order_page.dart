@@ -9,8 +9,6 @@ import 'package:order_app/pages/order/components/allergen_filter_widget.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
 import 'package:order_app/pages/order/components/more_options_modal_widget.dart';
 import 'package:order_app/pages/order/components/modal_utils.dart';
-import 'package:order_app/pages/order/components/quantity_input_widget.dart';
-import 'package:order_app/pages/order/components/keyboard_quantity_input_widget.dart';
 import 'package:order_app/pages/order/ordered_page.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/utils/focus_manager.dart';
@@ -34,17 +32,7 @@ class _OrderDishPageState extends State<OrderDishPage> {
   List<double> _categoryPositions = [];
   bool _isClickCategory = false;
   
-  // 键盘输入组件状态
-  CartItem? _editingCartItem;
-  int _editingQuantity = 0;
   
-  /// 开始编辑数量
-  void _startEditingQuantity(CartItem cartItem, int currentQuantity) {
-    setState(() {
-      _editingCartItem = cartItem;
-      _editingQuantity = currentQuantity;
-    });
-  }
 
   @override
   void initState() {
@@ -341,21 +329,6 @@ class _OrderDishPageState extends State<OrderDishPage> {
               _buildBottomCart(),
             ],
           ),
-          // 键盘输入组件
-          if (_editingCartItem != null)
-            KeyboardQuantityInputWidget(
-              cartItem: _editingCartItem!,
-              currentQuantity: _editingQuantity,
-              onQuantityChanged: () {
-                setState(() {});
-              },
-              onDismiss: () {
-                setState(() {
-                  _editingCartItem = null;
-                  _editingQuantity = 0;
-                });
-              },
-            ),
         ],
       ),
     );
@@ -1494,15 +1467,13 @@ class _CartItem extends StatelessWidget {
                     ),
                   ),
                   SizedBox(width: 12),
-                  QuantityInputWidget(
-                    cartItem: cartItem,
-                    currentQuantity: count,
-                    isInCartModal: true,
-                    onQuantityChanged: () {
-                      // 刷新购物车UI
-                      controller.forceRefreshCartUI();
-                    },
-                    onStartEditing: _startEditingQuantity,
+                  Text(
+                    '$count',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black87,
+                    ),
                   ),
                   SizedBox(width: 12),
                   GestureDetector(

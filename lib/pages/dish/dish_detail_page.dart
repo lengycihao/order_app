@@ -323,13 +323,37 @@ class _DishDetailPageState extends State<DishDetailPage> {
             ),
           ),
           const SizedBox(width: 12),
-          Text(
-            '$cartCount',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
-            ),
+          // 查找对应的购物车项
+          Builder(
+            builder: (context) {
+              CartItem? cartItem;
+              for (var entry in orderController.cart.entries) {
+                if (entry.key.dish.id == dishModel.id && entry.key.selectedOptions.isEmpty) {
+                  cartItem = entry.key;
+                  break;
+                }
+              }
+              
+              if (cartItem != null) {
+                return Text(
+                  '$cartCount',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                );
+              } else {
+                return Text(
+                  '$cartCount',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black,
+                  ),
+                );
+              }
+            },
           ),
           const SizedBox(width: 12),
           GestureDetector(
@@ -723,9 +747,10 @@ class _DishDetailPageState extends State<DishDetailPage> {
               const SizedBox(width: 12),
               Text(
                 '$count',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w500,
+                  color: Colors.black87,
                 ),
               ),
               const SizedBox(width: 12),

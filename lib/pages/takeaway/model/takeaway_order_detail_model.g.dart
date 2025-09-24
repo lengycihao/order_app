@@ -74,6 +74,8 @@ TakeawayOrderDetailItem _$TakeawayOrderDetailItemFromJson(
   processStatus: (json['process_status'] as num?)?.toInt(),
   processStatusName: json['process_status_name'] as String?,
   cookingTimeout: json['cooking_timeout'] as String?,
+  remark: json['remark'] as String?,
+  tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
 );
 
 Map<String, dynamic> _$TakeawayOrderDetailItemToJson(
@@ -98,6 +100,8 @@ Map<String, dynamic> _$TakeawayOrderDetailItemToJson(
   'process_status': instance.processStatus,
   'process_status_name': instance.processStatusName,
   'cooking_timeout': instance.cookingTimeout,
+  'remark': instance.remark,
+  'tags': instance.tags,
 };
 
 AllergenInfo _$AllergenInfoFromJson(Map<String, dynamic> json) => AllergenInfo(

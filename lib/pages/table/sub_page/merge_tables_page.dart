@@ -9,6 +9,7 @@ import 'package:order_app/pages/table/sub_page/select_menu_page.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/table/card/table_card.dart';
+import 'package:order_app/utils/restaurant_refresh_indicator.dart';
 
 class MergeTablesPage extends StatefulWidget {
   final List<List<TableListModel>> allTabTables;
@@ -458,10 +459,11 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
   /// 构建可刷新的网格 - 与桌台页面相同的样式
   Widget _buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
-      return RefreshIndicator(
+      return RestaurantRefreshIndicator(
         onRefresh: () async {
           await _fetchDataForTab(tabIndex);
         },
+        loadingColor: const Color(0xFFFF9027),
         child: CustomScrollView(
           physics: AlwaysScrollableScrollPhysics(),
           slivers: [

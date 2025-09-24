@@ -36,6 +36,9 @@ class TakeawayController extends GetxController {
   // 网络错误状态
   var hasNetworkErrorUnpaid = false.obs;
   var hasNetworkErrorPaid = false.obs;
+  
+  // 是否正在加载更多
+  var isLoadingMore = false.obs;
 
   @override
   void onInit() {
@@ -49,7 +52,15 @@ class TakeawayController extends GetxController {
   void onClose() {
     // 清理WebSocket连接
     wsLifecycleManager.cleanupAllConnections();
-    searchController.dispose();
+    
+    // 安全地销毁searchController
+    try {
+      searchController.dispose();
+    } catch (e) {
+      // 如果已经销毁，忽略错误
+      print('SearchController already disposed: $e');
+    }
+    
     super.onClose();
   }
 
@@ -243,10 +254,15 @@ class TakeawayController extends GetxController {
 
   /// 加载更多数据
   Future<void> loadMore(int tabIndex) async {
-    if (tabIndex == 0) {
-      await _loadUnpaidOrders(refresh: false);
-    } else {
-      await _loadPaidOrders(refresh: false);
+    isLoadingMore.value = true;
+    try {
+      if (tabIndex == 0) {
+        await _loadUnpaidOrders(refresh: false);
+      } else {
+        await _loadPaidOrders(refresh: false);
+      }
+    } finally {
+      isLoadingMore.value = false;
     }
   }
 

@@ -1,5 +1,4 @@
 import 'package:get/get.dart';
-import 'package:order_app/pages/table/table_controller.dart';
 import 'package:order_app/pages/nav/screen_nav_page.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_main_page.dart';

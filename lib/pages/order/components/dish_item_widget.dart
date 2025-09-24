@@ -3,8 +3,6 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
-import 'package:order_app/pages/order/order_element/models.dart';
-import 'package:order_app/pages/order/components/quantity_input_widget.dart';
 
 /// 菜品列表项组件
 class DishItemWidget extends StatelessWidget {
@@ -138,7 +136,7 @@ class DishItemWidget extends StatelessWidget {
           Wrap(
             spacing: 4,
             runSpacing: 2,
-            children: validAllergens.take(3).map((allergen) {
+            children: validAllergens.map((allergen) {
               return Container(
                 child: CachedNetworkImage(
                   imageUrl: allergen.icon!,
@@ -276,17 +274,6 @@ class DishItemWidget extends StatelessWidget {
 
   /// 构建数量控制按钮
   Widget _buildQuantityControls(int count) {
-    final controller = Get.find<OrderController>();
-    
-    // 查找对应的购物车项
-    CartItem? cartItem;
-    for (var entry in controller.cart.entries) {
-      if (entry.key.dish.id == dish.id && entry.key.selectedOptions.isEmpty) {
-        cartItem = entry.key;
-        break;
-      }
-    }
-    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -301,25 +288,16 @@ class DishItemWidget extends StatelessWidget {
             onTap: onRemoveTap,
           ),
         if (count > 0) SizedBox(width: 5),
-        // 数量显示 - 如果有购物车项则使用可点击输入
+        // 数量显示
         if (count > 0)
-          cartItem != null
-              ? QuantityInputWidget(
-                  cartItem: cartItem,
-                  currentQuantity: count,
-                  isInCartModal: false,
-                  onQuantityChanged: () {
-                    // 刷新UI
-                    controller.update();
-                  },
-                )
-              : Text(
-                  "$count",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+          Text(
+            "$count",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
         if (count > 0) SizedBox(width: 5),
         // 加号按钮 - 直接显示，无loading状态
         GestureDetector(

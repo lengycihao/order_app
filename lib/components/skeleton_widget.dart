@@ -409,7 +409,7 @@ class TakeawayPageSkeleton extends StatelessWidget {
   }
 }
 
-/// 已点页面骨架图
+/// 已点页面骨架图 - 简化版
 class OrderedPageSkeleton extends StatelessWidget {
   const OrderedPageSkeleton({Key? key}) : super(key: key);
 
@@ -419,8 +419,8 @@ class OrderedPageSkeleton extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // 订单项骨架
-          ...List.generate(3, (index) => _buildOrderItemSkeleton()),
+          // 只显示2个订单项骨架，减少视觉负担
+          ...List.generate(2, (index) => _buildOrderItemSkeleton()),
         ],
       ),
     );
@@ -428,79 +428,67 @@ class OrderedPageSkeleton extends StatelessWidget {
 
   Widget _buildOrderItemSkeleton() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.grey.shade200),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade100),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 订单头部
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SkeletonPlaceholder(
-                height: 16,
-                width: 100,
-              ),
-              SkeletonPlaceholder(
-                height: 16,
-                width: 80,
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          
-          // 订单信息
+          // 简化的订单头部 - 只保留一个标题
           SkeletonPlaceholder(
-            height: 14,
-            width: 200,
-            margin: const EdgeInsets.only(bottom: 8),
-          ),
-          SkeletonPlaceholder(
-            height: 14,
-            width: 150,
-            margin: const EdgeInsets.only(bottom: 8),
-          ),
-          SkeletonPlaceholder(
-            height: 14,
+            height: 18,
             width: 120,
+            borderRadius: 4,
+          ),
+          const SizedBox(height: 16),
+          
+          // 简化的订单信息 - 只显示2行
+          SkeletonPlaceholder(
+            height: 14,
+            width: 180,
             margin: const EdgeInsets.only(bottom: 12),
+            borderRadius: 4,
+          ),
+          SkeletonPlaceholder(
+            height: 14,
+            width: 140,
+            margin: const EdgeInsets.only(bottom: 16),
+            borderRadius: 4,
           ),
           
-          // 菜品列表骨架
-          ...List.generate(2, (index) => _buildDishItemSkeleton()),
+          // 简化的菜品列表 - 只显示1个菜品
+          _buildDishItemSkeleton(),
         ],
       ),
     );
   }
 
   Widget _buildDishItemSkeleton() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          SkeletonPlaceholder(
-            height: 12,
-            width: 20,
-            borderRadius: 6,
+    return Row(
+      children: [
+        SkeletonPlaceholder(
+          height: 14,
+          width: 24,
+          borderRadius: 6,
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: SkeletonPlaceholder(
+            height: 14,
+            width: 100,
+            borderRadius: 4,
           ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: SkeletonPlaceholder(
-              height: 12,
-              width: 100,
-            ),
-          ),
-          SkeletonPlaceholder(
-            height: 12,
-            width: 40,
-          ),
-        ],
-      ),
+        ),
+        SkeletonPlaceholder(
+          height: 14,
+          width: 50,
+          borderRadius: 4,
+        ),
+      ],
     );
   }
 }
