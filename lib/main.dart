@@ -62,6 +62,22 @@ class MyApp extends StatelessWidget {
 
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        // 完全移除输入框的水滴效果
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: Colors.black54,
+          selectionColor: Colors.transparent,
+          selectionHandleColor: Colors.transparent,
+        ),
+        // 移除Material Design的所有水滴和波纹效果
+        splashFactory: NoSplash.splashFactory,
+        highlightColor: Colors.transparent,
+        splashColor: Colors.transparent,
+        // 移除输入框的焦点效果
+        inputDecorationTheme: InputDecorationTheme(
+          focusedBorder: InputBorder.none,
+          enabledBorder: InputBorder.none,
+          border: InputBorder.none,
+        ),
       ),
       
       // 添加国际化配置

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'select_menu_controller.dart';
+import 'package:order_app/utils/keyboard_utils.dart';
 
 class SelectMenuPage extends GetView<SelectMenuController> {
   const SelectMenuPage({super.key});
@@ -26,24 +27,26 @@ class SelectMenuPage extends GetView<SelectMenuController> {
         backgroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-        
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 选择人数卡片
-            _buildPersonCountCard(),
+      body: KeyboardUtils.buildDismissiblePage(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+          
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 选择人数卡片
+              _buildPersonCountCard(),
 
-            // 选择菜单卡片
-            _buildMenuSelectionCard(),
+              // 选择菜单卡片
+              _buildMenuSelectionCard(),
 
-            const SizedBox(height: 80), // 给底部按钮留空间
-            // 底部按钮
-            _buildBottomButton(),
+              const SizedBox(height: 80), // 给底部按钮留空间
+              // 底部按钮
+              _buildBottomButton(),
 
-            const SizedBox(height: 16),
-          ],
+              const SizedBox(height: 16),
+            ],
+          ),
         ),
       ),
     );
@@ -161,22 +164,42 @@ SizedBox(height: 12,),
             height: 40,
             color: Colors.grey.shade300,
           ),
-          // 数字显示区域
-          GestureDetector(
-            onTap: () => _showNumberInputDialog(count),
-            child: Container(
-              width: 32,
-              height: 24,
-              color: Colors.white,
+          // 数字显示区域 - 可编辑输入框
+          Container(
+            width: 32,
+            height: 24,
+            color: Colors.white,
+            child: Center(
               child: Obx(
-                () => Center(
-                  child: Text(
-                    '${count.value}',
+                () => SizedBox(
+                  width: 32,
+                  child: TextField(
+                    controller: TextEditingController(text: '${count.value}'),
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Colors.grey.shade800,
                     ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                      alignLabelWithHint: true,
+                    ),
+                            cursorColor: Colors.black54,
+                            showCursor: true,
+                            enableInteractiveSelection: false,
+                    onSubmitted: (value) {
+                      final inputValue = int.tryParse(value);
+                      if (inputValue != null && inputValue > 0) {
+                        count.value = inputValue;
+                      }
+                    },
+                    onChanged: (value) {
+                      // 实时更新，但只在输入完成时验证
+                    },
                   ),
                 ),
               ),
@@ -218,50 +241,6 @@ SizedBox(height: 12,),
     );
   }
 
-  /// 显示数字输入对话框
-  void _showNumberInputDialog(RxInt count) {
-    final TextEditingController textController = TextEditingController(text: '${count.value}');
-    
-    showDialog(
-      context: Get.context!,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('输入人数'),
-          content: TextField(
-            controller: textController,
-            keyboardType: TextInputType.number,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: '请输入人数',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                // 点击页面收起键盘
-                FocusScope.of(context).unfocus();
-              },
-              child: Text('取消'),
-            ),
-            TextButton(
-              onPressed: () {
-                final inputValue = int.tryParse(textController.text);
-                if (inputValue != null && inputValue > 0) {
-                  count.value = inputValue;
-                }
-                Navigator.of(context).pop();
-                // 点击页面收起键盘
-                FocusScope.of(context).unfocus();
-              },
-              child: Text('确定'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   /// 构建菜单选择卡片
   Widget _buildMenuSelectionCard() {

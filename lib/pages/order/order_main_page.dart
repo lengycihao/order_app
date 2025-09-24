@@ -9,6 +9,7 @@ import 'package:order_app/pages/takeaway/components/menu_selection_modal_widget.
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_domain/api/base_api.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
+import 'package:order_app/utils/keyboard_utils.dart';
 
 // 简单的控制器来管理主页面状态
 class OrderMainPageController extends GetxController {
@@ -83,7 +84,7 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
       if (_tabController.index == 1) {
         // 只有在不是loading状态时才刷新，避免重复请求
         if (!controller.isLoadingOrdered.value) {
-          controller.loadCurrentOrder();
+          controller.loadCurrentOrder(showLoading: false);
         }
       }
     }
@@ -183,18 +184,14 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
                   // 外卖页面只显示"外卖"
                   _buildNavButton('外卖', true),
                 ] else ...[
-                  // 桌台页面显示"点餐"和"已点"
+                  // 桌台页面显示"菜单"和"已点"
                   GestureDetector(
                     onTap: () => _tabController.animateTo(0),
-                    child: _buildNavButton('点餐', _tabController.index == 0),
+                    child: _buildNavButton('菜单', _tabController.index == 0),
                   ),
                   SizedBox(width: 20),
                   GestureDetector(
-                    onTap: () {
-                      // 切换到已点页面前先刷新数据
-                      controller.loadCurrentOrder();
-                      _tabController.animateTo(1);
-                    },
+                    onTap: () => _tabController.animateTo(1),
                     child: _buildNavButton('已点', _tabController.index == 1),
                   ),
                 ],
@@ -231,17 +228,20 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
                 MoreOptionsModalWidget.showMoreModal(context);
               },
               child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                height: 24,
+                padding: EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: Colors.orange,
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  '更多',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
+                child: Center(
+                  child: Text(
+                    '更多',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
               ),
@@ -256,16 +256,28 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
   Widget _buildNavButton(String text, bool isSelected) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: isSelected ? Colors.orange : Colors.black,
-          fontSize: 16,
-          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: TextStyle(
+              color: isSelected ? Colors.orange : Color(0xFF666666),
+              fontSize: 16,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+            ),
+          ),
+          if (isSelected)
+            Container(
+              margin: EdgeInsets.only(top: 4),
+              height: 2,
+              width: text.length * 16.0, // 根据文字长度动态调整宽度
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(1),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -275,17 +287,18 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
     return Scaffold(
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false,
-      body: Column(
-        children: [
-          // 顶部导航栏
-          AnimatedBuilder(
-            animation: _tabController,
-            builder: (context, child) {
-              return _buildTopNavigation();
-            },
-          ),
-          // Tab内容
-          Expanded(
+      body: KeyboardUtils.buildDismissiblePage(
+        child: Column(
+          children: [
+            // 顶部导航栏
+            AnimatedBuilder(
+              animation: _tabController,
+              builder: (context, child) {
+                return _buildTopNavigation();
+              },
+            ),
+            // Tab内容
+            Expanded(
             child: controller.source.value == 'takeaway' 
               ? OrderDishTab() // 外卖页面只显示点餐页面
               : TabBarView(
@@ -299,6 +312,7 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
                 ),
           ),
         ],
+        ),
       ),
     );
   }

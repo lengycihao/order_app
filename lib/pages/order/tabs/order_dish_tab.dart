@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
@@ -38,10 +39,14 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   // 性能优化：防抖定时器
   Timer? _scrollDebounceTimer;
   Timer? _categoryCalculationTimer;
+  Timer? _searchDebounceTimer;
   
   // 性能优化：缓存机制
   String? _lastFilteredDishesHash;
   bool _categoryPositionsCalculated = false;
+  
+  // 搜索框显示状态
+  bool _showSearchField = false;
 
   @override
   bool get wantKeepAlive => true; // 保持页面状态
@@ -63,6 +68,22 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       }
     });
     
+    // 监听焦点变化，处理键盘收起时的光标释放
+    _searchFocusNode.addListener(() {
+      if (!_searchFocusNode.hasFocus) {
+        // 焦点丢失时，确保光标完全释放
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            // 强制清除焦点，确保光标消失
+            FocusScope.of(context).unfocus();
+            // 额外确保搜索框失去焦点
+            _searchFocusNode.unfocus();
+          }
+        });
+      }
+    });
+    
+    
     // 延迟计算类目位置
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _calculateCategoryPositions();
@@ -76,7 +97,19 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     _searchController.dispose();
     _scrollDebounceTimer?.cancel();
     _categoryCalculationTimer?.cancel();
+    _searchDebounceTimer?.cancel();
     super.dispose();
+  }
+
+  /// 防抖搜索 - 优化搜索性能
+  void _debouncedSearch(String value) {
+    // 取消之前的搜索定时器
+    _searchDebounceTimer?.cancel();
+    
+    // 设置防抖定时器，延迟300ms执行
+    _searchDebounceTimer = Timer(Duration(milliseconds: 300), () {
+      _calculateCategoryPositions();
+    });
   }
 
   /// 计算每个类目在列表中的位置 - 优化版本，使用防抖
@@ -220,6 +253,87 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     }
   }
 
+  /// 构建共用的搜索框组件
+  Widget _buildSearchField({bool showClearIcon = true, bool showSearchIcon = true}) {
+    return Container(
+      height: 28,
+      decoration: BoxDecoration(
+        color: Color(0xffF5F5F5),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: TextField(
+        controller: _searchController,
+        focusNode: _searchFocusNode,
+        textAlignVertical: TextAlignVertical.center,
+        // 性能优化配置
+        enableInteractiveSelection: true,
+        autocorrect: false,
+        enableSuggestions: false,
+        keyboardType: TextInputType.text,
+        textInputAction: TextInputAction.search,
+        // 光标样式配置
+        cursorColor: Colors.orange,
+        cursorWidth: 1.0,
+        cursorHeight: 16.0,
+        decoration: InputDecoration(
+          hintText: "请输入菜品编码或名称",
+          hintStyle: TextStyle(
+            color: Colors.grey.shade500,
+            fontSize: 12,
+          ),
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
+          ),
+          suffixIcon: showClearIcon && controller.searchKeyword.value.isNotEmpty
+              ? GestureDetector(
+                  onTap: () {
+                    _searchController.clear();
+                    controller.searchKeyword.value = '';
+                    // 强制释放焦点，确保光标消失
+                    _searchFocusNode.unfocus();
+                    FocusScope.of(context).unfocus();
+                    // 强制隐藏键盘
+                    SystemChannels.textInput.invokeMethod('TextInput.hide');
+                    _calculateCategoryPositions();
+                  },
+                  child: Icon(
+                    Icons.clear,
+                    color: Colors.grey.shade500,
+                    size: 18,
+                  ),
+                )
+              : showClearIcon && showSearchIcon
+                  ? Icon(
+                      Icons.search,
+                      color: Colors.grey.shade500,
+                      size: 18,
+                    )
+                  : null,
+        ),
+        onChanged: (v) {
+          controller.searchKeyword.value = v;
+          // 使用防抖搜索，避免频繁计算
+          _debouncedSearch(v);
+        },
+        onSubmitted: (value) {
+          // 强制释放焦点，确保光标消失
+          _searchFocusNode.unfocus();
+          FocusScope.of(context).unfocus();
+          // 强制隐藏键盘
+          SystemChannels.textInput.invokeMethod('TextInput.hide');
+          // 搜索提交时才计算位置
+          _calculateCategoryPositions();
+        },
+        onTap: () {
+          // 点击搜索框时，确保焦点正确
+          _searchFocusNode.requestFocus();
+        },
+      ),
+    );
+  }
+
   /// 构建搜索和筛选区域
   Widget _buildSearchAndFilter() {
     return Container(
@@ -231,56 +345,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
           return Row(
             children: [
               Expanded(
-                child: Container(
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Color(0xffF5F5F5),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    textAlignVertical: TextAlignVertical.center,
-                    decoration: InputDecoration(
-                      hintText: "请输入菜品名称或首字母",
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 14,
-                      ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      suffixIcon: controller.searchKeyword.value.isNotEmpty
-                          ? GestureDetector(
-                              onTap: () {
-                                _searchController.clear();
-                                controller.searchKeyword.value = '';
-                                _searchFocusNode.unfocus();
-                                _calculateCategoryPositions();
-                              },
-                              child: Icon(
-                                Icons.search,
-                                color: Colors.grey.shade500,
-                                size: 18,
-                              ),
-                            )
-                          : Icon(
-                              Icons.search,
-                              color: Colors.grey.shade500,
-                              size: 18,
-                            ),
-                    ),
-                    onChanged: (v) {
-                      controller.searchKeyword.value = v;
-                      _calculateCategoryPositions();
-                    },
-                    onSubmitted: (value) {
-                      _searchFocusNode.unfocus();
-                    },
-                  ),
-                ),
+                child: _buildSearchField(showClearIcon: true),
               ),
               SizedBox(width: 15),
               // 敏感物筛选图标
@@ -289,113 +354,51 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
           );
         }
         
-        // 桌台页面的原有逻辑
-        return Row( 
+        // 桌台页面：显示桌台信息和搜索按钮
+        return Column(
           children: [
-            if (!controller.isSearchVisible.value) ...[
-              Text(
-                controller.getTableDisplayText(),
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color(0xff666666),
-                ),
-              ),
-              Spacer(),
-            ] else ...[
-              Expanded(
-                child: Container(
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Color(0xffF5F5F5),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    textAlignVertical: TextAlignVertical.center,
-                    decoration: InputDecoration(
-                      hintText: "请输入菜品名称或首字母",
-                      hintStyle: TextStyle(
-                        color: Colors.grey.shade500,
-                        fontSize: 14,
+            SizedBox(
+              width: double.infinity,
+              // padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  // 根据状态显示桌台信息或搜索框
+                  if (!_showSearchField) ...[
+                    // 桌台号和人数信息
+                    Flexible(
+                       child: Text(
+                        '桌子:${controller.table.value?.tableName ?? 'null'} | 大人:${controller.adultCount.value} 小孩:${controller.childCount.value}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Color(0xff666666),
+                          fontWeight: FontWeight.w400,
+                        ),
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 12,
-                      ),
-                      suffixIcon: controller.searchKeyword.value.isNotEmpty
-                          ? GestureDetector(
-                              onTap: () {
-                                _searchController.clear();
-                                controller.searchKeyword.value = '';
-                                _searchFocusNode.unfocus();
-                                _calculateCategoryPositions();
-                              },
-                              child: Icon(
-                                Icons.clear,
-                                color: Colors.grey.shade500,
-                                size: 18,
-                              ),
-                            )
-                          : null,
                     ),
-                    onChanged: (v) {
-                      controller.searchKeyword.value = v;
-                      _calculateCategoryPositions();
+                  ] else ...[
+                    // 搜索框
+                    Expanded(
+                      child: _buildSearchField(showClearIcon: true, showSearchIcon: false),
+                    ),
+                  ],
+                  // Spacer(),
+                  // 搜索按钮
+                  SizedBox(width: 10,),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _showSearchField = !_showSearchField;
+                      });
                     },
-                    onSubmitted: (value) {
-                      _searchFocusNode.unfocus();
-                    },
+                    child: Image(image: AssetImage("assets/order_allergen_search.webp"),width: 20,),
                   ),
-                ),
+                  SizedBox(width: 12),
+                  // 过敏原筛选按钮
+                  AllergenFilterWidget.buildFilterButton(context),
+                ],
               ),
-              SizedBox(width: 15),
-            ],
-            
-            if (!controller.isSearchVisible.value) ...[
-              GestureDetector(
-                onTap: () {
-                  controller.showSearchBox();
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    _searchFocusNode.requestFocus();
-                  });
-                },
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: Image(image: AssetImage("assets/order_allergen_search.webp"), width: 20),
-                ),
-              ),
-              SizedBox(width: 13),
-            ],
-            
-            if (controller.isSearchVisible.value) ...[
-              GestureDetector(
-                onTap: () {
-                  controller.hideSearchBox();
-                  _searchController.clear();
-                  _searchFocusNode.unfocus();
-                  _calculateCategoryPositions();
-                },
-                child: Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: Color(0xffF5F5F5),
-                    borderRadius: BorderRadius.circular(18),
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.grey.shade600,
-                    size: 20,
-                  ),
-                ),
-              ),
-              SizedBox(width: 13),
-            ],
-            
-            AllergenFilterWidget.buildFilterButton(context),
+            ),
           ],
         );
       }),
@@ -445,7 +448,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                     onTap: () => _scrollToCategory(index),
                     child: Container(
                       padding: EdgeInsets.symmetric(
-                        vertical: 16,
+                        vertical: 14,
                         horizontal: 0,
                       ),
                       decoration: BoxDecoration(
@@ -484,8 +487,9 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                               textAlign: TextAlign.center,
                               style: TextStyle(
                                 color: isSelected
-                                    ? Colors.orange
+                                    ? Colors.black
                                     : Color(0xff666666),
+                                    fontSize: 12,
                                 fontWeight: isSelected 
                                     ? FontWeight.bold 
                                     : FontWeight.normal,
@@ -494,29 +498,31 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                           ),
                           if (categoryCount > 0)
                             Positioned(
-                              right: 4,
-                              bottom: 12,
+                              right: 0,
+                              top: -12,
                               child: Container(
                                 constraints: BoxConstraints(
-                                  minWidth: 20,
-                                  minHeight: 20,
+                                  minWidth: 15,
+                                  maxWidth: 20,
+                                  minHeight: 15,
+                                  maxHeight: 15
                                 ),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: categoryCount > 99 ? 6 : 4,
-                                  vertical: 2,
-                                ),
+                                // padding: EdgeInsets.symmetric(horizontal: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.red,
-                                  borderRadius: BorderRadius.circular(10),
+                                  borderRadius: BorderRadius.circular(8),
+                                   
                                 ),
-                                child: Text(
-                                  "$categoryCount",
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
+                                child: Center(
+                                  child: Text(
+                                    "$categoryCount",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 12,
+                                      height: 1,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
-                                  textAlign: TextAlign.center,
                                 ),
                               ),
                             ),
@@ -723,15 +729,15 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       decoration: BoxDecoration(
         color: Colors.white,
       ),
-      child: isLastCategory ? Center(
-        child: Text(
-          '已经到底啦～',
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 14,
-          ),
-        ),
-      ) : null,
+      // child: isLastCategory ? Center(
+      //   child: Text(
+      //     '已经到底啦～',
+      //     style: TextStyle(
+      //       color: Colors.grey,
+      //       fontSize: 14,
+      //     ),
+      //   ),
+      // ) : null,
     );
   }
 
@@ -815,21 +821,13 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
-                  Container(
-                    width: 50,
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: totalCount > 0 ? Colors.orange : Colors.grey.shade300,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Center(
-                      child: Icon(
-                        Icons.shopping_cart,
-                        color: Colors.white,
-                        size: 24,
+                  Image.asset(
+                        'assets/order_shop_car.webp',
+                        width: 50,
+                        height: 50,
+                        color: totalCount > 0 ? null : Colors.grey,
+                        colorBlendMode: totalCount > 0 ? null : BlendMode.modulate,
                       ),
-                    ),
-                  ),
                   if (totalCount > 0)
                     Positioned(
                       right: -3,
@@ -899,6 +897,8 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                 style: ElevatedButton.styleFrom(
                   backgroundColor: totalCount > 0 ? Colors.orange : Colors.grey.shade300,
                   foregroundColor: Colors.white,
+                  elevation: 0,
+                  shadowColor: Colors.transparent,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
                   ),
@@ -1057,15 +1057,28 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   Widget build(BuildContext context) {
     super.build(context); // 必须调用，因为使用了AutomaticKeepAliveClientMixin
     
-    return Column(
-      children: [
-        // 搜索 + 排序
-        _buildSearchAndFilter(),
-        // 主体内容区域
-        _buildMainContent(),
-        // 底部购物车
-        _buildBottomCart(),
-      ],
+    return GestureDetector(
+      // 添加全局点击监听器，处理键盘收起按钮点击
+      onTap: () {
+        // 当用户点击其他地方时，释放搜索框焦点
+        if (_searchFocusNode.hasFocus) {
+          _searchFocusNode.unfocus();
+          FocusScope.of(context).unfocus();
+          // 强制隐藏键盘
+          SystemChannels.textInput.invokeMethod('TextInput.hide');
+        }
+      },
+      behavior: HitTestBehavior.translucent,
+      child: Column(
+        children: [
+          // 搜索 + 排序
+          _buildSearchAndFilter(),
+          // 主体内容区域
+          _buildMainContent(),
+          // 底部购物车
+          _buildBottomCart(),
+        ],
+      ),
     );
   }
 }
@@ -1269,27 +1282,47 @@ class _CartModalContent extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        '共${controller.totalCount}件',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
+                  Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Image.asset(
+                        'assets/order_shop_car.webp',
+                        width: 50,
+                        height: 50,
+                        color: controller.totalCount > 0 ? null : Colors.grey,
+                        colorBlendMode: controller.totalCount > 0 ? null : BlendMode.modulate,
+                      ),
+                  if (controller.totalCount > 0)
+                    Positioned(
+                      right: -3,
+                      top: -3,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: controller.totalCount > 99 ? 6 : 4,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        constraints: BoxConstraints(
+                          minWidth: 20,
+                          minHeight: 20,
+                        ),
+                        child: Text(
+                          '${controller.totalCount}',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
                         ),
                       ),
-                      Text(
-                        '￥${controller.totalPrice.toStringAsFixed(0)}',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.orange,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                ],
+              ),
+          
                   Spacer(),
                   ElevatedButton(
                     onPressed: () async {
@@ -1301,6 +1334,8 @@ class _CartModalContent extends StatelessWidget {
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.orange,
                       foregroundColor: Colors.white,
+                      elevation: 0,
+                      shadowColor: Colors.transparent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
@@ -1389,18 +1424,19 @@ class _CartItem extends StatelessWidget {
                           border: Border.all(color: Colors.grey[200] ?? Colors.grey.shade200),
                         ),
                         child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             ClipRRect(
                               borderRadius: BorderRadius.circular(6),
                               child: Image.network(
                                 cartItem.dish.image,
-                                width: 40,
-                                height: 40,
+                                width: 46,
+                                height: 46,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return Container(
-                                    width: 40,
-                                    height: 40,
+                                    width: 46,
+                                    height: 46,
                                     color: Colors.grey[300],
                                     child: Icon(Icons.restaurant, color: Colors.grey[600]),
                                   );
@@ -1489,18 +1525,18 @@ class _CartItem extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
             child: CachedNetworkImage(
               imageUrl: cartItem.dish.image,
-              width: 60,
-              height: 60,
+              width: 46,
+              height: 46,
               fit: BoxFit.cover,
               placeholder: (context, url) => Container(
-                width: 60,
-                height: 60,
+                width: 46,
+                height: 46,
                 color: Colors.grey.shade200,
                 child: Icon(Icons.image, color: Colors.grey),
               ),
               errorWidget: (context, url, error) => Container(
-                width: 60,
-                height: 60,
+                width: 46,
+                height: 46,
                 color: Colors.grey.shade200,
                 child: Icon(Icons.broken_image, color: Colors.grey),
               ),
@@ -1510,50 +1546,95 @@ class _CartItem extends StatelessWidget {
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                // 1. 菜品名称
                 Text(
                   cartItem.dish.name,
                   style: TextStyle(
-                    fontSize: 16,
+                    fontSize: 14,
+                    height: 1,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 SizedBox(height: 4),
-                // 敏感物图标（只显示图标，不显示文字，去除背景）
+                // 2. 敏感物图标（只显示图标，不显示文字，去除背景）
                 if (cartItem.dish.allergens != null && cartItem.dish.allergens?.isNotEmpty == true)
-                  Row(
-                    children: (cartItem.dish.allergens ?? []).map((allergen) {
-                      return Container(
-                        margin: EdgeInsets.only(right: 4),
-                        child: allergen.icon != null
-                            ? CachedNetworkImage(
-                                imageUrl: allergen.icon ?? '',
-                                width: 16,
-                                height: 16,
-                                fit: BoxFit.contain,
-                                errorWidget: (context, url, error) => Icon(
-                                  Icons.warning,
-                                  size: 16,
-                                  color: Colors.orange,
-                                ),
-                              )
-                            : Icon(
-                                Icons.warning,
-                                size: 16,
-                                color: Colors.orange,
-                              ),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 2,
+                    children: (cartItem.dish.allergens ?? []).where((allergen) => 
+                      allergen.icon != null && allergen.icon!.isNotEmpty
+                    ).map((allergen) {
+                      return CachedNetworkImage(
+                        imageUrl: allergen.icon!,
+                        width: 12,
+                        height: 12,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => SizedBox.shrink(),
+                        errorWidget: (context, url, error) => SizedBox.shrink(),
                       );
                     }).toList(),
                   ),
-                SizedBox(height: 8),
-                // 价格显示（单价）
-                Text(
-                  '￥${cartItem.dish.price.toStringAsFixed(0)}/份',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                // 3. 标签（tags）
+                if (cartItem.dish.tags != null && cartItem.dish.tags?.isNotEmpty == true)
+                  Padding(
+                    padding: EdgeInsets.only(top: 6),
+                    child: Wrap(
+                      spacing: 4,
+                      runSpacing: 2,
+                      children: (cartItem.dish.tags ?? []).where((tag) => 
+                        tag.isNotEmpty
+                      ).take(3).map((tag) {
+                        return Container(
+                          padding: EdgeInsets.symmetric(horizontal: 4),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.orange[700]!),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            tag,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.orange[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
+                SizedBox(height: 8),
+                // 4. 价格显示（单价）：￥（8pt 000000）价格（16pt 000000）/份（6pt #999999）
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      "￥",
+                      style: TextStyle(
+                        fontSize: 8,
+                        color: Color(0xFF000000),
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                    Text(
+                      "${cartItem.dish.price.toStringAsFixed(0)}",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Color(0xFF000000),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      "/份",
+                      style: TextStyle(
+                        fontSize: 6,
+                        color: Color(0xFF999999),
+                        fontWeight: FontWeight.normal,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),

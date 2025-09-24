@@ -1072,15 +1072,17 @@ class OrderController extends GetxController {
   // ========== 已点订单相关方法 ==========
 
   /// 加载当前订单数据
-  Future<void> loadCurrentOrder({int retryCount = 0, int maxRetries = 3, bool showRetryDialog = false}) async {
+  Future<void> loadCurrentOrder({int retryCount = 0, int maxRetries = 3, bool showRetryDialog = false, bool showLoading = true}) async {
     if (table.value?.tableId == null) {
       logDebug('❌ 桌台ID为空，无法加载已点订单', tag: OrderConstants.logTag);
       return;
     }
 
     try {
-      isLoadingOrdered.value = true;
-      logDebug('📋 开始加载已点订单数据... (重试次数: $retryCount)', tag: OrderConstants.logTag);
+      if (showLoading) {
+        isLoadingOrdered.value = true;
+      }
+      logDebug('📋 开始加载已点订单数据... (重试次数: $retryCount, 显示loading: $showLoading)', tag: OrderConstants.logTag);
 
       final result = await _orderApi.getCurrentOrder(
         tableId: table.value!.tableId.toString(),
@@ -1123,7 +1125,9 @@ class OrderController extends GetxController {
     } finally {
       // 只有在不需要重试时才设置loading状态为false
       if (retryCount >= maxRetries || currentOrder.value != null) {
-        isLoadingOrdered.value = false;
+        if (showLoading) {
+          isLoadingOrdered.value = false;
+        }
       }
     }
   }

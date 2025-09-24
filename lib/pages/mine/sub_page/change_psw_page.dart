@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/mine/sub_page/change_psw_controller.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
+import 'package:order_app/utils/keyboard_utils.dart';
 
 class ChangePasswordPage extends StatelessWidget {
   final ChangePasswordController controller = Get.put(
@@ -12,9 +13,10 @@ class ChangePasswordPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('修改密码')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      body: KeyboardUtils.buildDismissiblePage(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
           children: [
             // 新密码输入区域
             Column(
@@ -175,6 +177,7 @@ class ChangePasswordPage extends StatelessWidget {
               ),
             ),
           ],
+        ),
         ),
       ),
     );

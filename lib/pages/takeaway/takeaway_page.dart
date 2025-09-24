@@ -11,6 +11,7 @@ import 'takeaway_controller.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/utils/restaurant_refresh_indicator.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
+import 'package:order_app/utils/keyboard_utils.dart';
 
 class TakeawayPage extends StatelessWidget {
   final TakeawayController controller = Get.put(TakeawayController());
@@ -25,22 +26,24 @@ class TakeawayPage extends StatelessWidget {
       child: Scaffold(
         backgroundColor: Color(0xFFF9F9F9),
         appBar: CenteredTabBar(tabs: ['未结账', '已结账']),
-        body: Column(
-          children: [
-            // 搜索框
-            _buildSearchBar(),
-            // Tab内容
-            Expanded(
-              child: TabBarView(
-                children: [
-                  // 未结账 Tab
-                  _buildOrderList(0),
-                  // 已结账 Tab
-                  _buildOrderList(1),
-                ],
+        body: KeyboardUtils.buildDismissiblePage(
+          child: Column(
+            children: [
+              // 搜索框
+              _buildSearchBar(),
+              // Tab内容
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    // 未结账 Tab
+                    _buildOrderList(0),
+                    // 已结账 Tab
+                    _buildOrderList(1),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
         floatingActionButton: _buildFloatingActionButton(),
       ),

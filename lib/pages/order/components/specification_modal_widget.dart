@@ -15,7 +15,7 @@ class SpecificationModalWidget {
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.symmetric(horizontal: 20),
         child: Container(
-          height: 420,
+          height: MediaQuery.of(context).size.height * 0.6, // 使用屏幕高度的60%
           child: _SpecificationModalContent(dish: dish),
         ),
       ),
@@ -40,11 +40,48 @@ class _SpecificationModalContentState
   Map<int, List<int>> selectedOptions = {}; // 规格ID -> 选中的选项ID列表
   int quantity = 1;
   double totalPrice = 0;
+  late TextEditingController _quantityController;
+  late FocusNode _quantityFocusNode;
 
   @override
   void initState() {
     super.initState();
     totalPrice = widget.dish.price;
+    _quantityController = TextEditingController(text: '$quantity');
+    _quantityFocusNode = FocusNode();
+    
+    // 监听焦点变化，处理键盘抬起时的偏移和光标释放
+    _quantityFocusNode.addListener(() {
+      if (_quantityFocusNode.hasFocus) {
+        // 键盘弹起时，延迟一点时间让弹窗向上偏移
+        Future.delayed(Duration(milliseconds: 300), () {
+          if (mounted) {
+            // 滚动到输入框位置，确保不被键盘遮挡
+            Scrollable.ensureVisible(
+              _quantityFocusNode.context!,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
+        });
+      } else {
+        // 焦点丢失时，确保光标完全释放
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) {
+            // 强制清除焦点，确保光标消失
+            FocusScope.of(context).unfocus();
+            _quantityFocusNode.unfocus();
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _quantityController.dispose();
+    _quantityFocusNode.dispose();
+    super.dispose();
   }
 
   @override
@@ -296,6 +333,21 @@ class _SpecificationModalContentState
     return specs.join(', ');
   }
 
+  /// 从输入框更新数量
+  void _updateQuantityFromInput(String value) {
+    final inputValue = int.tryParse(value);
+    if (inputValue != null && inputValue > 0) {
+      setState(() {
+        quantity = inputValue;
+        _quantityController.text = '$quantity';
+      });
+    } else {
+      // 输入无效，恢复原值
+      _quantityController.text = '$quantity';
+      GlobalToast.error('请输入有效的数量');
+    }
+  }
+
   /// 构建底部区域（数量选择 + 购物车按钮）
   Widget _buildBottomSection() {
     return Container(
@@ -325,6 +377,7 @@ class _SpecificationModalContentState
                   if (quantity > 1) {
                     setState(() {
                       quantity--;
+                      _quantityController.text = '$quantity';
                     });
                   }
                 },
@@ -336,15 +389,50 @@ class _SpecificationModalContentState
                 ),
               ),
               SizedBox(width: 10),
-              Text(
-                '$quantity',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              // 可编辑的数量输入框
+              GestureDetector(
+                onTap: () {
+                  _quantityFocusNode.requestFocus();
+                },
+                child: Container(
+                  width: 40,
+                  height: 24,
+                  child: TextField(
+                    controller: _quantityController,
+                    focusNode: _quantityFocusNode,
+                    textAlign: TextAlign.center,
+                    keyboardType: TextInputType.number,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                    decoration: InputDecoration(
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
+                    ),
+                    cursorColor: Colors.black54,
+                    showCursor: true,
+                    enableInteractiveSelection: false,
+                    onSubmitted: (value) {
+                      _updateQuantityFromInput(value);
+                      // 提交后释放焦点
+                      _quantityFocusNode.unfocus();
+                      FocusScope.of(context).unfocus();
+                    },
+                    onChanged: (value) {
+                      // 实时更新显示，但只在提交时验证
+                    },
+                  ),
+                ),
               ),
               SizedBox(width: 10),
               GestureDetector(
                 onTap: () {
                   setState(() {
                     quantity++;
+                    _quantityController.text = '$quantity';
                   });
                 },
                 child: SizedBox(

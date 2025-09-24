@@ -59,20 +59,24 @@ class DishItemWidget extends StatelessWidget {
                   height: 100,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // 菜品名称
-                      Text(
-                        dish.name,
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                        ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // 菜品名称
+                          Text(
+                            dish.name,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          // 过敏图标
+                          _buildAllergenIcons(),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      // 过敏图标
-                      _buildAllergenIcons(),
-                      const SizedBox(height: 6),
-                      Spacer(),
                       // 价格和操作按钮
                       _buildPriceAndActions(count),
                     ],
@@ -145,16 +149,14 @@ class DishItemWidget extends StatelessWidget {
             spacing: 4,
             runSpacing: 2,
             children: validAllergens.map((allergen) {
-              return Container(
-                child: CachedNetworkImage(
+              return CachedNetworkImage(
                   imageUrl: allergen.icon!,
-                  width: 16,
-                  height: 16,
+                  width: 12,
+                  height: 12,
                   fit: BoxFit.contain,
                   placeholder: (context, url) => SizedBox.shrink(),
                   errorWidget: (context, url, error) => SizedBox.shrink(),
-                ),
-              );
+                );
             }).toList(),
           ),
         );
@@ -169,12 +171,18 @@ class DishItemWidget extends StatelessWidget {
       ).toList();
       
       if (validTags.isNotEmpty) {
+        widgets.add(SizedBox(height: 8,));
         widgets.add(
           Wrap(
             spacing: 4,
             runSpacing: 2,
             children: validTags.take(3).map((tag) {
               return Container(
+                padding: EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.orange[700]!),
+                  borderRadius: BorderRadius.circular(4),
+                ),
                 child: Text(
                   tag,
                   style: TextStyle(
@@ -205,13 +213,28 @@ class DishItemWidget extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(
-          "￥${dish.price.toStringAsFixed(0)}",
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.orange,
-          ),
+        // 价格显示：￥（8pt 000000）价格（16pt 000000）
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              "￥",
+              style: TextStyle(
+                fontSize: 8,
+                color: Color(0xFF000000),
+                fontWeight: FontWeight.normal,
+              ),
+            ),
+            Text(
+              "${dish.price.toStringAsFixed(0)}",
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF000000),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
         ),
         Spacer(),
         SizedBox(width: 10),

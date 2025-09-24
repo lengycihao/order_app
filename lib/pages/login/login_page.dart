@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:order_app/pages/login/login_controller.dart';
 import 'package:get/get.dart';
 import 'package:order_app/utils/screen_adaptation.dart';
+import 'package:order_app/utils/keyboard_utils.dart';
 
 class LoginPage extends StatefulWidget {
   LoginPage({Key? key}) : super(key: key);
@@ -41,11 +42,12 @@ class _LoginPageState extends State<LoginPage> {
 
     return Scaffold(
       resizeToAvoidBottomInset: false, // 禁用系统的键盘避让
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          // 背景图
-          Image.asset('assets/order_login_bg.webp', fit: BoxFit.cover),
+      body: KeyboardUtils.buildDismissiblePage(
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            // 背景图
+            Image.asset('assets/order_login_bg.webp', fit: BoxFit.cover),
           Positioned(
             top: 50,
             right: 30,
@@ -196,6 +198,8 @@ class _LoginPageState extends State<LoginPage> {
                             controller: controller.usernameController,
                             cursorHeight: 16,
                             cursorColor: Colors.black54,
+                            showCursor: true,
+                            enableInteractiveSelection: false,
                             decoration: InputDecoration(
                               prefixIcon: Container(
                                 width: 48,
@@ -273,6 +277,8 @@ class _LoginPageState extends State<LoginPage> {
                               obscureText: controller.obscurePassword.value,
                               cursorHeight: 16,
                               cursorColor: Colors.black54,
+                              showCursor: true,
+                              enableInteractiveSelection: false,
                               decoration: InputDecoration(
                                 prefixIcon: Container(
                                   width: 48,
@@ -450,6 +456,7 @@ class _LoginPageState extends State<LoginPage> {
             return SizedBox.shrink();
           }),
         ],
+        ),
       ),
     );
   }

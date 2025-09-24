@@ -71,6 +71,18 @@ class _AllergenModalContent extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            // 说明文字
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                '筛选含有敏感物的菜品',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xff666666),
+                ),
+              ),
+            ),
             // 重新获取敏感物数据按钮
             if (controller.allAllergens.isEmpty && !controller.isLoadingAllergens.value)
               Container(
@@ -128,7 +140,6 @@ class _AllergenModalContent extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     color: Color(0xff333333),
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),

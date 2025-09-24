@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/nav/screen_nav_page.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
+import 'package:order_app/pages/table/table_controller.dart';
 
 /// 导航管理器 - 统一管理页面导航和返回逻辑
 class NavigationManager {
@@ -40,9 +41,30 @@ class NavigationManager {
     // 等待页面构建完成
     await Future.delayed(Duration(milliseconds: 300));
     
-    // 不刷新数据，直接显示现有数据，避免骨架图闪烁
-    // 如果需要刷新数据，可以在用户主动下拉刷新时进行
-    print('✅ 返回桌台页面，保持现有数据显示');
+    // 执行隐式刷新，不显示骨架图
+    await _performImplicitRefresh();
+    
+    print('✅ 返回桌台页面，执行隐式刷新完成');
+  }
+  
+  /// 执行隐式刷新桌台数据
+  /// 不显示加载状态和骨架图，静默更新数据
+  static Future<void> _performImplicitRefresh() async {
+    try {
+      // 导入TableController
+      final tableController = Get.find<TableController>();
+      
+      // 获取当前选中的tab索引
+      final currentTabIndex = tableController.selectedTab.value;
+      
+      // 执行隐式刷新当前tab的数据
+      await tableController.refreshDataForTab(currentTabIndex);
+      
+      print('✅ 桌台数据隐式刷新完成 - Tab: $currentTabIndex');
+    } catch (e) {
+      print('⚠️ 隐式刷新桌台数据失败: $e');
+      // 如果TableController不存在，说明是首次进入，不需要刷新
+    }
   }
   
   /// 从选择菜单页面跳转到点餐页面
