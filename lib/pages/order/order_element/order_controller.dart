@@ -254,12 +254,68 @@ class OrderController extends GetxController {
         // 设置失败回调
         _wsDebounceManager.setFailureCallback(_onWebSocketDebounceFailed);
         logDebug('📋 桌台ID: $tableId ✅ 桌台 $tableName WebSocket连接初始化成功', tag: OrderConstants.logTag);
+        
+        // 启动连接状态监控
+        _startWebSocketStatusMonitoring();
       } else {
         logDebug('📋 桌台ID: $tableId ❌ 桌台 $tableName WebSocket连接初始化失败', tag: OrderConstants.logTag);
+        // 连接失败，尝试重连
+        _scheduleWebSocketReconnect();
       }
     } catch (e) {
       logDebug('❌ WebSocket初始化异常: $e', tag: OrderConstants.logTag);
       isWebSocketConnected.value = false;
+      // 异常情况下也尝试重连
+      _scheduleWebSocketReconnect();
+    }
+  }
+  
+  /// 启动WebSocket连接状态监控
+  void _startWebSocketStatusMonitoring() {
+    Timer.periodic(Duration(seconds: 5), (timer) {
+      if (!isWebSocketConnected.value) {
+        logDebug('⚠️ WebSocket连接已断开，尝试重连', tag: OrderConstants.logTag);
+        _reconnectWebSocket();
+      }
+    });
+  }
+  
+  /// 安排WebSocket重连
+  void _scheduleWebSocketReconnect() {
+    Timer(Duration(seconds: 3), () {
+      if (table.value?.tableId != null) {
+        logDebug('🔄 尝试重新连接WebSocket...', tag: OrderConstants.logTag);
+        _reconnectWebSocket();
+      }
+    });
+  }
+  
+  /// 重连WebSocket
+  Future<void> _reconnectWebSocket() async {
+    if (table.value?.tableId == null) return;
+    
+    try {
+      final tableId = table.value!.tableId.toString();
+      final token = _getUserToken();
+      
+      logDebug('🔄 重新连接桌台 $tableId 的WebSocket...', tag: OrderConstants.logTag);
+      
+      final success = await _wsManager.initializeTableConnection(
+        tableId: tableId,
+        token: token,
+      );
+      
+      isWebSocketConnected.value = success;
+      
+      if (success) {
+        logDebug('✅ WebSocket重连成功', tag: OrderConstants.logTag);
+      } else {
+        logDebug('❌ WebSocket重连失败，3秒后再次尝试', tag: OrderConstants.logTag);
+        _scheduleWebSocketReconnect();
+      }
+    } catch (e) {
+      logDebug('❌ WebSocket重连异常: $e', tag: OrderConstants.logTag);
+      _scheduleWebSocketReconnect();
     }
   }
 
@@ -310,18 +366,21 @@ class OrderController extends GetxController {
   }
 
   /// 从API加载购物车数据
-  Future<void> _loadCartFromApi({int retryCount = 0}) async {
+  Future<void> _loadCartFromApi({int retryCount = 0, bool silent = false}) async {
     if (table.value?.tableId == null) {
       logDebug('❌ 桌台ID为空，无法加载购物车数据', tag: OrderConstants.logTag);
       return;
     }
     
-    if (isLoadingCart.value) {
+    if (isLoadingCart.value && !silent) {
       logDebug('⏳ 购物车数据正在加载中，跳过重复请求', tag: OrderConstants.logTag);
       return;
     }
     
-    isLoadingCart.value = true;
+    // 静默刷新时不设置loading状态，避免显示骨架图
+    if (!silent) {
+      isLoadingCart.value = true;
+    }
     try {
       final tableId = table.value!.tableId.toString();
       final cartData = await _cartManager.loadCartFromApi(tableId);
@@ -335,7 +394,7 @@ class OrderController extends GetxController {
           logDebug('⚠️ 购物车数据可能不稳定，2秒后重试 (${retryCount + 1}/2)', tag: OrderConstants.logTag);
           Future.delayed(Duration(seconds: 2), () {
             if (isLoadingCart.value == false) {
-              _loadCartFromApi(retryCount: retryCount + 1);
+              _loadCartFromApi(retryCount: retryCount + 1, silent: silent);
             }
           });
         }
@@ -345,7 +404,10 @@ class OrderController extends GetxController {
     } catch (e) {
       logDebug('❌ 购物车数据加载异常: $e', tag: OrderConstants.logTag);
     } finally {
-      isLoadingCart.value = false;
+      // 静默刷新时不重置loading状态
+      if (!silent) {
+        isLoadingCart.value = false;
+      }
     }
   }
 
@@ -418,11 +480,11 @@ class OrderController extends GetxController {
         _loadDishesFromData(result.data!);
       } else {
         logDebug('❌ 获取菜品数据失败: ${result.msg}', tag: OrderConstants.logTag);
-        Toast.error(Get.context!, result.msg ?? '获取菜品数据失败');
+        GlobalToast.error(result.msg ?? '获取菜品数据失败');
       }
     } catch (e) {
       logDebug('❌ 获取菜品数据异常: $e', tag: OrderConstants.logTag);
-      Toast.error(Get.context!, '获取菜品数据异常');
+      GlobalToast.error('获取菜品数据异常');
     } finally {
       isLoadingDishes.value = false;
     }
@@ -487,10 +549,36 @@ class OrderController extends GetxController {
       cart.refresh();
       update();
       
-      // 使用本地购物车管理器发送WebSocket消息
-      _localCartManager.setDishQuantity(newCartItem, 1);
+      // 直接发送WebSocket添加消息（不通过LocalCartManager）
+      _sendAddDishWebSocket(dish, selectedOptions);
       
       logDebug('➕ 本地添加新菜品: ${dish.name}', tag: OrderConstants.logTag);
+    }
+  }
+  
+  /// 发送添加菜品的WebSocket消息
+  Future<void> _sendAddDishWebSocket(Dish dish, Map<String, List<String>>? selectedOptions) async {
+    try {
+      logDebug('🆕 发送WebSocket添加菜品: ${dish.name}', tag: OrderConstants.logTag);
+      
+      final success = await _wsHandler.sendAddDish(
+        dish: dish,
+        quantity: 1,
+        selectedOptions: selectedOptions,
+      );
+      
+      if (success) {
+        logDebug('✅ WebSocket添加菜品成功: ${dish.name}', tag: OrderConstants.logTag);
+        // WebSocket发送成功，等待服务器确认
+        // 服务器会通过cart_add消息通知我们，然后我们会在_loadCartFromApi中获取完整的购物车数据
+      } else {
+        logDebug('❌ WebSocket添加菜品失败: ${dish.name}', tag: OrderConstants.logTag);
+        // WebSocket失败，显示错误提示
+        GlobalToast.error('添加菜品失败，请重试');
+      }
+    } catch (e) {
+      logDebug('❌ 发送WebSocket添加菜品异常: $e', tag: OrderConstants.logTag);
+      GlobalToast.error('添加菜品异常，请重试');
     }
   }
 
@@ -505,12 +593,45 @@ class OrderController extends GetxController {
   void _removeCartItem(CartItem cartItem) {
     if (!cart.containsKey(cartItem)) return;
     
+    // 开始loading状态
+    isCartOperationLoading.value = true;
+    
     final currentQuantity = cart[cartItem]!;
     
     // 使用本地购物车管理器进行本地优先的增减操作
     _localCartManager.removeDishQuantity(cartItem, currentQuantity);
     
     logDebug('➖ 本地减少购物车项数量: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+    
+    // 检查WebSocket连接状态
+    if (!isWebSocketConnected.value) {
+      logDebug('⚠️ WebSocket未连接，无法同步减少操作', tag: OrderConstants.logTag);
+      GlobalToast.warning('网络连接异常，操作可能未同步到服务器');
+      isCartOperationLoading.value = false;
+      return;
+    }
+    
+    // 检查是否有必要的ID
+    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+      logDebug('⚠️ 减少的菜品缺少ID，无法同步到WebSocket: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+      isCartOperationLoading.value = false;
+      return;
+    }
+    
+    // 同步到WebSocket
+    _wsHandler.sendUpdateQuantity(cartItem: cartItem, quantity: currentQuantity - 1).then((success) {
+      if (success) {
+        logDebug('✅ 减少菜品数量同步到WebSocket成功: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+      } else {
+        logDebug('❌ 减少菜品数量同步到WebSocket失败', tag: OrderConstants.logTag);
+        GlobalToast.error('减少菜品失败，请重试');
+      }
+      isCartOperationLoading.value = false;
+    }).catchError((error) {
+      logDebug('❌ 减少菜品数量同步到WebSocket异常: $error', tag: OrderConstants.logTag);
+      GlobalToast.error('减少菜品异常，请重试');
+      isCartOperationLoading.value = false;
+    });
   }
 
   void deleteCartItem(CartItem cartItem) {
@@ -523,10 +644,40 @@ class OrderController extends GetxController {
     _lastOperationCartItem = cartItem;
     _lastOperationQuantity = 0; // 删除操作的目标数量为0
     
+    // 从本地购物车中移除
     cart.remove(cartItem);
-    _wsHandler.sendDeleteDish(cartItem);
     cart.refresh();
     update();
+    
+    // 检查WebSocket连接状态
+    if (!isWebSocketConnected.value) {
+      logDebug('⚠️ WebSocket未连接，无法同步删除操作', tag: OrderConstants.logTag);
+      GlobalToast.warning('网络连接异常，删除操作可能未同步到服务器');
+      isCartOperationLoading.value = false;
+      return;
+    }
+    
+    // 检查是否有必要的ID
+    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+      logDebug('⚠️ 删除的菜品缺少ID，无法同步到WebSocket: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+      isCartOperationLoading.value = false;
+      return;
+    }
+    
+    // 同步到WebSocket
+    _wsHandler.sendDeleteDish(cartItem).then((success) {
+      if (success) {
+        logDebug('✅ 删除菜品同步到WebSocket成功: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+      } else {
+        logDebug('❌ 删除菜品同步到WebSocket失败', tag: OrderConstants.logTag);
+        GlobalToast.error('删除菜品失败，请重试');
+      }
+      isCartOperationLoading.value = false;
+    }).catchError((error) {
+      logDebug('❌ 删除菜品同步到WebSocket异常: $error', tag: OrderConstants.logTag);
+      GlobalToast.error('删除菜品异常，请重试');
+      isCartOperationLoading.value = false;
+    });
     
     logDebug('🗑️ 完全删除购物车项: ${cartItem.dish.name}', tag: OrderConstants.logTag);
   }
@@ -534,12 +685,45 @@ class OrderController extends GetxController {
   void addCartItemQuantity(CartItem cartItem) {
     if (!cart.containsKey(cartItem)) return;
     
+    // 开始loading状态
+    isCartOperationLoading.value = true;
+    
     final currentQuantity = cart[cartItem]!;
     
     // 使用本地购物车管理器进行本地优先的增减操作
     _localCartManager.addDishQuantity(cartItem, currentQuantity);
     
     logDebug('➕ 本地增加购物车项数量: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+    
+    // 检查WebSocket连接状态
+    if (!isWebSocketConnected.value) {
+      logDebug('⚠️ WebSocket未连接，无法同步增加操作', tag: OrderConstants.logTag);
+      GlobalToast.warning('网络连接异常，操作可能未同步到服务器');
+      isCartOperationLoading.value = false;
+      return;
+    }
+    
+    // 检查是否有必要的ID
+    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+      logDebug('⚠️ 增加的菜品缺少ID，无法同步到WebSocket: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+      isCartOperationLoading.value = false;
+      return;
+    }
+    
+    // 同步到WebSocket
+    _wsHandler.sendUpdateQuantity(cartItem: cartItem, quantity: currentQuantity + 1).then((success) {
+      if (success) {
+        logDebug('✅ 增加菜品数量同步到WebSocket成功: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+      } else {
+        logDebug('❌ 增加菜品数量同步到WebSocket失败', tag: OrderConstants.logTag);
+        GlobalToast.error('增加菜品失败，请重试');
+      }
+      isCartOperationLoading.value = false;
+    }).catchError((error) {
+      logDebug('❌ 增加菜品数量同步到WebSocket异常: $error', tag: OrderConstants.logTag);
+      GlobalToast.error('增加菜品异常，请重试');
+      isCartOperationLoading.value = false;
+    });
   }
 
   /// 手动更新购物车项数量
@@ -829,6 +1013,13 @@ class OrderController extends GetxController {
 
   /// 本地WebSocket发送回调
   void _onLocalWebSocketSend(CartItem cartItem, int quantity) {
+    // 检查是否有必要的ID
+    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+      logDebug('⚠️ 新菜品缺少ID，跳过WebSocket同步: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+      // 对于新菜品，应该通过addToCart方法处理，这里不应该被调用
+      return;
+    }
+    
     // 使用WebSocket防抖管理器发送消息
     if (quantity > 0) {
       _wsDebounceManager.debounceUpdateQuantity(
@@ -860,7 +1051,7 @@ class OrderController extends GetxController {
 
   void _handleCartRefresh() {
     logDebug('🔄 收到服务器刷新购物车消息', tag: OrderConstants.logTag);
-    _loadCartFromApi();
+    _loadCartFromApi(silent: true);
   }
 
   void _handleCartAdd() {
@@ -879,14 +1070,14 @@ class OrderController extends GetxController {
     logDebug('🗑️ 收到服务器购物车删除消息', tag: OrderConstants.logTag);
     // 停止loading状态
     isCartOperationLoading.value = false;
-    _cartManager.refreshCartFromServer(_loadCartFromApi);
+    _cartManager.refreshCartFromServer(() => _loadCartFromApi(silent: true));
   }
 
   void _handleCartClear() {
     logDebug('🧹 收到服务器购物车清空消息', tag: OrderConstants.logTag);
     // 停止loading状态
     isCartOperationLoading.value = false;
-    _cartManager.refreshCartFromServer(_loadCartFromApi);
+    _cartManager.refreshCartFromServer(() => _loadCartFromApi(silent: true));
   }
 
   void _handlePeopleCountChange(int adultCount, int childCount) {
@@ -1072,9 +1263,9 @@ class OrderController extends GetxController {
     logDebug('✅ 点餐页面数据刷新完成', tag: OrderConstants.logTag);
   }
 
-  Future<void> forceRefreshCart() async {
+  Future<void> forceRefreshCart({bool silent = false}) async {
     logDebug('🔄 强制刷新购物车数据', tag: OrderConstants.logTag);
-    await _loadCartFromApi();
+    await _loadCartFromApi(silent: silent);
   }
   
   void forceRefreshCartUI() {
@@ -1092,7 +1283,7 @@ class OrderController extends GetxController {
     super.onReady();
     Future.delayed(Duration(milliseconds: 500), () {
       if (table.value?.tableId != null) {
-        forceRefreshCart().then((_) {
+        forceRefreshCart(silent: true).then((_) {
           cart.refresh();
           update();
         });

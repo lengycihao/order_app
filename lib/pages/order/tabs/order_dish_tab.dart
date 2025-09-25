@@ -362,7 +362,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                   // 根据状态显示桌台信息或搜索框
                   if (!_showSearchField) ...[
                     // 桌台号和人数信息
-                    Flexible(
+                    Expanded(
                        child: Text(
                         '桌子:${controller.table.value?.tableName ?? 'null'} | 大人:${controller.adultCount.value} 小孩:${controller.childCount.value}',
                         style: TextStyle(
@@ -754,12 +754,25 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       Navigator.of(context).pop();
       
       if (result['success'] == true) {
-        // 下单成功，刷新已点订单数据后切换到已点页面
-        await controller.loadCurrentOrder();
-        _switchToOrderedTab();
+        // 下单成功，显示成功提示
+        await OrderSubmitDialog.showSuccess(
+          context,
+          title: '下单成功',
+          message: '订单已提交成功！',
+          onClose: () {
+            Navigator.of(context).pop();
+            // 刷新已点订单数据后切换到已点页面
+            controller.loadCurrentOrder();
+            _switchToOrderedTab();
+          },
+        );
       } else {
         // 下单失败，显示错误弹窗
-        await OrderSubmitDialog.showError(context);
+        await OrderSubmitDialog.showError(
+          context,
+          title: '下单失败',
+          message: result['message'] ?? '订单提交失败，请重试',
+        );
       }
     } catch (e) {
       print('❌ 提交订单异常: $e');
@@ -793,10 +806,6 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       builder: (controller) {
         final totalCount = controller.totalCount;
         final totalPrice = controller.totalPrice;
-        
-        if (totalCount == 0) {
-          return const SizedBox.shrink();
-        }
         
         return Container(
           height: 60,
@@ -870,7 +879,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                       ),
                     ),
                     Text(
-                      totalPrice.toStringAsFixed(0),
+                      totalCount > 0 ? totalPrice.toStringAsFixed(0) : '0',
                       style: TextStyle(
                         fontSize: 24,
                         height: 1,

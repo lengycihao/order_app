@@ -1,6 +1,5 @@
 import 'package:json_annotation/json_annotation.dart';
 import 'cart_item_model.dart';
-import 'package:lib_base/lib_base.dart';
 
 part 'cart_info_model.g.dart';
 

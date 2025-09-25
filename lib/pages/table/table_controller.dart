@@ -187,16 +187,16 @@ class TableController extends GetxController {
       );
 
       if (result.isSuccess) {
-        Toast.success(Get.context!, '桌台状态更新成功');
+        GlobalToast.success('桌台状态更新成功');
         // 刷新当前tab的桌台数据
         await fetchDataForTab(selectedTab.value);
       } else {
-        Toast.error(Get.context!, result.msg ?? '状态更新失败');
+        GlobalToast.error(result.msg ?? '状态更新失败');
       }
     } catch (e) {
       // 关闭加载对话框
       Get.back();
-      Toast.error(Get.context!, '网络错误: $e');
+      GlobalToast.error('网络错误: $e');
     }
   }
 

@@ -105,6 +105,12 @@ class WebSocketDebounceManager {
     
     switch (operation.type) {
       case OperationType.update:
+        // 检查是否有必要的ID，如果没有则跳过WebSocket同步
+        if (operation.cartItem!.cartSpecificationId == null || operation.cartItem!.cartId == null) {
+          logDebug('⚠️ 新菜品缺少ID，跳过WebSocket防抖操作: ${operation.cartItem!.dish.name}', tag: _logTag);
+          return;
+        }
+        
         _wsHandler.sendUpdateQuantity(
           cartItem: operation.cartItem!,
           quantity: operation.quantity!,
@@ -124,6 +130,12 @@ class WebSocketDebounceManager {
         });
         break;
       case OperationType.decrease:
+        // 检查是否有必要的ID，如果没有则跳过WebSocket同步
+        if (operation.cartItem!.cartSpecificationId == null || operation.cartItem!.cartId == null) {
+          logDebug('⚠️ 新菜品缺少ID，跳过WebSocket防抖操作: ${operation.cartItem!.dish.name}', tag: _logTag);
+          return;
+        }
+        
         _wsHandler.sendDecreaseQuantity(
           cartItem: operation.cartItem!,
           incrQuantity: operation.incrQuantity!,

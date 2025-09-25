@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart' as gg;
-import 'package:order_app/utils/toast_component.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 /// 401未授权错误处理器
 /// 提供统一的401错误处理逻辑，支持自定义配置

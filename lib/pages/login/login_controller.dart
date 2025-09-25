@@ -139,12 +139,45 @@ class LoginController extends GetxController {
     return languages[selectedLanguageIndex.value]['name'] ?? '中文(简体)';
   }
 
+  // 显示Toast消息
+  void _showToast(String message, {required bool isError}) {
+    try {
+      // 首先尝试使用GlobalToast
+      if (isError) {
+        GlobalToast.error(message);
+      } else {
+        GlobalToast.success(message);
+      }
+    } catch (e) {
+      // 如果GlobalToast失败，使用Get.snackbar作为备选方案
+      Get.snackbar(
+        '',
+        message,
+        backgroundColor: isError ? Colors.red : Colors.green,
+        colorText: Colors.white,
+        icon: Icon(
+          isError ? Icons.error : Icons.check_circle,
+          color: Colors.white,
+        ),
+        duration: const Duration(seconds: 2),
+        snackPosition: SnackPosition.TOP,
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
+        isDismissible: true,
+        dismissDirection: DismissDirection.horizontal,
+        forwardAnimationCurve: Curves.easeOutBack,
+        reverseAnimationCurve: Curves.easeInBack,
+        animationDuration: const Duration(milliseconds: 300),
+      );
+    }
+  }
+
   void login() {
     final username = usernameController.text.trim();
     final password = passwordController.text.trim();
 
     if (username.isEmpty || password.isEmpty) {
-      Toast.error(Get.context!, '账号或密码不能为空');
+      _showToast('账号或密码不能为空', isError: true);
       return;
     }
     _loginWithApi(name: username, psw: password);
@@ -165,13 +198,13 @@ class LoginController extends GetxController {
       if (result.isSuccess) {
         // 登录成功后保存账号和密码
         await _saveRecentAccount(name, psw);
-        Toast.success(Get.context!, '登录成功');
+        _showToast('登录成功', isError: false);
         Get.offAll(() => ScreenNavPage());
       } else {
-        Toast.error(Get.context!, result.msg ?? '登录失败');
+        _showToast(result.msg ?? '登录失败', isError: true);
       }
     } catch (e) {
-      Toast.error(Get.context!, '登录失败: $e');
+      _showToast('登录失败: $e', isError: true);
     }
   }
 }

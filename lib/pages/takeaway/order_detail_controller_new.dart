@@ -31,7 +31,7 @@ class OrderDetailControllerNew extends GetxController {
       // 延迟显示Toast，确保页面已经加载完成
       Future.delayed(const Duration(milliseconds: 100), () {
         if (Get.context != null) {
-          Toast.error(Get.context!, '订单ID不能为空');
+          GlobalToast.error('订单ID不能为空');
         }
       });
     }
@@ -44,7 +44,7 @@ class OrderDetailControllerNew extends GetxController {
       // 延迟显示Toast，确保页面已经加载完成
       Future.delayed(const Duration(milliseconds: 100), () {
         if (Get.context != null) {
-          Toast.error(Get.context!, '订单ID不能为空');
+          GlobalToast.error('订单ID不能为空');
         }
       });
       return;
@@ -77,26 +77,26 @@ class OrderDetailControllerNew extends GetxController {
           } else {
             logDebug('❌ dataJson为空，无法解析数据', tag: 'OrderDetailControllerNew');
             if (Get.context != null) {
-              Toast.error(Get.context!, '订单详情数据为空');
+              GlobalToast.error('订单详情数据为空');
             }
           }
         } catch (parseError) {
           logDebug('❌ 数据解析失败: $parseError', tag: 'OrderDetailControllerNew');
           logDebug('❌ 解析错误堆栈: ${parseError.toString()}', tag: 'OrderDetailControllerNew');
           if (Get.context != null) {
-            Toast.error(Get.context!, '数据解析失败: ${parseError.toString()}');
+            GlobalToast.error('数据解析失败: ${parseError.toString()}');
           }
         }
       } else {
         logDebug('❌ API请求失败: ${result.msg}', tag: 'OrderDetailControllerNew');
         if (Get.context != null) {
-          Toast.error(Get.context!, result.msg ?? '获取订单详情失败');
+          GlobalToast.error(result.msg ?? '获取订单详情失败');
         }
       }
     } catch (e) {
       logDebug('❌ 加载订单详情异常: $e', tag: 'OrderDetailControllerNew');
       if (Get.context != null) {
-        Toast.error(Get.context!, '获取订单详情异常');
+        GlobalToast.error('获取订单详情异常');
       }
     } finally {
       isLoading.value = false;
@@ -111,7 +111,7 @@ class OrderDetailControllerNew extends GetxController {
   /// 再来一单
   void reorder() {
     if (orderDetail.value?.details == null || orderDetail.value!.details!.isEmpty) {
-      Toast.error(Get.context!, '订单商品信息不完整，无法再来一单');
+      GlobalToast.error('订单商品信息不完整，无法再来一单');
       return;
     }
     
@@ -119,7 +119,7 @@ class OrderDetailControllerNew extends GetxController {
     // 1. 将订单中的商品添加到购物车
     // 2. 跳转到外卖页面或购物车页面
     
-    Toast.success(Get.context!, '商品已添加到购物车');
+    GlobalToast.success('商品已添加到购物车');
     
     // 暂时跳转到外卖页面
     Get.back();
@@ -129,18 +129,18 @@ class OrderDetailControllerNew extends GetxController {
   /// 联系商家
   void contactMerchant() {
     // TODO: 实现联系商家功能
-    Toast.info(Get.context!, '联系商家功能暂未开放');
+    GlobalToast.message('联系商家功能暂未开放');
   }
 
   /// 申请退款
   void requestRefund() {
     if (orderDetail.value?.isPaid != true) {
-      Toast.error(Get.context!, '只有已支付的订单才能申请退款');
+      GlobalToast.error('只有已支付的订单才能申请退款');
       return;
     }
     
     // TODO: 实现申请退款功能
-    Toast.info(Get.context!, '退款申请功能暂未开放');
+    GlobalToast.message('退款申请功能暂未开放');
   }
 
   /// 计算商品总价

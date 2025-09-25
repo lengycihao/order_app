@@ -8,7 +8,7 @@ import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:lib_base/logging/logging.dart';
-import 'package:order_app/utils/toast_component.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 class SelectMenuController extends GetxController {
   // 传入的数据

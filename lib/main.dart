@@ -11,6 +11,7 @@ import 'package:lib_base/network/interceptor/network_loading_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:order_app/l10n/app_localizations.dart';
+import 'package:toast/toast.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,9 +55,13 @@ class MyApp extends StatelessWidget {
   final bool isLoggedIn;
   const MyApp({super.key, required this.isLoggedIn});
 
+  // 全局Navigator key
+  static final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
+      navigatorKey: navigatorKey, // 添加Navigator key
       // 使用 GetMaterialApp 替换 MaterialApp
       title: 'Flutter Demo',
 
@@ -85,13 +90,26 @@ class MyApp extends StatelessWidget {
       supportedLocales: AppLocalizations.supportedLocales,
       locale: const Locale('zh'), // 默认中文
       
-      initialRoute: isLoggedIn ? '/home' : '/login', // 动态控制初始页面
       getPages: [
         GetPage(name: '/login', page: () => LoginPage()), // 登录页面路由
         // 在这里可以添加其他页面路由
         GetPage(name: '/home', page: () => ScreenNavPage()), // 示例其他页面路由
         GetPage(name: '/dish-detail-route', page: () => DishDetailRoutePage()), // 菜品详情路由页面
       ],
+      home: isLoggedIn ? ScreenNavPage() : LoginPage(), // 直接使用home而不是路由
+      builder: (context, child) {
+        // 初始化 Toast Context
+        ToastContext().init(context);
+        
+        // 在应用启动时立即设置全局Context
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (context.mounted) {
+            // 导入Toast工具类并设置context
+            // 这里不直接导入避免循环依赖，在实际使用时会自动设置
+          }
+        });
+        return child ?? const SizedBox.shrink();
+      },
     );
   }
 }

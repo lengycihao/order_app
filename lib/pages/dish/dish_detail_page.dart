@@ -50,10 +50,8 @@ class _DishDetailPageState extends State<DishDetailPage> {
                 children: [
                   // 菜品图片（紧贴顶部）
                   _buildDishImage(controller),
-                  // 菜品信息
-                  _buildDishInfo(controller),
-                  // 敏感物信息
-                  _buildAllergenSection(controller),
+                  // 菜品信息和敏感物
+                  _buildDishInfoWithAllergen(controller),
                   // 价格和数量控制
                   _buildPriceAndQuantity(controller),
                   const SizedBox(height: 100), // 给底部购物车留空间
@@ -151,8 +149,8 @@ class _DishDetailPageState extends State<DishDetailPage> {
     });
   }
 
-  /// 构建菜品信息
-  Widget _buildDishInfo(DishDetailController controller) {
+  /// 构建菜品信息和敏感物
+  Widget _buildDishInfoWithAllergen(DishDetailController controller) {
     return Obx(() {
       final dish = controller.dish.value;
       if (dish == null) return const SizedBox.shrink();
@@ -172,6 +170,44 @@ class _DishDetailPageState extends State<DishDetailPage> {
               ),
             ),
             const SizedBox(height: 8),
+            // 敏感物信息（紧接着菜品名称）
+            if (dish.allergens != null && dish.allergens!.isNotEmpty) ...[
+              const Text(
+                '敏感物',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF666666),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: dish.allergens!.map((allergen) {
+                  return Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (allergen.icon != null)
+                        CachedNetworkImage(
+                          imageUrl: allergen.icon!,
+                          width: 16,
+                          height: 16,
+                          fit: BoxFit.cover,
+                          errorWidget: (context, url, error) =>
+                              const Icon(Icons.warning, size: 16, color: Colors.orange),
+                        ),
+                      if (allergen.icon != null) const SizedBox(width: 4),
+                      Text(
+                        allergen.label ?? '',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF3D3D3D)),
+                      ),
+                    ],
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 16),
+            ],
             // 菜品描述
             if (dish.description != null && dish.description!.isNotEmpty) ...[
               Text(
@@ -183,60 +219,6 @@ class _DishDetailPageState extends State<DishDetailPage> {
               ),
               const SizedBox(height: 16),
             ],
-          ],
-        ),
-      );
-    });
-  }
-
-  /// 构建敏感物信息
-  Widget _buildAllergenSection(DishDetailController controller) {
-    return Obx(() {
-      final dish = controller.dish.value;
-      if (dish == null || dish.allergens == null || dish.allergens!.isEmpty) {
-        return const SizedBox.shrink();
-      }
-
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              '敏感物',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF666666),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 10,
-              runSpacing: 8,
-              children: dish.allergens!.map((allergen) {
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (allergen.icon != null)
-                      CachedNetworkImage(
-                        imageUrl: allergen.icon!,
-                        width: 16,
-                        height: 16,
-                        fit: BoxFit.cover,
-                        errorWidget: (context, url, error) =>
-                            const Icon(Icons.warning, size: 16, color: Colors.orange),
-                      ),
-                    if (allergen.icon != null) const SizedBox(width: 4),
-                    Text(
-                      allergen.label ?? '',
-                      style: const TextStyle(fontSize: 12, color: Color(0xFF3D3D3D)),
-                    ),
-                  ],
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
           ],
         ),
       );
@@ -293,10 +275,6 @@ class _DishDetailPageState extends State<DishDetailPage> {
       builder: (controller) {
         final totalCount = controller.totalCount;
         final totalPrice = controller.totalPrice;
-        
-        if (totalCount == 0) {
-          return const SizedBox.shrink();
-        }
         
         return Container(
           height: 60,
@@ -370,7 +348,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
                       ),
                     ),
                     Text(
-                      totalPrice.toStringAsFixed(0),
+                      totalCount > 0 ? totalPrice.toStringAsFixed(0) : '0',
                       style: TextStyle(
                         fontSize: 24,
                         height: 1,
@@ -386,10 +364,10 @@ class _DishDetailPageState extends State<DishDetailPage> {
                 onTap: _handleSubmitOrder,
                 child: Container(
                   width: 80,
-                  height: 36,
+                  height: 30,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFF4444),
-                    borderRadius: BorderRadius.circular(18),
+                    color: const Color(0xFFFF9027),
+                    borderRadius: BorderRadius.circular(15),
                   ),
                   child: const Center(
                     child: Text(

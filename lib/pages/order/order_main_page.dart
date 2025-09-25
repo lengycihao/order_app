@@ -80,12 +80,14 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
   /// Tab变化监听
   void _onTabChanged() {
     if (!_tabController.indexIsChanging) {
-      // 当切换到已点页面时，刷新已点订单数据
       if (_tabController.index == 1) {
-        // 只有在不是loading状态时才刷新，避免重复请求
+        // 切换到已点页面时，刷新已点订单数据
         if (!controller.isLoadingOrdered.value) {
           controller.loadCurrentOrder(showLoading: false);
         }
+      } else if (_tabController.index == 0) {
+        // 切换回菜单页面时，刷新购物车数据
+        controller.forceRefreshCart(silent: true);
       }
     }
   }
@@ -120,7 +122,7 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
     final currentTableId = controller.table.value?.tableId.toInt();
 
     if (currentTableId == null) {
-      Toast.error(context, '当前桌台信息错误');
+      GlobalToast.error('当前桌台信息错误');
       return;
     }
 
@@ -137,12 +139,12 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
         // 刷新点餐页面数据
         await controller.refreshOrderData();
 
-        Toast.success(context, '已成功更换菜单');
+        GlobalToast.success('已成功更换菜单');
       } else {
-        Toast.error(context, result.msg ?? '更换菜单失败');
+        GlobalToast.error(result.msg ?? '更换菜单失败');
       }
     } catch (e) {
-      Toast.error(context, '更换菜单操作异常：$e');
+      GlobalToast.error('更换菜单操作异常：$e');
     }
   }
 

@@ -125,21 +125,21 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const Text(
-                '选规格',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                ),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              '选规格',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
             ),
+          ),
             // 角标
             if (specCount > 0)
               Positioned(
@@ -179,20 +179,10 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
         final orderController = Get.find<OrderController>();
         orderController.addToCart(dish);
       },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.orange,
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: const Text(
-          '加入购物车',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
+      child: Image(
+        image: AssetImage('assets/order_add_num.webp'),
+        width: 22,
+        height: 22,
       ),
     );
   }

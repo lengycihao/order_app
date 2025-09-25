@@ -591,7 +591,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
   Future<void> _performChangeMenu() async {
     if (_selectedMenuId == null) {
       if (mounted) {
-        Toast.error(context, '请选择需要更换的菜单');
+        GlobalToast.error('请选择需要更换的菜单');
       }
       return;
     }
@@ -601,7 +601,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
 
     if (currentTableId == null) {
       if (mounted) {
-        Toast.error(context, '当前桌台信息错误');
+        GlobalToast.error('当前桌台信息错误');
       }
       return;
     }
@@ -628,18 +628,18 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
         await controller.refreshOrderData();
 
         if (mounted) {
-          Toast.success(context, '更换成功');
+          GlobalToast.success('更换成功');
         }
       } else {
         if (mounted) {
-          Toast.error(context, result.msg ?? '更换失败');
+          GlobalToast.error(result.msg ?? '更换失败');
         }
       }
     } catch (e) {
       // 异常情况下也要关闭弹窗
       if (mounted) {
         Navigator.of(context).pop();
-        Toast.error(context, '操作异常：$e');
+        GlobalToast.error('操作异常：$e');
       }
     }
   }

@@ -4,7 +4,6 @@ import 'package:lib_base/network/cons/http_header_key.dart';
 import 'package:lib_base/network/enum/cache_control.dart';
 import 'package:lib_base/utils/file_cache_util.dart';
 
-import 'mixin_debug.dart';
 
 class CacheControlInterceptor extends Interceptor {
   // Memory cache for frequently accessed data

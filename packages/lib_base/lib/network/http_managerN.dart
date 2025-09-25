@@ -8,7 +8,6 @@ import 'cons/http_header_key.dart';
 import 'enum/cache_control.dart';
 import 'enum/http_method.dart';
 import 'http_engine.dart';
-import 'interceptor/api_response_interceptor.dart';
 import 'interceptor/cache_control_interceptor.dart';
 import 'interceptor/encypt_interceptor.dart';
 import 'interceptor/logging_interceptor.dart';

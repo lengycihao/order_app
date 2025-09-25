@@ -50,8 +50,8 @@ class DishDetailController extends GetxController {
         price: dishData!.price.toString(),
         image: dishData!.image,
         description: '', // Dish模型没有description字段
-        allergens: [], // 暂时不转换过敏原数据
-        options: [], // 暂时不转换选项数据
+        allergens: dishData!.allergens, // 直接使用传入的过敏原数据
+        options: dishData!.options, // 直接使用传入的选项数据
         tags: dishData!.tags ?? [],
         hasOptions: dishData!.hasOptions,
       );

@@ -5,7 +5,6 @@ import 'package:lib_base/cons/network_constants.dart';
 import 'package:lib_base/network/cons/http_header_key.dart';
 import 'package:lib_base/utils/loading_manager.dart';
 
-import 'mixin_debug.dart';
 
 class NetworkDebounceInterceptor extends Interceptor {
   static final Map<String, CancelToken> _cancelTokenMap = {};

@@ -2,7 +2,7 @@ import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:lib_domain/entrity/takeout/takeout_time_option_model.dart';
-import 'package:order_app/utils/toast_component.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 class TakeawayOrderSuccessController extends GetxController {
   // 桌台ID

@@ -166,10 +166,10 @@ class TakeawayPage extends StatelessWidget {
           },
         );
       } else {
-        Toast.error(Get.context!, result.msg ?? '未知错误');
+        GlobalToast.error(result.msg ?? '未知错误');
       }
     } catch (e) {
-      Toast.error(Get.context!, '网络错误: $e');
+      GlobalToast.error('网络错误: $e');
     }
   }
 

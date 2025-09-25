@@ -167,7 +167,7 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
   /// 确认并桌操作
   Future<void> _confirmMerge() async {
     if (selectedTableIds.length < 2) {
-      Toast.error(context, '请至少选择2个桌台进行合并');
+      GlobalToast.error('请至少选择2个桌台进行合并');
       return;
     }
 
@@ -181,7 +181,7 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
 
     try {
       // 显示加载提示（使用临时提示，会自动取消之前的提示）
-      Toast.info(context, '正在合并桌台...');
+      GlobalToast.message('正在合并桌台...');
 
       // 转换桌台ID为整数列表
       final tableIds = selectedTableIds.map((id) => int.parse(id)).toList();
@@ -193,14 +193,12 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
         // 并桌成功，直接使用返回的桌台详情
         await _handleMergeSuccess(result.data!);
       } else {
-        // 并桌失败，取消之前的提示并显示错误
-        Toast.hide();
-        Toast.error(context, result.msg ?? '并桌失败');
+        // 并桌失败，显示错误
+        GlobalToast.error(result.msg ?? '并桌失败');
       }
     } catch (e) {
-      // 网络错误，取消之前的提示并显示错误
-      Toast.hide();
-      Toast.error(context, '并桌操作失败: $e');
+      // 网络错误，显示错误
+      GlobalToast.error('并桌操作失败: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -213,9 +211,8 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
   /// 处理并桌成功后的逻辑
   Future<void> _handleMergeSuccess(TableListModel mergedTable) async {
     try {
-      // 取消之前的加载提示，显示成功提示
-      Toast.hide();
-      Toast.success(context, '桌台合并成功');
+      // 显示成功提示
+      GlobalToast.success('桌台合并成功');
 
       // 判断选中的桌子中是否有非空闲桌子
       final hasNonEmptyTables = _hasNonEmptyTables();
@@ -228,9 +225,8 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
         await _navigateToSelectMenuPage(mergedTable);
       }
     } catch (e) {
-      // 跳转异常，取消之前的提示并显示错误
-      Toast.hide();
-      Toast.error(context, '跳转失败: $e');
+      // 跳转异常，显示错误
+      GlobalToast.error('跳转失败: $e');
     }
   }
 
@@ -284,7 +280,7 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
     // 获取非空闲桌子的菜单
     final selectedMenu = _getNonEmptyTableMenu();
     if (selectedMenu == null) {
-      Toast.error(context, '无法获取菜单信息');
+      GlobalToast.error('无法获取菜单信息');
       return;
     }
 

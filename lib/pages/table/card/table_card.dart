@@ -10,7 +10,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/table/table_controller.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:lib_domain/api/base_api.dart';
-import 'package:order_app/utils/toast_component.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 class TableCard extends StatelessWidget {
   final TableListModel table;

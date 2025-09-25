@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/login/login_page.dart';
-import 'package:order_app/utils/toast_component.dart';
+import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:order_app/utils/modal_utils.dart';

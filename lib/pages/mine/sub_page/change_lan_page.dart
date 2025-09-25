@@ -116,12 +116,12 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
                     try {
                       await _languageService.changeLanguage(newLocale);
                       if (mounted) {
-                        Toast.success(context, '语言切换成功');
+                        GlobalToast.success('语言切换成功');
                         Navigator.of(context).pop();
                       }
                     } catch (e) {
                       if (mounted) {
-                        Toast.error(context, '语言切换失败：$e');
+                        GlobalToast.error('语言切换失败：$e');
                       }
                     }
                   },

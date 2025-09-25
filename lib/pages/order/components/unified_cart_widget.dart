@@ -124,7 +124,7 @@ class _UserAvatarWithLoadingState extends State<_UserAvatarWithLoading>
           height: 40,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            // 移除边框
+            // 完全移除背景色和边框
           ),
           child: ClipOval(
             child: user?.avatar != null && user?.avatar?.isNotEmpty == true
@@ -219,9 +219,8 @@ class _CartModalContent extends StatelessWidget {
                         ],
                       ),
                     )
-                  : Flexible(
+                  : Expanded(
                       child: ListView.builder(
-                        shrinkWrap: true,
                         padding: EdgeInsets.all(16),
                         itemCount: controller.cart.length,
                         itemBuilder: (context, index) {

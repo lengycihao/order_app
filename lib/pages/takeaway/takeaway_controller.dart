@@ -132,12 +132,12 @@ class TakeawayController extends GetxController {
         }
       } else {
         logDebug('❌ API请求失败: ${result.msg}', tag: 'TakeawayController');
-        Toast.error(Get.context!, result.msg ?? '获取未结账订单失败');
+        GlobalToast.error(result.msg ?? '获取未结账订单失败');
       }
     } catch (e) {
       logDebug('❌ 加载未结账订单异常: $e', tag: 'TakeawayController');
       hasNetworkErrorUnpaid.value = true;
-      Toast.error(Get.context!, '获取未结账订单异常');
+      GlobalToast.error('获取未结账订单异常');
     } finally {
       isRefreshingUnpaid.value = false;
     }
@@ -189,12 +189,12 @@ class TakeawayController extends GetxController {
         }
       } else {
         logDebug('❌ 已结账API请求失败: ${result.msg}', tag: 'TakeawayController');
-        Toast.error(Get.context!, result.msg ?? '获取已结账订单失败');
+        GlobalToast.error(result.msg ?? '获取已结账订单失败');
       }
     } catch (e) {
       logDebug('❌ 加载已结账订单异常: $e', tag: 'TakeawayController');
       hasNetworkErrorPaid.value = true;
-      Toast.error(Get.context!, '获取已结账订单异常');
+      GlobalToast.error('获取已结账订单异常');
     } finally {
       isRefreshingPaid.value = false;
     }
@@ -238,11 +238,11 @@ class TakeawayController extends GetxController {
           }
         }
       } else {
-        Toast.error(Get.context!, result.msg ?? '搜索订单失败');
+        GlobalToast.error(result.msg ?? '搜索订单失败');
       }
     } catch (e) {
       logDebug('❌ 搜索订单异常: $e', tag: 'TakeawayController');
-      Toast.error(Get.context!, '搜索订单异常');
+      GlobalToast.error('搜索订单异常');
     } finally {
       if (tabIndex == 0) {
         isRefreshingUnpaid.value = false;

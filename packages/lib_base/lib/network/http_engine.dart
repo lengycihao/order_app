@@ -5,11 +5,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lib_base/cons/network_constants.dart';
-import 'package:lib_base/network/interceptor/cache_control_interceptor.dart';
 import 'package:lib_base/utils/log_util.dart';
 import 'package:lib_base/utils/regex_util.dart';
 import 'enum/cache_control.dart';
-import 'interceptor/network_debounce_interceptor.dart';
 
 class HttpEngine {
   late Dio dio;

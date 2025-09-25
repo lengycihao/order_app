@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/utils/screen_adaptation.dart';
 
 /// 规格选择弹窗组件
 class SpecificationModalWidget {
@@ -15,7 +16,7 @@ class SpecificationModalWidget {
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.symmetric(horizontal: 20),
         child: Container(
-          height: MediaQuery.of(context).size.height * 0.6, // 使用屏幕高度的60%
+          height: ScreenAdaptation.adaptHeight(context, 420), // 使用420的屏幕适配高度
           child: _SpecificationModalContent(dish: dish),
         ),
       ),

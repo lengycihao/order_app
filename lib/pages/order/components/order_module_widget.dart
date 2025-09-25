@@ -75,7 +75,7 @@ class OrderModuleWidget extends StatelessWidget {
 
   /// 构建进度条
   Widget _buildProgressBar() {
-    final times = orderDetail.times ?? 1;
+    // final times = orderDetail.times ?? 1;
     // final progress = (times - 1) / 6.0; // 假设最多6次下单
     
     return Container(
