@@ -519,13 +519,17 @@ class OrderController extends GetxController {
 
   void addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) {
     logDebug('📤 发送添加菜品请求: ${dish.name}', tag: OrderConstants.logTag);
+    logDebug('  规格选项: $selectedOptions', tag: OrderConstants.logTag);
+    logDebug('  当前购物车项数: ${cart.length}', tag: OrderConstants.logTag);
     
     // 查找是否已存在相同的购物车项
     CartItem? existingCartItem;
     for (var entry in cart.entries) {
+      logDebug('  检查购物车项: ${entry.key.dish.name}, 规格: ${entry.key.selectedOptions}', tag: OrderConstants.logTag);
       if (entry.key.dish.id == dish.id && 
           _areOptionsEqual(entry.key.selectedOptions, selectedOptions ?? {})) {
         existingCartItem = entry.key;
+        logDebug('  找到相同的购物车项: ${entry.key.dish.name}', tag: OrderConstants.logTag);
         break;
       }
     }
@@ -533,6 +537,7 @@ class OrderController extends GetxController {
     if (existingCartItem != null) {
       // 如果已存在，使用本地购物车管理器增加数量
       final currentQuantity = cart[existingCartItem]!;
+      logDebug('  当前数量: $currentQuantity', tag: OrderConstants.logTag);
       _localCartManager.addDishQuantity(existingCartItem, currentQuantity);
       logDebug('➕ 本地增加已存在菜品数量: ${dish.name}', tag: OrderConstants.logTag);
     } else {
@@ -556,7 +561,96 @@ class OrderController extends GetxController {
       logDebug('➕ 本地添加新菜品: ${dish.name}', tag: OrderConstants.logTag);
     }
   }
+
+  /// 添加指定数量的菜品到购物车（用于选规格弹窗）
+  void addToCartWithQuantity(Dish dish, {required int quantity, Map<String, List<String>>? selectedOptions}) {
+    logDebug('📤 发送添加指定数量菜品请求: ${dish.name} x$quantity', tag: OrderConstants.logTag);
+    logDebug('  规格选项: $selectedOptions', tag: OrderConstants.logTag);
+    logDebug('  当前购物车项数: ${cart.length}', tag: OrderConstants.logTag);
+    
+    // 查找是否已存在相同的购物车项
+    CartItem? existingCartItem;
+    for (var entry in cart.entries) {
+      logDebug('  检查购物车项: ${entry.key.dish.name}, 规格: ${entry.key.selectedOptions}', tag: OrderConstants.logTag);
+      if (entry.key.dish.id == dish.id && 
+          _areOptionsEqual(entry.key.selectedOptions, selectedOptions ?? {})) {
+        existingCartItem = entry.key;
+        logDebug('  找到相同的购物车项: ${entry.key.dish.name}', tag: OrderConstants.logTag);
+        break;
+      }
+    }
+    
+    if (existingCartItem != null) {
+      // 如果已存在，直接增加指定数量
+      final currentQuantity = cart[existingCartItem]!;
+      final newQuantity = currentQuantity + quantity;
+      logDebug('  当前数量: $currentQuantity, 增加数量: $quantity, 新数量: $newQuantity', tag: OrderConstants.logTag);
+      
+      // 立即更新本地购物车状态
+      cart[existingCartItem] = newQuantity;
+      cart.refresh();
+      update();
+      
+      // 发送WebSocket消息
+      _sendAddDishWebSocketWithQuantity(dish, quantity, selectedOptions);
+      
+      logDebug('➕ 本地增加已存在菜品数量: ${dish.name} +$quantity = $newQuantity', tag: OrderConstants.logTag);
+    } else {
+      // 如果不存在，创建新的购物车项并添加到本地购物车
+      final newCartItem = CartItem(
+        dish: dish,
+        selectedOptions: selectedOptions ?? {},
+        cartSpecificationId: null, // 服务器会返回
+        cartItemId: null, // 服务器会返回
+        cartId: null, // 服务器会返回
+      );
+      
+      // 立即添加到本地购物车
+      cart[newCartItem] = quantity;
+      cart.refresh();
+      update();
+      
+      // 发送WebSocket消息
+      _sendAddDishWebSocketWithQuantity(dish, quantity, selectedOptions);
+      
+      logDebug('➕ 本地添加新菜品: ${dish.name} x$quantity', tag: OrderConstants.logTag);
+    }
+  }
   
+  /// 发送添加指定数量菜品的WebSocket消息
+  Future<void> _sendAddDishWebSocketWithQuantity(Dish dish, int quantity, Map<String, List<String>>? selectedOptions) async {
+    try {
+      logDebug('🆕 发送WebSocket添加指定数量菜品: ${dish.name} x$quantity', tag: OrderConstants.logTag);
+      
+      // 构建规格选项数据
+      List<Map<String, dynamic>> optionsData = [];
+      if (selectedOptions != null && selectedOptions.isNotEmpty) {
+        selectedOptions.forEach((optionId, itemIds) {
+          optionsData.add({
+            'id': int.parse(optionId),
+            'item_ids': itemIds.map((id) => int.parse(id)).toList(),
+            'custom_values': <String>[],
+          });
+        });
+      }
+      
+      // 发送WebSocket消息
+      final success = await _wsHandler.sendAddDish(
+        dish: dish,
+        quantity: quantity,
+        selectedOptions: selectedOptions,
+      );
+      
+      if (success) {
+        logDebug('✅ WebSocket添加指定数量菜品成功: ${dish.name} x$quantity', tag: OrderConstants.logTag);
+      } else {
+        logDebug('❌ WebSocket添加指定数量菜品失败: ${dish.name} x$quantity', tag: OrderConstants.logTag);
+      }
+    } catch (e) {
+      logDebug('❌ 发送WebSocket添加指定数量菜品异常: $e', tag: OrderConstants.logTag);
+    }
+  }
+
   /// 发送添加菜品的WebSocket消息
   Future<void> _sendAddDishWebSocket(Dish dish, Map<String, List<String>>? selectedOptions) async {
     try {
@@ -1000,6 +1094,12 @@ class OrderController extends GetxController {
 
   /// 本地数量变化回调
   void _onLocalQuantityChanged(CartItem cartItem, int quantity) {
+    logDebug('🔍 _onLocalQuantityChanged 调试信息:', tag: OrderConstants.logTag);
+    logDebug('  菜品: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+    logDebug('  新数量: $quantity', tag: OrderConstants.logTag);
+    logDebug('  规格选项: ${cartItem.selectedOptions}', tag: OrderConstants.logTag);
+    logDebug('  更新前购物车项数: ${cart.length}', tag: OrderConstants.logTag);
+    
     // 立即更新本地购物车状态
     if (quantity > 0) {
       cart[cartItem] = quantity;
@@ -1009,6 +1109,7 @@ class OrderController extends GetxController {
     cart.refresh();
     update();
     
+    logDebug('  更新后购物车项数: ${cart.length}', tag: OrderConstants.logTag);
     logDebug('🔄 本地数量变化: ${cartItem.dish.name} -> $quantity', tag: OrderConstants.logTag);
   }
 

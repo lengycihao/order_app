@@ -58,102 +58,115 @@ class ChangeTableStatusDialog extends StatelessWidget {
 
     return Dialog(
       insetPadding: EdgeInsets.all(30),
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // 标题和关闭按钮
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '更换状态',
-                  style: TextStyle(
-                    fontSize: 20,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                IconButton(icon: Icon(Icons.close), onPressed: onClose),
-              ],
-            ),
-            Divider(height: 24, thickness: 1),
-            // 桌号和状态
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // 桌号 - 允许换行
-                RichText(
-                  text: TextSpan(
-                    text: '桌号：',
-                    style: TextStyle(fontSize: 14, color: Colors.black),
-                    children: [
-                      TextSpan(
-                        text: tableNo,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  maxLines: null, // 允许换行
-                  overflow: TextOverflow.visible,
-                ),
-                SizedBox(height: 8), // 添加间距
-                // 状态 - 固定显示
-                RichText(
-                  text: TextSpan(
-                    text: '状态：',
-                    style: TextStyle(fontSize: 14, color: Colors.black),
-                    children: [
-                      TextSpan(
-                        text: statusText(status),
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 24),
-            // 可切换状态按钮
-            ...availableStatus.map(
-              (s) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFFFF9027),
-                      padding: EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30), // 圆角更大，两侧半圆
-                      ),
-                      elevation: 0,
+      child: Container(
+        width: 343,
+        height: 182,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16  ,vertical: 10),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // 标题和关闭按钮
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '更换状态',
+                    style: TextStyle(
+                      fontSize: 20,
+                      height: 1,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
                     ),
-                    onPressed: () => onChangeStatus(s),
-                    child: Text(
-                      '更换状态：${statusText(s)}',
-                      style: TextStyle(
-                        color: Colors.white, // 文字白色
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
+                  ),
+                  IconButton(icon: Icon(Icons.close), onPressed: onClose),
+                ],
+              ),
+              Divider(height: 1, thickness: 1),
+              SizedBox(height: 10,),
+              // 桌号和状态
+             
+             Padding(padding: EdgeInsetsGeometry.only(right: 20),child:  Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // 桌号 - 允许换行
+                  Flexible(
+                    flex: 1,
+                    child: RichText(
+                    maxLines: 1,
+                    text: TextSpan(
+                      text: '桌号：',
+                      style: TextStyle(fontSize: 14, color: Colors.black),
+                      children: [
+                        TextSpan(
+                          text: tableNo,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                     overflow: TextOverflow.ellipsis,
+                  )),
+                  // Spacer(),
+                   // 状态 - 固定显示
+                  RichText(
+                    text: TextSpan(
+                      text: '状态：',
+                      style: TextStyle(fontSize: 14, color: Colors.black),
+                      children: [
+                        TextSpan(
+                          text: statusText(status),
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                 ],
+              ),
+             ),
+              SizedBox(height: 24),
+              // 可切换状态按钮
+              ...availableStatus.map(
+                (s) => Padding(
+                  padding: const EdgeInsets.only(bottom: 20),
+                  child: SizedBox(
+                    width: 253,
+                    height: 40,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Color(0xFFFF9027),
+                         shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30), // 圆角更大，两侧半圆
+                        ),
+                        elevation: 0,
+                      ),
+                      onPressed: () => onChangeStatus(s),
+                      child: Text(
+                        '更换状态：${statusText(s)}',
+                        style: TextStyle(
+                          color: Colors.white, // 文字白色
+                           fontSize: 20,
+                        ),
                       ),
                     ),
                   ),
                 ),
               ),
-            ),
-            if (availableStatus.isEmpty)
-              Text('当前状态不可切换', style: TextStyle(color: Colors.grey)),
-          ],
+              if (availableStatus.isEmpty)
+                Text('当前状态不可切换', style: TextStyle(color: Colors.grey)),
+            ],
+          ),
         ),
       ),
     );

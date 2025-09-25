@@ -14,13 +14,14 @@ import 'package:order_app/pages/order/components/restaurant_loading_widget.dart'
 import 'package:order_app/utils/keyboard_utils.dart';
 
 class TakeawayPage extends StatelessWidget {
-  final TakeawayController controller = Get.put(TakeawayController());
   final List<String> tabs = ['未结账', '已结账'];
 
   TakeawayPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // 初始化控制器
+    Get.put(TakeawayController());
     return DefaultTabController(
       length: tabs.length,
       child: Scaffold(
@@ -52,6 +53,7 @@ class TakeawayPage extends StatelessWidget {
 
   /// 构建搜索框
   Widget _buildSearchBar() {
+    final controller = Get.find<TakeawayController>();
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(16, 20, 16, 10),
@@ -175,6 +177,7 @@ class TakeawayPage extends StatelessWidget {
 
   /// 构建订单列表
   Widget _buildOrderList(int tabIndex) {
+    final controller = Get.find<TakeawayController>();
     return Obx(() {
       final orders = tabIndex == 0 ? controller.unpaidOrders : controller.paidOrders;
       final isRefreshing = tabIndex == 0 ? controller.isRefreshingUnpaid.value : controller.isRefreshingPaid.value;
@@ -272,6 +275,7 @@ class TakeawayPage extends StatelessWidget {
 
   /// 构建加载更多指示器
   Widget _buildLoadMoreIndicator(int tabIndex) {
+    final controller = Get.find<TakeawayController>();
     return Obx(() {
       final isLoadingMore = controller.isLoadingMore.value;
       

@@ -3,12 +3,14 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import '../../constants/global_colors.dart';
-import 'package:order_app/pages/order/components/unified_quantity_control_widget.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/components/unified_cart_widget.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
+import 'package:order_app/pages/order/components/specification_modal_widget.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/utils/image_cache_config.dart';
+import 'package:order_app/utils/toast_utils.dart';
 import 'dish_detail_controller.dart';
 
 class DishDetailPage extends StatefulWidget {
@@ -232,6 +234,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
       if (dish == null) return const SizedBox.shrink();
 
       final dishModel = controller.convertToDishModel();
+      final orderController = Get.find<OrderController>();
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -261,13 +264,151 @@ class _DishDetailPageState extends State<DishDetailPage> {
                 ),
               ),
             ),
-            // 数量控制
-            UnifiedQuantityControlWidget(dish: dishModel),
+            // 数量控制 - 使用与列表页面相同的逻辑
+            _buildQuantityControl(dishModel, orderController),
           ],
         ),
       );
     });
   }
+
+  /// 构建数量控制组件 - 与列表页面完全一致
+  Widget _buildQuantityControl(Dish dish, OrderController orderController) {
+    return Obx(() {
+      // 计算该菜品在购物车中的总数量
+      int totalCount = 0;
+      for (var entry in orderController.cart.entries) {
+        if (entry.key.dish.id == dish.id) {
+          totalCount += entry.value;
+        }
+      }
+
+      // 根据hasOptions决定显示加减按钮还是选规格按钮 - 与列表页面完全一致
+      if (dish.hasOptions) {
+        return _buildSpecificationButton(dish, orderController, totalCount);
+      } else {
+        return _buildQuantityControls(totalCount, dish, orderController);
+      }
+    });
+  }
+
+  /// 构建数量控制按钮 - 与列表页面完全一致
+  Widget _buildQuantityControls(int count, Dish dish, OrderController orderController) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // 减号按钮 - 只在有数量时显示
+        if (count > 0)
+          GestureDetector(
+            onTap: () {
+              // 找到对应的购物车项进行删除
+              CartItem? targetCartItem;
+              for (var entry in orderController.cart.entries) {
+                if (entry.key.dish.id == dish.id && entry.key.selectedOptions.isEmpty) {
+                  targetCartItem = entry.key;
+                  break;
+                }
+              }
+              if (targetCartItem != null) {
+                orderController.removeFromCart(targetCartItem);
+              }
+            },
+            child: Image(
+              image: AssetImage('assets/order_reduce_num.webp'),
+              width: 22,
+              height: 22,
+            ),
+          ),
+        // 数量显示 - 只在有数量时显示
+        if (count > 0) ...[
+          const SizedBox(width: 12),
+          Text(
+            '$count',
+            style: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(width: 12),
+        ],
+        // 加号按钮
+        GestureDetector(
+          onTap: () {
+            orderController.addToCart(dish);
+          },
+          child: Image(
+            image: AssetImage('assets/order_add_num.webp'),
+            width: 22,
+            height: 22,
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建选规格按钮 - 与列表页面完全一致
+  Widget _buildSpecificationButton(Dish dish, OrderController orderController, int totalCount) {
+    return GestureDetector(
+      onTap: () {
+        // 导入选规格弹窗组件
+        SpecificationModalWidget.showSpecificationModal(
+          context,
+          dish,
+        );
+      },
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.orange,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              '选规格',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+          // 角标 - 显示该菜品在购物车中的总数量
+          if (totalCount > 0)
+            Positioned(
+              right: -3,
+              top: -6,
+              child: Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: totalCount > 99 ? 4 : 2,
+                  vertical: 1,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.red,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                constraints: BoxConstraints(
+                  minWidth: 16,
+                  minHeight: 16,
+                ),
+                child: Text(
+                  '$totalCount',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
 
   /// 构建底部购物车按钮
   Widget _buildBottomCartButton() {
@@ -409,19 +550,16 @@ class _DishDetailPageState extends State<DishDetailPage> {
         await controller.loadCurrentOrder(showLoading: false);
         _switchToOrderedTab();
       } else {
-        // 下单失败，显示错误弹窗
-        await OrderSubmitDialog.showError(context);
+        // 下单失败，显示错误提示
+        GlobalToast.error('订单提交失败，请重试');
       }
     } catch (e) {
       print('❌ 提交订单异常: $e');
       if (mounted) {
         // 关闭加载弹窗
         Navigator.of(context).pop();
-        // 显示错误弹窗
-        await OrderSubmitDialog.showError(
-          context,
-          message: '提交订单时发生错误，请重试',
-        );
+        // 显示错误提示
+        GlobalToast.error('提交订单时发生错误，请重试');
       }
     }
   }

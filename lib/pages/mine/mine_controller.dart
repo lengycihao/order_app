@@ -12,15 +12,41 @@ import 'package:order_app/pages/takeaway/takeaway_controller.dart';
 // import '../../service/cart_cache_service.dart'; // 已泣释：不再需要缓存功能
 
 class MineController extends GetxController {
-  // 假设这些数据来自接口
-  final nickname = '张三'.obs;
-  final loginId = 'user_123456'.obs;
-  final accountDate = DateTime(2020, 5, 10).obs;
-  final remainMonth = 3.obs;
-  final remainDay = 12.obs;
+  // 用户信息
+  final nickname = ''.obs;
+  final loginId = ''.obs;
+  final accountDate = DateTime.now().obs;
+  final remainMonth = 0.obs;
+  final remainDay = 0.obs;
   final version = 'V1.0.0'.obs;
 
   final AuthService _authService = getIt<AuthService>();
+
+  @override
+  void onInit() {
+    super.onInit();
+    _loadUserInfo();
+  }
+
+  /// 加载用户信息
+  void _loadUserInfo() {
+    final user = _authService.currentUser;
+    if (user != null) {
+      nickname.value = user.waiterName ?? '未知用户';
+      loginId.value = user.waiterId?.toString() ?? '未知ID';
+      // 这里可以根据实际业务需求设置其他信息
+      // accountDate, remainMonth, remainDay 等可能需要从其他接口获取
+    } else {
+      nickname.value = '未登录';
+      loginId.value = '未登录';
+    }
+  }
+
+  /// 刷新用户信息
+  Future<void> refreshUserInfo() async {
+    await _authService.refreshUserInfo();
+    _loadUserInfo();
+  }
 
   // 处理点击事件的业务逻辑
   void onTapLoginOut() async {

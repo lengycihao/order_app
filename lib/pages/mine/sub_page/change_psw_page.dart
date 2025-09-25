@@ -12,24 +12,59 @@ class ChangePasswordPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('修改密码')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text('修改密码', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: KeyboardUtils.buildDismissiblePage(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
+        child: Stack(
           children: [
+            // 主要内容区域
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
             // 新密码输入区域
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 固定提示文字
-                const Text(
-                  '新密码',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '新密码',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xff666666),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '*',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xffFF0000),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      '任意8位字符',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xff999999),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 // 新密码输入框（仅下边框）
@@ -48,6 +83,13 @@ class ChangePasswordPage extends StatelessWidget {
                           width: 1.0, // 边框宽度
                         ),
                       ),
+                      // 未聚焦时的下边框
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Color(0xff999999), // 边框颜色
+                          width: 1.0, // 边框宽度
+                        ),
+                      ),
                       // 获得焦点时的下边框样式（可选）
                       focusedBorder: const UnderlineInputBorder(
                         borderSide: BorderSide(
@@ -55,19 +97,19 @@ class ChangePasswordPage extends StatelessWidget {
                           width: 1.5, // 聚焦时宽度
                         ),
                       ),
-                      // 右侧密码显示/隐藏按钮
+                      // 右侧密码显示按钮（固定显示明文）
                       suffixIcon: IconButton(
                         padding: EdgeInsets.zero,
                         icon: Image.asset(
-                          controller.showNewPassword.value
-                              ? 'assets/order_mine_eyeopen.webp'
-                              : 'assets/order_mine_eyeclose.webp',
+                          'assets/order_login_eye.webp',
                           width: 24,
                           height: 24,
                           fit: BoxFit.contain,
                         ),
-                        onPressed: () => controller.showNewPassword.value =
-                            !controller.showNewPassword.value,
+                        onPressed: () {
+                          // 点击时直接显示明文，不改变状态
+                          controller.showNewPassword.value = true;
+                        },
                       ),
                     ),
                     onChanged: (value) => controller.newPassword.value = value,
@@ -82,13 +124,26 @@ class ChangePasswordPage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 固定提示文字
-                const Text(
-                  '确认新密码',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.black87,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '确认新密码',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xff666666),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      '*',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xffFF0000),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 // 确认密码输入框（仅下边框）
@@ -102,7 +157,14 @@ class ChangePasswordPage extends StatelessWidget {
                       // 仅显示下边框
                       border: const UnderlineInputBorder(
                         borderSide: BorderSide(
-                          color: Color(0xff999999), // 聚焦时颜色
+                          color: Color(0xff999999), // 边框颜色
+                          width: 1.0,
+                        ),
+                      ),
+                      // 未聚焦时的下边框
+                      enabledBorder: const UnderlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Color(0xff999999), // 边框颜色
                           width: 1.0,
                         ),
                       ),
@@ -113,19 +175,19 @@ class ChangePasswordPage extends StatelessWidget {
                           width: 1.5,
                         ),
                       ),
-                      // 右侧密码显示/隐藏按钮
+                      // 右侧密码显示按钮（固定显示明文）
                       suffixIcon: IconButton(
                         padding: EdgeInsets.zero,
                         icon: Image.asset(
-                          controller.showConfirmPassword.value
-                              ? 'assets/order_mine_eyeopen.webp'
-                              : 'assets/order_mine_eyeclose.webp',
+                          'assets/order_login_eye.webp',
                           width: 24,
                           height: 24,
                           fit: BoxFit.contain,
                         ),
-                        onPressed: () => controller.showConfirmPassword.value =
-                            !controller.showConfirmPassword.value,
+                        onPressed: () {
+                          // 点击时直接显示明文，不改变状态
+                          controller.showConfirmPassword.value = true;
+                        },
                       ),
                     ),
                     onChanged: (value) =>
@@ -134,14 +196,19 @@ class ChangePasswordPage extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 80),
-
-            // 渐变背景的提交按钮
-            Obx(
-              () => Container(
-                margin: EdgeInsets.symmetric(horizontal: 20),
-                width: double.infinity,
-                height: 50,
+            ],
+            ),
+            ),
+            // 固定在底部的提交按钮
+            Positioned(
+              bottom: 190,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: Obx(
+                  () => Container(
+                    width: 253,
+                    height: 40,
                 decoration: BoxDecoration(
                   // 从#7FA1F6到#9C90FB的渐变
                   gradient: const LinearGradient(
@@ -173,11 +240,12 @@ class ChangePasswordPage extends StatelessWidget {
                           '提交',
                           style: TextStyle(fontSize: 15, color: Colors.white),
                         ),
+                    ),
+                  ),
                 ),
               ),
             ),
           ],
-        ),
         ),
       ),
     );

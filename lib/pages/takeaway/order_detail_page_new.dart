@@ -15,13 +15,7 @@ class OrderDetailPageNew extends StatelessWidget {
         return Scaffold(
           backgroundColor: const Color(0xfff9f9f9),
           appBar: AppBar(
-            title: Obx(() {
-              final order = controller.orderDetail.value;
-              if (order == null) {
-                return const Text('订单详情');
-              }
-              return Text(order.isPaid ? '已结账' : '未结账');
-            }),
+            title: const Text(''),
             centerTitle: true,
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,

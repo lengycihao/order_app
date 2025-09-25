@@ -37,15 +37,9 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
-        leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
-          child: Container(
-            margin: EdgeInsets.all(12),
-            child: Image.asset(
-              'assets/order_arrow_back.webp',
-              fit: BoxFit.contain,
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () => Navigator.of(context).pop(),
         ),
       ),
       body: Column(

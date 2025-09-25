@@ -65,9 +65,6 @@ class OrderModuleWidget extends StatelessWidget {
               color: Colors.black87,
             ),
           ),
-          Spacer(),
-          // 轮次和数量信息
-          _buildOrderInfo(),
         ],
       ),
     );
@@ -98,31 +95,6 @@ class OrderModuleWidget extends StatelessWidget {
     );
   }
 
-  /// 构建订单信息
-  Widget _buildOrderInfo() {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        // 轮次信息
-        Text(
-         "轮次：${orderDetail.roundStr ?? ''}",
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
-        SizedBox(width: 6),
-        // 数量信息
-        Text(
-          "数量：${orderDetail.quantityStr ?? ''}",
-          style: TextStyle(
-            fontSize: 14,
-            color: Colors.grey[600],
-          ),
-        ),
-      ],
-    );
-  }
 
   /// 构建菜品列表
   Widget _buildDishList() {

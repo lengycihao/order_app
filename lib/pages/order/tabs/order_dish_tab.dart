@@ -13,6 +13,7 @@ import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:get_it/get_it.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 class OrderDishTab extends StatefulWidget {
   const OrderDishTab({super.key});
@@ -767,23 +768,16 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
           },
         );
       } else {
-        // 下单失败，显示错误弹窗
-        await OrderSubmitDialog.showError(
-          context,
-          title: '下单失败',
-          message: result['message'] ?? '订单提交失败，请重试',
-        );
+        // 下单失败，显示错误提示
+        GlobalToast.error(result['message'] ?? '订单提交失败，请重试');
       }
     } catch (e) {
       print('❌ 提交订单异常: $e');
       if (mounted) {
         // 关闭加载弹窗
         Navigator.of(context).pop();
-        // 显示错误弹窗
-        await OrderSubmitDialog.showError(
-          context,
-          message: '提交订单时发生错误，请重试',
-        );
+        // 显示错误提示
+        GlobalToast.error('提交订单时发生错误，请重试');
       }
     }
   }

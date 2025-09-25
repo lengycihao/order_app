@@ -52,7 +52,7 @@ class MinePage extends StatelessWidget {
                               ),
                               SizedBox(height: 8),
                               Text(
-                                "登录ID: ${c.loginId.value}",
+                                "账户: ${c.loginId.value}",
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.black,
@@ -71,7 +71,10 @@ class MinePage extends StatelessWidget {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Color(0xddFF9027),
+                          image: DecorationImage(
+                            image: AssetImage('assets/order_company_bg.webp'),
+                            fit: BoxFit.cover,
+                          ),
                           borderRadius: BorderRadius.only(
                             topLeft: Radius.circular(10),
                             topRight: Radius.circular(10),
@@ -107,16 +110,18 @@ class MinePage extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
+                                width: 147,
+                                height: 30,
                                 padding: EdgeInsets.symmetric(horizontal: 10),
                                 decoration: BoxDecoration(
                                   color: Color(0xffF6F7FF),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                height: 30,
                                 child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      '账号到账日期   ',
+                                      '到期',
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Colors.grey[700],
@@ -133,23 +138,25 @@ class MinePage extends StatelessWidget {
                                 ),
                               ),
                               Container(
+                                width: 147,
+                                height: 30,
                                 padding: EdgeInsets.symmetric(horizontal: 10),
                                 decoration: BoxDecoration(
                                   color: Color(0xffF6F7FF),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
-                                height: 30,
                                 child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      '剩余时间   ',
+                                      '剩余',
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Colors.grey[700],
                                       ),
                                     ),
                                     Text(
-                                      '${c.remainMonth.value.toString().padLeft(2, '0')}月${c.remainDay.value.toString().padLeft(2, '0')}天',
+                                      '${c.remainDay.value.toString().padLeft(2, '0')}天',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Color(0xffFF9027),
@@ -186,10 +193,9 @@ class MinePage extends StatelessWidget {
                             Get.to(ChangePasswordPage());
                           },
                         ),
-                        Divider(height: 1),
                         _SettingItem(
                           icon: 'assets/order_mine_lan.webp',
-                          title: '切换语言',
+                          title: '语言',
                           trailing: Image.asset(
                             'assets/order_mine_arrowR.webp',
                             width: 20,
@@ -200,8 +206,6 @@ class MinePage extends StatelessWidget {
                             Get.to(ChangeLanPage());
                           },
                         ),
-                         
-                        Divider(height: 1),
                         Obx(
                           () => _SettingItem(
                             icon: 'assets/order_mine_sys.webp',
@@ -220,12 +224,12 @@ class MinePage extends StatelessWidget {
                   ),
                   const Spacer(),
                   // 退出登录按钮
-                  SizedBox(
-                    width: double.infinity,
+                  Center(
                     child: GestureDetector(
                       onTap: c.onTapLoginOut,
                       child: Container(
-                        height: 50,
+                        width: 253,
+                        height: 40,
                         decoration: BoxDecoration(
                           border: Border.all(
                             color: Color(0xff666666), // 边框颜色

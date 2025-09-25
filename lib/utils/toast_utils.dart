@@ -25,7 +25,7 @@ class Toast {
     BuildContext context,
     String message, {
     ToastPosition position = ToastPosition.bottom,
-    Duration duration = const Duration(seconds: 2),
+    Duration duration = const Duration(milliseconds: 1500),
   }) {
     _showToast(
       context,
@@ -41,7 +41,7 @@ class Toast {
     BuildContext context,
     String message, {
     ToastPosition position = ToastPosition.bottom,
-    Duration duration = const Duration(seconds: 2),
+    Duration duration = const Duration(milliseconds: 1500),
   }) {
     _showToast(
       context,
@@ -57,7 +57,7 @@ class Toast {
     BuildContext context,
     String message, {
     ToastPosition position = ToastPosition.bottom,
-    Duration duration = const Duration(seconds: 2),
+    Duration duration = const Duration(milliseconds: 1500),
   }) {
     _showToast(
       context,
@@ -73,7 +73,7 @@ class Toast {
     BuildContext context,
     String message, {
     ToastPosition position = ToastPosition.bottom,
-    Duration duration = const Duration(seconds: 2),
+    Duration duration = const Duration(milliseconds: 1500),
   }) {
     _showToast(
       context,
@@ -177,7 +177,7 @@ class GlobalToast {
         context: usableContext,
         message: message,
         type: type,
-        duration: const Duration(seconds: 3),
+        duration: const Duration(milliseconds: 1500),
       );
     } catch (e) {
       debugPrint('Toast显示失败: $e - $message');
@@ -207,7 +207,7 @@ class GlobalToast {
                 ],
               ),
               backgroundColor: backgroundColor,
-              duration: const Duration(seconds: 2),
+              duration: const Duration(milliseconds: 1500),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(8.0),

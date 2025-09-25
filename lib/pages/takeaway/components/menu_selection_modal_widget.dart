@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:order_app/utils/l10n_utils.dart';
-import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
@@ -95,103 +94,137 @@ class _MenuSelectionModalContentState extends State<_MenuSelectionModalContent> 
   void _confirmSelection() {
     if (_selectedMenu != null) {
       Navigator.of(context).pop(_selectedMenu);
+    } else {
+      // 如果没有选择菜单，显示警告提示
+      GlobalToast.warning('请先选择菜单');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ModalContainerWithMargin(
-      title: '选择菜单',
-      margin: EdgeInsets.zero,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 菜单列表
-          Flexible(
-            child: Container(
-              padding: EdgeInsets.all(16),
-              child: _isLoading
-                  ? Center(
-                      child: RestaurantLoadingWidget(size: 30),
-                    )
-                  : _errorMessage != null
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.error_outline,
-                            size: 64,
-                            color: Colors.red.shade400,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            _errorMessage!,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.red.shade600,
-                            ),
-                          ),
-                          SizedBox(height: 16),
-                          ElevatedButton(
-                            onPressed: _loadMenuList,
-                            child: Text(context.l10n.more),
-                          ),
-                        ],
-                      ),
-                    )
-                  : _menuList.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.restaurant_menu,
-                            size: 64,
-                            color: Colors.grey.shade400,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            context.l10n.noData,
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : _buildMenuGrid(),
-            ),
-          ),
-          // 确认按钮
-          Container(
-            padding: EdgeInsets.all(16),
-            child: Center(
-              child: GestureDetector(
-                onTap: _confirmSelection,
-                child: Container(
-                  width: 180,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(16),
+    return Container(
+      width: 343,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 标题行 - 更换菜单左对齐，右边关闭按钮
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '选择菜单',
+                  style: TextStyle(
+                    fontSize: 20,
+                    height: 1,
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
                   ),
-                  child: Center(
-                    child: Text(
-                      context.l10n.confirm,
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      shape: BoxShape.circle,
                     ),
+                    child: Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10), // 更换菜单距离上面10
+            Divider(height: 1, thickness: 1),
+            SizedBox(height: 10), // 分割线与更换菜单间距10
+            // 菜单列表
+            _isLoading
+                ? Center(
+                    child: RestaurantLoadingWidget(size: 30),
+                  )
+                : _errorMessage != null
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline,
+                          size: 64,
+                          color: Colors.red.shade400,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          _errorMessage!,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.red.shade600,
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        ElevatedButton(
+                          onPressed: _loadMenuList,
+                          child: Text(context.l10n.more),
+                        ),
+                      ],
+                    ),
+                  )
+                : _menuList.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.restaurant_menu,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          context.l10n.noData,
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : _buildMenuGrid(),
+            SizedBox(height: 24),
+            // 确认按钮
+            SizedBox(
+              width: 120,
+              height: 32,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFFF9027),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: _confirmSelection,
+                child: Text(
+                  context.l10n.confirm,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -277,7 +310,7 @@ class _MenuItem extends StatelessWidget {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
-      children: costWidgets,
+      children: costWidgets.map((widget) => Flexible(child: widget)).toList(),
     );
   }
 
@@ -309,26 +342,26 @@ class _MenuItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 菜单图片 - 147*88 自适应屏幕
+                // 菜单图片 - 141*88 适配容器宽度
                 Container(
-                  width: 147,
+                  width: 141, // 调整为容器内容区域宽度
                   height: 88,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
-                      width: 147,
+                      width: 141,
                       height: 88,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Image.asset(
                         'assets/order_menu_placeholder.webp',
-                        width: 147,
+                        width: 141,
                         height: 88,
                         fit: BoxFit.cover,
                       ),
                       errorWidget: (context, url, error) => Image.asset(
                         'assets/order_menu_placeholder.webp',
-                        width: 147,
+                        width: 141,
                         height: 88,
                         fit: BoxFit.cover,
                       ),
@@ -337,8 +370,10 @@ class _MenuItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
 
-                // 价格信息 - 文字可换行
-                _buildPriceInfo(context),
+                // 价格信息 - 文字可换行，使用 Flexible 避免溢出
+                Flexible(
+                  child: _buildPriceInfo(context),
+                ),
               ],
             ),
           ),

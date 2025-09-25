@@ -604,7 +604,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
       itemHeight = 200;
     } else if (hasImageOnlyMenus && !hasRegularMenus) {
       // 全部是图片类型，使用较小高度
-      itemHeight = 120; // 88px图片 + 16px padding + 16px余量
+      itemHeight = 140; // 88px图片 + 16px padding + 36px余量
     } else {
       // 全部是带价格信息的类型，使用标准高度
       itemHeight = 200;
@@ -702,19 +702,57 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
 
   @override
   Widget build(BuildContext context) {
-    return ModalContainerWithMargin(
-      title: '更换菜单',
-      margin: EdgeInsets.zero,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 菜单列表 - 自适应高度，最小220px
-          Container(
-            constraints: BoxConstraints(
-              minHeight: 220,
+    return Container(
+      width: 343,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 标题行 - 更换菜单左对齐，右边关闭按钮
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '选择菜单',
+                  style: TextStyle(
+                    fontSize: 20,
+                    height: 1,
+                    color: Color(0xFF000000),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Navigator.of(context).pop(),
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.close,
+                      size: 16,
+                      color: Colors.grey.shade600,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            padding: EdgeInsets.all(16),
-            child: _isLoading
+            SizedBox(height: 10), // 更换菜单距离上面10
+            Container(
+              width: double.infinity,
+              height: 1,
+              color: Colors.grey.shade300,
+            ),
+            SizedBox(height: 10), // 分割线与更换菜单间距10
+            // 菜单列表
+            _isLoading
                 ? Center(
                     child: RestaurantLoadingWidget(size: 30),
                   )
@@ -740,35 +778,31 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
                     ),
                   )
                 : _buildMenuGrid(),
-          ),
-          // 确认按钮
-          Container(
-            padding: EdgeInsets.all(16),
-            child: Center(
-              child: GestureDetector(
-                onTap: _performChangeMenu,
-                child: Container(
-                  width: 180,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(16),
+            SizedBox(height: 24),
+            // 确认按钮
+            SizedBox(
+              width: 120,
+              height: 32,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFFF9027),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
                   ),
-                  child: Center(
-                    child: Text(
-                      '确认',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
+                  elevation: 0,
+                ),
+                onPressed: _performChangeMenu,
+                child: Text(
+                  '确认',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -870,26 +904,26 @@ class _MenuItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 菜单图片 - 147*88 自适应屏幕
+                // 菜单图片 - 141*88 适配容器宽度
                 Container(
-                  width: 147,
+                  width: 141, // 调整为容器内容区域宽度
                   height: 88,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
-                      width: 147,
+                      width: 141,
                       height: 88,
                       fit: BoxFit.contain,
                       placeholder: (context, url) => Image.asset(
                         'assets/order_menu_placeholder.webp',
-                        width: 147,
+                        width: 141,
                         height: 88,
                         fit: BoxFit.contain,
                       ),
                       errorWidget: (context, url, error) => Image.asset(
                         'assets/order_menu_placeholder.webp',
-                        width: 147,
+                        width: 141,
                         height: 88,
                         fit: BoxFit.contain,
                       ),

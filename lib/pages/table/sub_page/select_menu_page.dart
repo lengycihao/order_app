@@ -59,7 +59,7 @@ class SelectMenuPage extends GetView<SelectMenuController> {
       margin: const EdgeInsets.only(bottom: 16),
       color: Colors.white,
       child: Padding(
-        padding: const EdgeInsets.only(left: 32, right: 32, top: 12, bottom: 12),
+        padding: const EdgeInsets.only(left: 32, right: 32,   bottom: 7),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
@@ -67,7 +67,7 @@ class SelectMenuPage extends GetView<SelectMenuController> {
             // 标题
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+              padding: const EdgeInsets.only(top: 10, bottom: 8, left: 8, right: 8),
               decoration: BoxDecoration(
                 border: Border(
                   bottom: BorderSide(color: Colors.grey.shade300, width: 1),
@@ -76,9 +76,9 @@ class SelectMenuPage extends GetView<SelectMenuController> {
               child: const Text(
                 '选择人数',
                 style: TextStyle(
-                  fontSize: 16,
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
+                  color: Color(0xFF000000),
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -244,38 +244,60 @@ SizedBox(height: 12,),
 
   /// 构建菜单选择卡片
   Widget _buildMenuSelectionCard() {
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-      margin: const EdgeInsets.only(bottom: 16),
+    return Container(
+      width: 343,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: const EdgeInsets.only(bottom: 5),
       child: Padding(
-        padding: const EdgeInsets.only(left: 10, right: 10, top: 10, bottom: 15),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 标题
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-              decoration: BoxDecoration(
-                border: Border(
-                  bottom: BorderSide(color: Colors.grey.shade300, width: 1),
-                ),
-              ),
-              child: const Text(
-                '选择菜单',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF333333),
-                ),
-                textAlign: TextAlign.center,
+            // 标题行 - 更换菜单左对齐，右边关闭按钮
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '更换菜单',
+                    style: TextStyle(
+                      fontSize: 20,
+                      height: 1,
+                      color: Color(0xFF000000),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () => controller.goBack(),
+                    child: Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade200,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.close,
+                        size: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 18),
-
+            SizedBox(height: 10), // 更换菜单距离上面10
+            Container(
+              width: double.infinity,
+              height: 1,
+              color: Colors.grey.shade300,
+            ),
+            SizedBox(height: 10), // 分割线与更换菜单间距10
             // 菜单网格
             _buildMenuGrid(),
           ],
@@ -357,37 +379,37 @@ SizedBox(height: 12,),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 菜单图片 - 147*88 自适应屏幕
-                      Container(
-                        width: 147,
-                        height: 88,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: CachedNetworkImage(
-                            imageUrl: item.menuImage ?? '',
-                            width: 147,
-                            height: 88,
-                            fit: BoxFit.contain,
-                            placeholder: (context, url) => Image.asset(
-                              'assets/order_menu_placeholder.webp',
+                      // 菜单图片 - 调整高度以适应容器
+                      Expanded(
+                        flex: 3,
+                        child: Container(
+                          width: 147,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: CachedNetworkImage(
+                              imageUrl: item.menuImage ?? '',
                               width: 147,
-                              height: 88,
-                              fit: BoxFit.contain,
-                            ),
-                            errorWidget: (context, url, error) => Image.asset(
-                              'assets/order_menu_placeholder.webp',
-                              width: 147,
-                              height: 88,
-                              fit: BoxFit.contain,
+                              fit: BoxFit.cover,
+                              placeholder: (context, url) => Image.asset(
+                                'assets/order_menu_placeholder.webp',
+                                width: 147,
+                                fit: BoxFit.cover,
+                              ),
+                              errorWidget: (context, url, error) => Image.asset(
+                                'assets/order_menu_placeholder.webp',
+                                width: 147,
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
                       ),
                       // 根据菜单类型决定是否显示价格信息
                       if (item.menuType != 2) ...[
-                        const SizedBox(height: 6),
+                        const SizedBox(height: 4),
                         // 价格信息 - 文字可换行
                         Expanded(
+                          flex: 1,
                           child: _buildPriceInfo(item),
                         ),
                       ],

@@ -42,9 +42,18 @@ class LocalCartManager {
     final key = _generateLocalKey(cartItem);
     final newQuantity = currentQuantity + 1;
     
+    logDebug('🔍 LocalCartManager.addDishQuantity 调试信息:', tag: _logTag);
+    logDebug('  菜品: ${cartItem.dish.name}', tag: _logTag);
+    logDebug('  当前数量: $currentQuantity', tag: _logTag);
+    logDebug('  新数量: $newQuantity', tag: _logTag);
+    logDebug('  规格选项: ${cartItem.selectedOptions}', tag: _logTag);
+    
     // 立即更新UI
     if (_onQuantityChanged != null) {
+      logDebug('  调用onQuantityChanged回调', tag: _logTag);
       _onQuantityChanged!(cartItem, newQuantity);
+    } else {
+      logDebug('  ⚠️ onQuantityChanged回调为null', tag: _logTag);
     }
     
     // 防抖发送WebSocket消息

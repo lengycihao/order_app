@@ -5,6 +5,7 @@ import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/utils/screen_adaptation.dart';
+import 'package:lib_base/logging/logging.dart';
 
 /// 规格选择弹窗组件
 class SpecificationModalWidget {
@@ -104,6 +105,8 @@ class _SpecificationModalContentState
                   child: Text(
                     widget.dish.name,
                     style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
                 GestureDetector(
@@ -581,9 +584,21 @@ class _SpecificationModalContentState
         }
       });
       
-      for (int i = 0; i < quantity; i++) {
-        controller.addToCart(widget.dish, selectedOptions: selectedOptionsMap);
-      }
+      logDebug('🔍 规格选择弹窗调试信息:', tag: 'SpecModal');
+      logDebug('  菜品: ${widget.dish.name}', tag: 'SpecModal');
+      logDebug('  数量: $quantity', tag: 'SpecModal');
+      logDebug('  规格选项: $selectedOptionsMap', tag: 'SpecModal');
+      logDebug('  当前购物车项数: ${controller.cart.length}', tag: 'SpecModal');
+      
+      // 直接添加指定数量的商品到购物车
+      controller.addToCartWithQuantity(
+        widget.dish, 
+        quantity: quantity,
+        selectedOptions: selectedOptionsMap,
+      );
+      
+      logDebug('✅ 规格选择弹窗添加商品完成: ${widget.dish.name} x$quantity', tag: 'SpecModal');
+      
       Navigator.of(context).pop();
       // 移除本地成功提示，等待服务器确认后再显示
     } else {

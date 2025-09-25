@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:lib_domain/entrity/takeout/takeout_time_option_model.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/pages/takeaway/components/bottom_time_picker_dialog.dart';
 
 class TakeawayOrderSuccessController extends GetxController {
   // 桌台ID
@@ -121,39 +122,28 @@ class TakeawayOrderSuccessController extends GetxController {
   // 显示时间选择器
   void showTimePicker() async {
     final now = DateTime.now();
-    final initialTime = TimeOfDay.fromDateTime(customDateTime.value ?? now);
+    final initialTime = customDateTime.value ?? now;
     
-    final selectedTime = await Get.dialog<TimeOfDay>(
-      TimePickerDialog(
+    final selectedTime = await Get.bottomSheet<DateTime>(
+      BottomTimePickerDialog(
         initialTime: initialTime,
-        helpText: '选择取餐时间',
-        cancelText: '取消',
-        confirmText: '确认',
+        onTimeSelected: (time) {
+          // 如果选择的时间已经过去，则设为明天
+          final finalDateTime = time.isBefore(DateTime.now()) 
+              ? time.add(const Duration(days: 1))
+              : time;
+          
+          customDateTime.value = finalDateTime;
+          // 更新显示的时间文本
+          selectedTimeText.value = _formatTime(finalDateTime);
+          this.selectedDateTime.value = finalDateTime;
+        },
       ),
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
     );
     
-    if (selectedTime != null) {
-      // 创建今天的指定时间
-      final today = DateTime.now();
-      final selectedDateTime = DateTime(
-        today.year,
-        today.month,
-        today.day,
-        selectedTime.hour,
-        selectedTime.minute,
-        0, // 秒数设为00
-      );
-      
-      // 如果选择的时间已经过去，则设为明天
-      final finalDateTime = selectedDateTime.isBefore(DateTime.now()) 
-          ? selectedDateTime.add(const Duration(days: 1))
-          : selectedDateTime;
-      
-      customDateTime.value = finalDateTime;
-      // 更新显示的时间文本
-      selectedTimeText.value = _formatTime(finalDateTime);
-      this.selectedDateTime.value = finalDateTime;
-    } else {
+    if (selectedTime == null) {
       // 如果用户取消了时间选择，重置为第一个选项
       if (timeOptions.isNotEmpty) {
         selectedTimeIndex.value = 0;
