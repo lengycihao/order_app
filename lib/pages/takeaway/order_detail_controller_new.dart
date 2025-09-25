@@ -174,11 +174,11 @@ class OrderDetailControllerNew extends GetxController {
 
   /// 获取总金额
   double get totalAmount {
-    if (orderDetail.value?.totalAmount != null) {
+    if (orderDetail.value?.totalAmount != null && orderDetail.value!.totalAmount!.isNotEmpty) {
       try {
         return double.parse(orderDetail.value!.totalAmount!);
       } catch (e) {
-        // 解析失败时使用计算值
+        return subtotal + deliveryFee + packagingFee;
       }
     }
     return subtotal + deliveryFee + packagingFee;

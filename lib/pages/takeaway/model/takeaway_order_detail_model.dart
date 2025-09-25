@@ -72,24 +72,14 @@ class TakeawayOrderDetailResponse {
 
   /// 获取格式化的总金额
   String get formattedTotalAmount {
-    if (totalAmount == null || totalAmount!.isEmpty) return '€0.00';
-    try {
-      final amount = double.parse(totalAmount!);
-      return '€${amount.toStringAsFixed(2)}';
-    } catch (e) {
-      return '€$totalAmount';
-    }
+    if (totalAmount == null || totalAmount!.isEmpty) return '€0';
+    return '€$totalAmount';
   }
 
   /// 获取格式化的已付金额
   String get formattedPaidAmount {
-    if (paidAmount == null || paidAmount!.isEmpty) return '€0.00';
-    try {
-      final amount = double.parse(paidAmount!);
-      return '€${amount.toStringAsFixed(2)}';
-    } catch (e) {
-      return '€$paidAmount';
-    }
+    if (paidAmount == null || paidAmount!.isEmpty) return '€0';
+    return '€$paidAmount';
   }
 
   /// 获取格式化的预计取餐时间
@@ -180,24 +170,14 @@ class TakeawayOrderDetailItem {
 
   /// 获取格式化的价格
   String get formattedPrice {
-    if (price == null || price!.isEmpty) return '€0.00';
-    try {
-      final amount = double.parse(price!);
-      return '€${amount.toStringAsFixed(2)}';
-    } catch (e) {
-      return '€$price';
-    }
+    if (price == null || price!.isEmpty) return '€0';
+    return '€$price';
   }
 
   /// 获取格式化的单价
   String get formattedUnitPrice {
-    if (unitPrice == null || unitPrice!.isEmpty) return '€0.00';
-    try {
-      final amount = double.parse(unitPrice!);
-      return '€${amount.toStringAsFixed(2)}';
-    } catch (e) {
-      return '€$unitPrice';
-    }
+    if (unitPrice == null || unitPrice!.isEmpty) return '€0';
+    return '€$unitPrice';
   }
 
   /// 获取格式化的烹饪超时时间

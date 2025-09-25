@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'order_detail_controller_new.dart';
+import 'model/takeaway_order_detail_model.dart';
 
 class OrderDetailPageNew extends StatelessWidget {
   const OrderDetailPageNew({Key? key}) : super(key: key);
@@ -12,8 +13,15 @@ class OrderDetailPageNew extends StatelessWidget {
       init: OrderDetailControllerNew(),
       builder: (controller) {
         return Scaffold(
+          backgroundColor: const Color(0xfff9f9f9),
           appBar: AppBar(
-            title: const Text('未结账/已结账'),
+            title: Obx(() {
+              final order = controller.orderDetail.value;
+              if (order == null) {
+                return const Text('订单详情');
+              }
+              return Text(order.isPaid ? '已结账' : '未结账');
+            }),
             centerTitle: true,
             backgroundColor: Colors.white,
             foregroundColor: Colors.black,
@@ -37,14 +45,18 @@ class OrderDetailPageNew extends StatelessWidget {
 
             final order = controller.orderDetail.value;
             if (order == null) {
-              return const Center(
+              return Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(Icons.error_outline, size: 64, color: Colors.grey),
-                    SizedBox(height: 16),
-                    Text(
-                      '订单详情加载失败',
+                    Image.asset(
+                      'assets/order_nonet.webp',
+                      width: 120,
+                      height: 120,
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      '加载失败',
                       style: TextStyle(fontSize: 16, color: Colors.grey),
                     ),
                   ],
@@ -85,67 +97,6 @@ class OrderDetailPageNew extends StatelessWidget {
     );
   }
 
-  /// 构建订单状态卡片
-  Widget _buildOrderStatusCard(order) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 3,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '订单状态',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: order.isPaid
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  order.isPaid ? '已结账' : '未结账',
-                  style: TextStyle(
-                    color: order.isPaid ? Colors.green : Colors.orange,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (order.orderStatusName != null)
-            Text(
-              '处理状态：${order.orderStatusName}',
-              style: const TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-        ],
-      ),
-    );
-  }
 
   /// 构建订单基本信息卡片
   Widget _buildOrderInfoCard(order) {
@@ -290,25 +241,23 @@ class OrderDetailPageNew extends StatelessWidget {
                               fontWeight: FontWeight.w500,
                             ),
                           ),
-                          Row(
-                            spacing: 5,
-                            children: [
-                              if (item.allergens != null &&
-                                  item.allergens!.isNotEmpty)
-                                ...item.allergens!.map((allergen) {
-                                  return CachedNetworkImage(
-                                    imageUrl: allergen.icon!,
-                                    width: 16,
-                                    height: 16,
-                                    fit: BoxFit.contain,
-                                    placeholder: (context, url) =>
-                                        SizedBox.shrink(),
-                                    errorWidget: (context, url, error) =>
-                                        SizedBox.shrink(),
-                                  );
-                                }).toList(),
-                            ],
-                          ),
+                          const SizedBox(height: 4),
+                          // 敏感物图片显示在商品名字下方
+                          if (item.allergens != null && item.allergens!.isNotEmpty)
+                            Wrap(
+                              spacing: 4,
+                              runSpacing: 2,
+                              children: item.allergens!.map<Widget>((allergen) {
+                                return CachedNetworkImage(
+                                  imageUrl: allergen.icon!,
+                                  width: 16,
+                                  height: 16,
+                                  fit: BoxFit.contain,
+                                  placeholder: (context, url) => SizedBox.shrink(),
+                                  errorWidget: (context, url, error) => SizedBox.shrink(),
+                                );
+                              }).toList(),
+                            ),
                           const SizedBox(height: 4),
                           if (item.optionsStr != null &&
                               item.optionsStr!.isNotEmpty)
@@ -353,10 +302,10 @@ class OrderDetailPageNew extends StatelessWidget {
                     // 数量和价格
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        const SizedBox(height: 4),
                         Text(
-                          '¥${item.price != null ? (double.tryParse(item.price.toString())?.toStringAsFixed(0) ?? item.price.toString()) : '34'}',
+                          '¥${_getItemUnitPrice(item)}',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -364,7 +313,6 @@ class OrderDetailPageNew extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 4),
-
                         Text(
                           item.quantityText,
                           style: const TextStyle(
@@ -379,7 +327,23 @@ class OrderDetailPageNew extends StatelessWidget {
               );
             }).toList()
           else
-            const Text('暂无商品信息', style: TextStyle(color: Colors.grey)),
+            Center(
+              child: Column(
+                children: [
+                  const SizedBox(height: 40),
+                  Image.asset(
+                    'assets/order_empty.webp',
+                    width: 120,
+                    height: 120,
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    '暂无详情',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );
@@ -403,7 +367,7 @@ class OrderDetailPageNew extends StatelessWidget {
             width: 5,
           ),
           Text(
-             controller.orderDetail.value?.details?.length.toString() ?? '0',
+             _getTotalQuantity(controller.orderDetail.value?.details).toString(),
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xffFF1010)),
           ),
           Spacer(),
@@ -412,7 +376,7 @@ class OrderDetailPageNew extends StatelessWidget {
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Color(0xffFF1010)),
           ),
           Text(
-            controller.orderDetail.value?.totalAmount ?? '0',
+            controller.totalAmount.toStringAsFixed(0),
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xffFF1010)),
           ),
         ],
@@ -421,6 +385,21 @@ class OrderDetailPageNew extends StatelessWidget {
   }
 
  
+  /// 获取商品单价
+  String _getItemUnitPrice(TakeawayOrderDetailItem item) {
+    if (item.unitPrice != null && item.unitPrice!.isNotEmpty) {
+      final price = double.tryParse(item.unitPrice!) ?? 0.0;
+      return price.toStringAsFixed(0);
+    }
+    return item.unitPrice ?? '0';
+  }
+
+  /// 获取总数量
+  int _getTotalQuantity(List<TakeawayOrderDetailItem>? items) {
+    if (items == null || items.isEmpty) return 0;
+    return items.fold<int>(0, (sum, item) => sum + (item.quantity ?? 0));
+  }
+
   /// 构建信息行
   Widget _buildInfoRow(String label, String value, {bool isTotal = false}) {
     return Padding(
