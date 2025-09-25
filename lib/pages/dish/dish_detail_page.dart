@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
-import 'package:order_app/pages/order/order_element/models.dart';
-import 'package:order_app/pages/order/order_element/order_controller.dart';
 import '../../constants/global_colors.dart';
-import 'package:order_app/pages/order/components/specification_modal_widget.dart';
+import 'package:order_app/pages/order/components/unified_quantity_control_widget.dart';
+import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/pages/order/components/unified_cart_widget.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
-import 'package:order_app/pages/order/ordered_page.dart';
-import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
+import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/utils/image_cache_config.dart';
 import 'dish_detail_controller.dart';
 
@@ -70,7 +69,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
           ],
         ),
         // 底部购物车
-        bottomNavigationBar: _buildBottomCart(controller),
+        bottomNavigationBar: _buildBottomCartButton(),
       ),
     );
   }
@@ -251,7 +250,6 @@ class _DishDetailPageState extends State<DishDetailPage> {
       if (dish == null) return const SizedBox.shrink();
 
       final dishModel = controller.convertToDishModel();
-      final cartCount = controller.cartCount.value;
 
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -282,490 +280,133 @@ class _DishDetailPageState extends State<DishDetailPage> {
               ),
             ),
             // 数量控制
-            _buildQuantityControls(controller, dishModel, cartCount),
+            UnifiedQuantityControlWidget(dish: dishModel),
           ],
         ),
       );
     });
   }
 
-  /// 构建数量控制
-  Widget _buildQuantityControls(
-    DishDetailController controller,
-    Dish dishModel,
-    int cartCount,
-  ) {
-    final orderController = Get.find<OrderController>();
-
-    if (cartCount > 0) {
-      // 已添加到购物车，显示数量控制
-      return Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            onTap: () {
-              // 找到对应的购物车项进行删除
-              CartItem? targetCartItem;
-              for (var entry in orderController.cart.entries) {
-                if (entry.key.dish.id == dishModel.id && entry.key.selectedOptions.isEmpty) {
-                  targetCartItem = entry.key;
-                  break;
-                }
-              }
-              if (targetCartItem != null) {
-                orderController.removeFromCart(targetCartItem);
-              }
-            },
-            child: const Icon(
-              Icons.remove_circle_outline,
-              color: Colors.orange,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: 12),
-          // 查找对应的购物车项
-          Builder(
-            builder: (context) {
-              CartItem? cartItem;
-              for (var entry in orderController.cart.entries) {
-                if (entry.key.dish.id == dishModel.id && entry.key.selectedOptions.isEmpty) {
-                  cartItem = entry.key;
-                  break;
-                }
-              }
-              
-              if (cartItem != null) {
-                return Text(
-                  '$cartCount',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black87,
-                  ),
-                );
-              } else {
-                return Text(
-                  '$cartCount',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
-                );
-              }
-            },
-          ),
-          const SizedBox(width: 12),
-          GestureDetector(
-            onTap: () => orderController.addToCart(dishModel),
-            child: const Icon(
-              Icons.add_circle,
-              color: Colors.orange,
-              size: 22,
-            ),
-          ),
-        ],
-      );
-    } else {
-      // 未添加到购物车，显示添加按钮或规格选择
-      if (dishModel.hasOptions) {
-        return Obx(() {
-          // 重新计算规格项数量，确保响应式更新
-          int currentSpecCount = 0;
-          for (var entry in orderController.cart.entries) {
-            if (entry.key.dish.id == dishModel.id && entry.key.selectedOptions.isNotEmpty) {
-              currentSpecCount += entry.value;
-            }
-          }
-          
-          return GestureDetector(
-            onTap: () {
-              SpecificationModalWidget.showSpecificationModal(
-                Get.context!,
-                dishModel,
-              );
-            },
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: Colors.orange,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const Text(
-                    '选规格',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                // 角标
-                if (currentSpecCount > 0)
-                  Positioned(
-                    right: -4,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        '$currentSpecCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-          );
-        });
-      } else {
-        return GestureDetector(
-          onTap: () => orderController.addToCart(dishModel),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: const Text(
-              '加入购物车',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ),
-        );
-      }
-    }
-  }
-
-  /// 构建底部购物车
-  Widget _buildBottomCart(DishDetailController controller) {
-    final orderController = Get.find<OrderController>();
-    
-    return Obx(() {
-      final totalCount = orderController.totalCount;
-      final totalPrice = orderController.totalPrice;
-      
-      if (totalCount == 0) {
-        return const SizedBox.shrink();
-      }
-
-      return Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              offset: const Offset(0, -2),
-              blurRadius: 8,
-            ),
-          ],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            // 购物车图标和数量
-            GestureDetector(
-              onTap: () {
-                if (totalCount > 0) {
-                  _showCartModal();
-                }
-              },
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Image.asset(
-                    'assets/order_shop_car.webp.webp',
-                    width: 50,
-                    height: 50,
-                    color: totalCount > 0 ? null : Colors.grey,
-                  ),
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.red,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 20,
-                        minHeight: 20,
-                      ),
-                      child: Text(
-                        '$totalCount',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            // 价格信息
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: '￥',
-                          style: TextStyle(
-                            color: Color(0xFFFF1010),
-                            fontSize: 12,
-                          ),
-                        ),
-                        TextSpan(
-                          text: '${totalPrice.toStringAsFixed(2)}',
-                          style: TextStyle(
-                            color: Color(0xFFFF1010),
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Text(
-                    '共$totalCount件商品',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF666666),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // 下单按钮
-            ElevatedButton(
-              onPressed: () => _handleSubmitOrder(),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              ),
-              child: const Text(
-                '下单',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  /// 显示购物车弹窗
-  void _showCartModal() {
-    final orderController = Get.find<OrderController>();
-    showModalBottomSheet(
-      context: Get.context!,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.3,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) => Container(
-          decoration: const BoxDecoration(
+  /// 构建底部购物车按钮
+  Widget _buildBottomCartButton() {
+    return GetBuilder<OrderController>(
+      builder: (controller) {
+        final totalCount = controller.totalCount;
+        final totalPrice = controller.totalPrice;
+        
+        if (totalCount == 0) {
+          return const SizedBox.shrink();
+        }
+        
+        return Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, -2),
+              ),
+            ],
           ),
-          child: Column(
+          child: Row(
             children: [
-              // 拖拽指示器
-              Container(
-                margin: const EdgeInsets.only(top: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
+              // 购物车图标和数量角标
+              GestureDetector(
+                onTap: () => UnifiedCartWidget.showCartModal(
+                  context,
+                  onSubmitOrder: _handleSubmitOrder,
+                ),
+                child: Stack(
+                  children: [
+                    Image.asset(
+                      'assets/order_shop_car.webp',
+                      width: 44,
+                      height: 44,
+                    ),
+                    if (totalCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFF1010),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            totalCount > 99 ? '99+' : totalCount.toString(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              // 标题
-              Padding(
-                padding: const EdgeInsets.all(16),
+              const SizedBox(width: 12),
+              // 价格信息
+              Expanded(
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    const Text(
-                      '购物车',
+                    Text(
+                      '￥',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 12,
+                        height: 1,
+                        color: Color(0xFFFF1010),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => Get.back(),
-                      child: const Icon(Icons.close),
+                    Text(
+                      totalPrice.toStringAsFixed(0),
+                      style: TextStyle(
+                        fontSize: 24,
+                        height: 1,
+                        color: Color(0xFFFF1010),
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
               ),
-              // 购物车内容
-              Expanded(
-                child: orderController.cart.isEmpty
-                    ? const Center(
-                        child: Text('购物车是空的'),
-                      )
-                    : ListView.builder(
-                        controller: scrollController,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: orderController.cart.length,
-                        itemBuilder: (context, index) {
-                          final entry = orderController.cart.entries.elementAt(index);
-                          final cartItem = entry.key;
-                          final count = entry.value;
-                          return _buildCartItem(cartItem, count);
-                        },
-                      ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  /// 构建购物车项
-  Widget _buildCartItem(dynamic cartItem, int count) {
-    final orderController = Get.find<OrderController>();
-    
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey.shade50,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        children: [
-          // 菜品图片
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: cartItem.dish.image,
-              width: 60,
-              height: 60,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                width: 60,
-                height: 60,
-                color: Colors.grey.shade200,
-                child: const Center(child: CircularProgressIndicator()),
-              ),
-              errorWidget: (context, url, error) => Container(
-                width: 60,
-                height: 60,
-                color: Colors.grey.shade200,
-                child: const Icon(Icons.error),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // 菜品信息
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  cartItem.dish.name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
+              // 下单按钮
+              GestureDetector(
+                onTap: _handleSubmitOrder,
+                child: Container(
+                  width: 80,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF4444),
+                    borderRadius: BorderRadius.circular(18),
                   ),
-                ),
-                if (cartItem.specificationText.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    cartItem.specificationText,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF666666),
+                  child: const Center(
+                    child: Text(
+                      '下单',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ],
-                const SizedBox(height: 8),
-                Text(
-                  '￥${cartItem.dish.price.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          // 数量控制
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              GestureDetector(
-                onTap: () => orderController.removeFromCart(cartItem),
-                child: const Icon(
-                  Icons.remove_circle_outline,
-                  color: Colors.orange,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Text(
-                '$count',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.black87,
-                ),
-              ),
-              const SizedBox(width: 12),
-              GestureDetector(
-                onTap: () => orderController.addCartItemQuantity(cartItem),
-                child: const Icon(
-                  Icons.add_circle,
-                  color: Colors.orange,
-                  size: 22,
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -773,66 +414,49 @@ class _DishDetailPageState extends State<DishDetailPage> {
   Future<void> _handleSubmitOrder() async {
     if (!mounted) return;
     
-    final orderController = Get.find<OrderController>();
-    
-    // 根据来源决定跳转页面
-    if (orderController.source.value == 'takeaway') {
-      // 外卖订单，先清空购物车，然后跳转到外卖下单成功页面
-      orderController.clearCart();
-      print('🧹 外卖订单提交前清空购物车数据');
+    try {
+      // 显示纯动画加载弹窗（无文字）
+      OrderSubmitDialog.showLoadingOnly(context);
       
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => TakeawayOrderSuccessPage(),
-          settings: RouteSettings(
-            arguments: {
-              'tableId': orderController.table.value?.tableId ?? 0,
-            },
-          ),
-        ),
-      );
-    } else {
-      // 堂食订单，需要提交订单
-      try {
-        // 显示纯动画加载弹窗（无文字）
-        OrderSubmitDialog.showLoadingOnly(context);
-        
-        // 提交订单
-        final result = await orderController.submitOrder();
-        
-        if (!mounted) return;
-        
+      final controller = Get.find<OrderController>();
+      final result = await controller.submitOrder();
+      
+      if (!mounted) return;
+      
+      // 关闭加载弹窗
+      Navigator.of(context).pop();
+      
+      if (result['success'] == true) {
+        // 下单成功，刷新已点订单数据后切换到已点页面
+        await controller.loadCurrentOrder();
+        _switchToOrderedTab();
+      } else {
+        // 下单失败，显示错误弹窗
+        await OrderSubmitDialog.showError(context);
+      }
+    } catch (e) {
+      print('❌ 提交订单异常: $e');
+      if (mounted) {
         // 关闭加载弹窗
         Navigator.of(context).pop();
-        
-        if (result['success'] == true) {
-          // 返回到上一页
-          Navigator.of(context).pop();
-          
-          // 跳转到已点页面
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const OrderedPage()),
-          );
-        } else {
-          // 下单失败，显示具体错误信息
-          await OrderSubmitDialog.showError(
-            context,
-            message: result['message'] ?? '订单提交失败，请重试',
-          );
-        }
-      } catch (e) {
-        print('❌ 提交订单异常: $e');
-        if (mounted) {
-          // 显示错误弹窗（自动关闭加载弹窗）
-          await OrderSubmitDialog.showError(
-            context,
-            message: '提交订单时发生错误，请重试',
-          );
-        }
+        // 显示错误弹窗
+        await OrderSubmitDialog.showError(
+          context,
+          message: '提交订单时发生错误，请重试',
+        );
       }
     }
   }
 
+  /// 切换到已点页面
+  void _switchToOrderedTab() {
+    if (!mounted) return;
+    
+    try {
+      // 直接使用OrderMainPageController来切换Tab
+      Get.find<OrderMainPageController>().switchToOrderedTab();
+    } catch (e) {
+      print('❌ 切换到已点页面失败: $e');
+    }
+  }
 }

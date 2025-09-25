@@ -351,7 +351,7 @@ class _SpecificationModalContentState
   /// 构建底部区域（数量选择 + 购物车按钮）
   Widget _buildBottomSection() {
     return Container(
-      padding: EdgeInsets.only(bottom: 15),
+       padding: EdgeInsets.only(bottom: 15),
       decoration: BoxDecoration(
         color: Colors.white,
         // border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
@@ -372,74 +372,133 @@ class _SpecificationModalContentState
                 ),
               ),
               Spacer(),
-              GestureDetector(
-                onTap: () {
-                  if (quantity > 1) {
-                    setState(() {
-                      quantity--;
-                      _quantityController.text = '$quantity';
-                    });
-                  }
-                },
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                 
-                  child: Image(image: AssetImage('assets/order_jian_icon.webp')),
+              // 统一的步进器组件
+              Container(
+                height: 24,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey.shade300, width: 1),
+                  borderRadius: BorderRadius.circular(4),
                 ),
-              ),
-              SizedBox(width: 10),
-              // 可编辑的数量输入框
-              GestureDetector(
-                onTap: () {
-                  _quantityFocusNode.requestFocus();
-                },
-                child: Container(
-                  width: 40,
-                  height: 24,
-                  child: TextField(
-                    controller: _quantityController,
-                    focusNode: _quantityFocusNode,
-                    textAlign: TextAlign.center,
-                    keyboardType: TextInputType.number,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // 减少按钮
+                    GestureDetector(
+                      onTap: () {
+                        if (quantity > 1) {
+                          setState(() {
+                            quantity--;
+                            _quantityController.text = '$quantity';
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(4),
+                            bottomLeft: Radius.circular(4),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '一',
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xff666666),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
-                    decoration: InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                      isDense: true,
+                    // 分割线
+                    Container(
+                      width: 1,
+                      height: 24,
+                      color: Colors.grey.shade300,
                     ),
-                    cursorColor: Colors.black54,
-                    showCursor: true,
-                    enableInteractiveSelection: false,
-                    onSubmitted: (value) {
-                      _updateQuantityFromInput(value);
-                      // 提交后释放焦点
-                      _quantityFocusNode.unfocus();
-                      FocusScope.of(context).unfocus();
-                    },
-                    onChanged: (value) {
-                      // 实时更新显示，但只在提交时验证
-                    },
-                  ),
-                ),
-              ),
-              SizedBox(width: 10),
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    quantity++;
-                    _quantityController.text = '$quantity';
-                  });
-                },
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                 
-                  child: Image(image: AssetImage('assets/order_jia_icon.webp')),
+                    // 数字显示区域 - 可编辑输入框
+                    Container(
+                      width: 32,
+                      height: 24,
+                      color: Colors.white,
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            _quantityFocusNode.requestFocus();
+                          },
+                          child: TextField(
+                            controller: _quantityController,
+                            focusNode: _quantityFocusNode,
+                            textAlign: TextAlign.center,
+                            keyboardType: TextInputType.number,
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey.shade800,
+                            ),
+                            decoration: InputDecoration(
+                              border: InputBorder.none,
+                              contentPadding: EdgeInsets.zero,
+                              isDense: true,
+                              alignLabelWithHint: true,
+                            ),
+                            cursorColor: Colors.black54,
+                            showCursor: true,
+                            enableInteractiveSelection: false,
+                            onSubmitted: (value) {
+                              _updateQuantityFromInput(value);
+                              // 提交后释放焦点
+                              _quantityFocusNode.unfocus();
+                              FocusScope.of(context).unfocus();
+                            },
+                            onChanged: (value) {
+                              // 实时更新显示，但只在提交时验证
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                    // 分割线
+                    Container(
+                      width: 1,
+                      height: 24,
+                      color: Colors.grey.shade300,
+                    ),
+                    // 增加按钮
+                    GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          quantity++;
+                          _quantityController.text = '$quantity';
+                        });
+                      },
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(4),
+                            bottomRight: Radius.circular(4),
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            '+',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xff666666),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],

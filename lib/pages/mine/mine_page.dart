@@ -3,8 +3,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/mine/mine_controller.dart';
 import 'package:order_app/pages/mine/sub_page/change_lan_page.dart';
 import 'package:order_app/pages/mine/sub_page/change_psw_page.dart';
-import 'package:order_app/pages/debug/auth_test_page.dart';
-
+ 
 class MinePage extends StatelessWidget {
   final MineController c = Get.put(MineController());
 
@@ -201,20 +200,7 @@ class MinePage extends StatelessWidget {
                             Get.to(ChangeLanPage());
                           },
                         ),
-                        Divider(height: 1),
-                        _SettingItem(
-                          icon: 'assets/order_mine_sys.webp',
-                          title: '认证调试',
-                          trailing: Image.asset(
-                            'assets/order_mine_arrowR.webp',
-                            width: 20,
-                            height: 20,
-                          ),
-                          onTap: () {
-                            // 跳转认证调试页面
-                            Get.to(() => const AuthTestPage());
-                          },
-                        ),
+                         
                         Divider(height: 1),
                         Obx(
                           () => _SettingItem(

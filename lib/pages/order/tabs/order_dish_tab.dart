@@ -2,17 +2,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart';
-import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:order_app/pages/order/order_element/models.dart';
+import 'package:order_app/pages/order/components/order_submit_dialog.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/dish_item_widget.dart';
 import 'package:order_app/pages/order/components/allergen_filter_widget.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
-import 'package:order_app/pages/order/components/modal_utils.dart';
+import 'package:order_app/pages/order/components/unified_cart_widget.dart';
 import 'package:order_app/utils/focus_manager.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
-import 'package:order_app/pages/order/components/order_submit_dialog.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:get_it/get_it.dart';
@@ -790,266 +787,126 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     }
   }
 
-  /// 构建底部购物车
-  Widget _buildBottomCart() {
-    return Obx(() {
-      final totalCount = controller.totalCount;
-      final totalPrice = controller.totalPrice;
-      
-      return Container(
-        height: 60,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              offset: Offset(0, -2),
-              blurRadius: 8,
-            ),
-          ],
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 16),
-        child: Row(
-          children: [
-            // 购物车图标和数量
-            GestureDetector(
-              onTap: () {
-                if (totalCount > 0) {
-                  _showCartModal();
-                }
-              },
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Image.asset(
-                        'assets/order_shop_car.webp',
-                        width: 50,
-                        height: 50,
-                        color: totalCount > 0 ? null : Colors.grey,
-                        colorBlendMode: totalCount > 0 ? null : BlendMode.modulate,
-                      ),
-                  if (totalCount > 0)
-                    Positioned(
-                      right: -3,
-                      top: -3,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: totalCount > 99 ? 6 : 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 20,
-                          minHeight: 20,
-                        ),
-                        child: Text(
-                          '$totalCount',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
+  /// 构建底部购物车按钮
+  Widget _buildBottomCartButton() {
+    return GetBuilder<OrderController>(
+      builder: (controller) {
+        final totalCount = controller.totalCount;
+        final totalPrice = controller.totalPrice;
+        
+        if (totalCount == 0) {
+          return const SizedBox.shrink();
+        }
+        
+        return Container(
+          height: 60,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 4,
+                offset: const Offset(0, -2),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // 购物车图标和数量角标
+              GestureDetector(
+                onTap: () => UnifiedCartWidget.showCartModal(
+                  context,
+                  onSubmitOrder: _handleSubmitOrder,
+                ),
+                child: Stack(
+                  children: [
+                    Image.asset(
+                      'assets/order_shop_car.webp',
+                      width: 44,
+                      height: 44,
+                    ),
+                    if (totalCount > 0)
+                      Positioned(
+                        right: 0,
+                        top: 0,
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFFF1010),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                          textAlign: TextAlign.center,
+                          constraints: BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            totalCount > 99 ? '99+' : totalCount.toString(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-            SizedBox(width: 12),
-            // 价格信息
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (totalCount > 0) ...[
-                    Text(
-                      ' ',
-                      style: TextStyle(
-                        color: Colors.grey.shade600,
-                        fontSize: 12,
-                      ),
-                    ),
-                    SizedBox(height: 2),
                   ],
-                  Text(
-                    totalCount > 0 
-                        ? '￥${totalPrice.toStringAsFixed(0)}' 
-                        : '选择菜品',
-                    style: TextStyle(
-                      color: totalCount > 0 ? Colors.black : Colors.grey.shade500,
-                      fontSize: totalCount > 0 ? 18 : 16,
-                      fontWeight: totalCount > 0 ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // 价格信息
+              Expanded(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      '￥',
+                      style: TextStyle(
+                        fontSize: 12,
+                        height: 1,
+                        color: Color(0xFFFF1010),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      totalPrice.toStringAsFixed(0),
+                      style: TextStyle(
+                        fontSize: 24,
+                        height: 1,
+                        color: Color(0xFFFF1010),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // 下单按钮
+              GestureDetector(
+                onTap: _handleSubmitOrder,
+                child: Container(
+                  width: 80,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9027),
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '下单',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            // 下单按钮
-            Container(
-              height: 40,
-              child: ElevatedButton(
-                onPressed: totalCount > 0 ? () => _handleSubmitOrder() : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: totalCount > 0 ? Colors.orange : Colors.grey.shade300,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  shadowColor: Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  padding: EdgeInsets.symmetric(horizontal: 24),
-                ),
-                child: Text(
-                  '下单',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                  ),
                 ),
               ),
-            ),
-          ],
-        ),
-      );
-    });
-  }
-
-  /// 显示购物车弹窗
-  void _showCartModal() {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final maxHeight = screenHeight * 0.8;
-    
-    ModalUtils.showBottomModal(
-      context: context,
-      isScrollControlled: true,
-      child: CartModalContainer(
-        title: ' ',
-        onClear: () => _showClearCartDialog(context),
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            maxHeight: maxHeight,
+            ],
           ),
-          child: _CartModalContent(onSubmitOrder: _handleSubmitOrder),
-        ),
-      ),
-    );
-  }
-
-  /// 显示清空购物车对话框
-  void _showClearCartDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.white, 
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(16),
-        ),
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.red,
-              size: 28,
-            ),
-            SizedBox(width: 12),
-            Text(
-              '清空购物车',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '确认要清空购物车中的所有菜品吗？',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[700],
-              ),
-            ),
-            SizedBox(height: 16),
-            Container(
-              padding: EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: Colors.red[200] ?? Colors.red.shade200),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.shopping_cart_outlined,
-                    color: Colors.red[600],
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Obx(() {
-                    final totalCount = controller.totalCount;
-                    return Text(
-                      '当前购物车有 $totalCount 个菜品',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.red[700],
-                        fontWeight: FontWeight.w500,
-                      ),
-                    );
-                  }),
-                ],
-              ),
-            ),
-            SizedBox(height: 12),
-            
-          ],
-        ),
-        actionsAlignment: MainAxisAlignment.spaceAround,
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.grey[400],
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              '取消',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              controller.clearCart();
-              Navigator.of(context).pop();
-              Get.back();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              '确认',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -1075,8 +932,8 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
           _buildSearchAndFilter(),
           // 主体内容区域
           _buildMainContent(),
-          // 底部购物车
-          _buildBottomCart(),
+          // 底部购物车按钮
+          _buildBottomCartButton(),
         ],
       ),
     );
@@ -1212,541 +1069,6 @@ class _UserAvatarWithLoadingState extends State<_UserAvatarWithLoading>
               ),
           ],
         );
-  }
-}
-
-/// 购物车弹窗内容
-class _CartModalContent extends StatelessWidget {
-  final VoidCallback onSubmitOrder;
-  
-  const _CartModalContent({required this.onSubmitOrder});
-
-  @override
-  Widget build(BuildContext context) {
-    return Obx(() {
-      final controller = Get.find<OrderController>();
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 购物车列表 - 只在初始加载时显示骨架图，操作时不显示
-          controller.isLoadingCart.value && !controller.isCartOperationLoading.value
-              ? const CartSkeleton()
-              : controller.cart.isEmpty
-                  ? Container(
-                      padding: EdgeInsets.all(40),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.shopping_cart_outlined,
-                            size: 60,
-                            color: Colors.grey.shade400,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            '购物车是空的',
-                            style: TextStyle(
-                              color: Colors.grey.shade500,
-                              fontSize: 16,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : Flexible(
-                      child: ListView.builder(
-                        shrinkWrap: true,
-                        padding: EdgeInsets.all(16),
-                        itemCount: controller.cart.length,
-                        itemBuilder: (context, index) {
-                          final entry = controller.cart.entries.elementAt(index);
-                          final cartItem = entry.key;
-                          final count = entry.value;
-                          return _CartItem(cartItem: cartItem, count: count);
-                        },
-                      ),
-                    ),
-          // 底部统计和下单
-          if (controller.cart.isNotEmpty)
-            Container(
-              padding: EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    offset: Offset(0, -1),
-                    blurRadius: 4,
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Image.asset(
-                        'assets/order_shop_car.webp',
-                        width: 50,
-                        height: 50,
-                        color: controller.totalCount > 0 ? null : Colors.grey,
-                        colorBlendMode: controller.totalCount > 0 ? null : BlendMode.modulate,
-                      ),
-                  if (controller.totalCount > 0)
-                    Positioned(
-                      right: -3,
-                      top: -3,
-                      child: Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: controller.totalCount > 99 ? 6 : 4,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        constraints: BoxConstraints(
-                          minWidth: 20,
-                          minHeight: 20,
-                        ),
-                        child: Text(
-                          '${controller.totalCount}',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-          
-                  Spacer(),
-                  ElevatedButton(
-                    onPressed: () async {
-                      // 先关闭购物车弹窗
-                      Get.back();
-                      // 然后执行下单逻辑（会显示新的加载弹窗）
-                      onSubmitOrder();
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shadowColor: Colors.transparent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
-                      ),
-                      padding: EdgeInsets.symmetric(horizontal: 32),
-                    ),
-                    child: Text(
-                      '下单',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      );
-    });
-  }
-}
-
-/// 购物车项目
-class _CartItem extends StatelessWidget {
-  final CartItem cartItem;
-  final int count;
-
-  const _CartItem({
-    Key? key,
-    required this.cartItem,
-    required this.count,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = Get.find<OrderController>();
-    return Slidable(
-      key: Key('cart_item_${cartItem.cartSpecificationId ?? cartItem.dish.id}'),
-      endActionPane: ActionPane(
-        motion: const ScrollMotion(),
-        extentRatio: 0.25,
-        children: [
-          SlidableAction(
-            onPressed: (context) async {
-              final shouldDelete = await showDialog<bool>(
-                context: context,
-                barrierDismissible: false,
-                builder: (context) => AlertDialog(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  title: Row(
-                    children: [
-                      Icon(
-                        Icons.warning_amber_rounded,
-                        color: Colors.orange,
-                        size: 28,
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        '确认删除',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                  content: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '确定要删除以下菜品吗？',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                      Container(
-                        padding: EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: Colors.grey[200] ?? Colors.grey.shade200),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(6),
-                              child: Image.network(
-                                cartItem.dish.image,
-                                width: 46,
-                                height: 46,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    width: 46,
-                                    height: 46,
-                                    color: Colors.grey[300],
-                                    child: Icon(Icons.restaurant, color: Colors.grey[600]),
-                                  );
-                                },
-                              ),
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    cartItem.dish.name,
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    '数量：${Get.find<OrderController>().cart[cartItem] ?? 0}',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 12),
-                       
-                    ],
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.of(context).pop(false),
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.grey[600],
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      ),
-                      child: Text(
-                        '取消',
-                        style: TextStyle(fontSize: 16),
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () => Navigator.of(context).pop(true),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        '删除',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                      ),
-                    ),
-                  ],
-                ),
-              ) ?? false;
-              
-              if (shouldDelete) {
-                controller.deleteCartItem(cartItem);
-              }
-            },
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            icon: Icons.delete,
-            label: '删除',
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ],
-      ),
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: CachedNetworkImage(
-              imageUrl: cartItem.dish.image,
-              width: 46,
-              height: 46,
-              fit: BoxFit.cover,
-              placeholder: (context, url) => Container(
-                width: 46,
-                height: 46,
-                color: Colors.grey.shade200,
-                child: Icon(Icons.image, color: Colors.grey),
-              ),
-              errorWidget: (context, url, error) => Container(
-                width: 46,
-                height: 46,
-                color: Colors.grey.shade200,
-                child: Icon(Icons.broken_image, color: Colors.grey),
-              ),
-            ),
-          ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // 1. 菜品名称
-                Text(
-                  cartItem.dish.name,
-                  style: TextStyle(
-                    fontSize: 14,
-                    height: 1,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(height: 4),
-                // 2. 敏感物图标（只显示图标，不显示文字，去除背景）
-                if (cartItem.dish.allergens != null && cartItem.dish.allergens?.isNotEmpty == true)
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 2,
-                    children: (cartItem.dish.allergens ?? []).where((allergen) => 
-                      allergen.icon != null && allergen.icon!.isNotEmpty
-                    ).map((allergen) {
-                      return CachedNetworkImage(
-                        imageUrl: allergen.icon!,
-                        width: 12,
-                        height: 12,
-                        fit: BoxFit.contain,
-                        placeholder: (context, url) => SizedBox.shrink(),
-                        errorWidget: (context, url, error) => SizedBox.shrink(),
-                      );
-                    }).toList(),
-                  ),
-                // 3. 标签（tags）
-                if (cartItem.dish.tags != null && cartItem.dish.tags?.isNotEmpty == true)
-                  Padding(
-                    padding: EdgeInsets.only(top: 6),
-                    child: Wrap(
-                      spacing: 4,
-                      runSpacing: 2,
-                      children: (cartItem.dish.tags ?? []).where((tag) => 
-                        tag.isNotEmpty
-                      ).take(3).map((tag) {
-                        return Container(
-                          padding: EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: Colors.orange[700]!),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            tag,
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.orange[700],
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                  ),
-                SizedBox(height: 8),
-                // 4. 价格显示（单价）：￥（8pt 000000）价格（16pt 000000）/份（6pt #999999）
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
-                  children: [
-                    Text(
-                      "￥",
-                      style: TextStyle(
-                        fontSize: 8,
-                        color: Color(0xFF000000),
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                    Text(
-                      "${cartItem.dish.price.toStringAsFixed(0)}",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Color(0xFF000000),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      "/份",
-                      style: TextStyle(
-                        fontSize: 6,
-                        color: Color(0xFF999999),
-                        fontWeight: FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 12),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                  GestureDetector(
-                    onTap: () => controller.removeFromCart(cartItem),
-                    child: Icon(
-                      Icons.remove_circle_outline,
-                      color: Colors.orange,
-                      size: 22,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Text(
-                    '$count',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.black87,
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  GestureDetector(
-                    onTap: () => controller.addCartItemQuantity(cartItem),
-                    child: Icon(
-                      Icons.add_circle,
-                      color: Colors.orange,
-                      size: 22,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-}
-
-// 定义购物车弹窗容器
-class CartModalContainer extends StatelessWidget {
-  final String title;
-  final VoidCallback onClear;
-  final Widget child;
-
-  const CartModalContainer({
-    Key? key,
-    required this.title,
-    required this.onClear,
-    required this.child,
-  }) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // 顶部标题栏
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                // 用户头像
-                Obx(() {
-                  final controller = Get.find<OrderController>();
-                  return _UserAvatarWithLoading(
-                    isLoading: controller.isCartOperationLoading.value,
-                  );
-                }),
-                Spacer(),
-                GestureDetector(
-                  onTap: onClear,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '清空',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Divider(height: 1, thickness: 1),
-          child,
-        ],
-      ),
-    );
   }
 }
 

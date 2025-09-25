@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
+import 'package:order_app/utils/modal_utils.dart';
 
 /// 键盘上方的数量输入组件
 class KeyboardQuantityInputWidget extends StatefulWidget {
@@ -76,26 +77,22 @@ class _KeyboardQuantityInputWidgetState extends State<KeyboardQuantityInputWidge
   void _updateQuantity(int newQuantity) {
     final controller = Get.find<OrderController>();
     
-    if (newQuantity > widget.currentQuantity) {
-      // 增加数量
-      final difference = newQuantity - widget.currentQuantity;
-      for (int i = 0; i < difference; i++) {
-        controller.addCartItemQuantity(widget.cartItem);
-      }
-    } else {
-      // 减少数量
-      final difference = widget.currentQuantity - newQuantity;
-      for (int i = 0; i < difference; i++) {
-        controller.removeFromCart(widget.cartItem);
-      }
-    }
-    
-    // 刷新UI
-    if (widget.onQuantityChanged != null) {
-      widget.onQuantityChanged!();
-    }
-    
-    _dismiss();
+    // 直接设置目标数量，使用本地购物车管理器的优化逻辑
+    controller.updateCartItemQuantity(
+      cartItem: widget.cartItem,
+      newQuantity: newQuantity,
+      onSuccess: () {
+        // 刷新UI
+        if (widget.onQuantityChanged != null) {
+          widget.onQuantityChanged!();
+        }
+        _dismiss();
+      },
+      onError: (code, message) {
+        // 显示错误信息
+        _showInvalidInputDialog();
+      },
+    );
   }
 
   /// 显示无效输入对话框
@@ -120,28 +117,18 @@ class _KeyboardQuantityInputWidgetState extends State<KeyboardQuantityInputWidge
 
   /// 显示删除确认对话框
   void _showDeleteConfirmDialog() {
-    showDialog(
+    ModalUtils.showConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('确认删除'),
-        content: Text('确定要删除这个商品吗？'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _dismiss();
-            },
-            child: Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _deleteItem();
-            },
-            child: Text('删除'),
-          ),
-        ],
-      ),
+      message: '是否删除菜品？',
+      confirmText: '删除',
+      cancelText: '取消',
+      confirmColor: Colors.red,
+      onConfirm: () {
+        _deleteItem();
+      },
+      onCancel: () {
+        _dismiss();
+      },
     );
   }
 

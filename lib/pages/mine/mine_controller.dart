@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/login/login_page.dart';
 import 'package:order_app/utils/toast_component.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
+import 'package:order_app/utils/modal_utils.dart';
 // import '../../service/cart_cache_service.dart'; // 已泣释：不再需要缓存功能
 
 class MineController extends GetxController {
@@ -22,21 +22,12 @@ class MineController extends GetxController {
   void onTapLoginOut() async {
     try {
       // 显示确认对话框
-      final confirm = await Get.dialog<bool>(
-        AlertDialog(
-          title: Text('退出登录'),
-          content: Text('是否退出当前登录？'),
-          actions: [
-            TextButton(
-              onPressed: () => Get.back(result: false),
-              child: Text('取消'),
-            ),
-            TextButton(
-              onPressed: () => Get.back(result: true),
-              child: Text('确认退出', style: TextStyle(color: Colors.red)),
-            ),
-          ],
-        ),
+      final confirm = await ModalUtils.showConfirmDialog(
+        context: Get.context!,
+        message: '是否退出当前登录？',
+        confirmText: '确认退出',
+        cancelText: '取消',
+        confirmColor: Colors.red,
       );
       
       if (confirm != true) return;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:order_app/utils/l10n_utils.dart';
-import 'package:order_app/pages/order/components/modal_utils.dart';
+import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';

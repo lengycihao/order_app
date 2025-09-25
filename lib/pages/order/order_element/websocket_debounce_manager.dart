@@ -16,10 +16,18 @@ class WebSocketDebounceManager {
   // 待发送的操作队列
   final Map<String, PendingOperation> _pendingOperations = {};
   
+  // 失败回调函数
+  Function(CartItem, int)? _onWebSocketFailed;
+  
   WebSocketDebounceManager({
     required WebSocketHandler wsHandler,
     required String logTag,
   }) : _wsHandler = wsHandler, _logTag = logTag;
+  
+  /// 设置失败回调函数
+  void setFailureCallback(Function(CartItem, int)? onWebSocketFailed) {
+    _onWebSocketFailed = onWebSocketFailed;
+  }
   
   /// 防抖发送更新数量操作
   void debounceUpdateQuantity({
@@ -104,11 +112,15 @@ class WebSocketDebounceManager {
         ).then((success) {
           if (!success) {
             logDebug('❌ WebSocket防抖操作发送失败: 更新数量 ${operation.cartItem!.dish.name}', tag: _logTag);
+            // 通知失败回调
+            _onWebSocketFailed?.call(operation.cartItem!, operation.quantity!);
           } else {
             logDebug('📤 执行WebSocket防抖操作: 更新数量 ${operation.cartItem!.dish.name} -> ${operation.quantity}', tag: _logTag);
           }
         }).catchError((error) {
           logDebug('❌ WebSocket防抖操作异常: 更新数量 ${operation.cartItem!.dish.name}, 错误: $error', tag: _logTag);
+          // 通知失败回调
+          _onWebSocketFailed?.call(operation.cartItem!, operation.quantity!);
         });
         break;
       case OperationType.decrease:
@@ -118,11 +130,15 @@ class WebSocketDebounceManager {
         ).then((success) {
           if (!success) {
             logDebug('❌ WebSocket防抖操作发送失败: 减少数量 ${operation.cartItem!.dish.name}', tag: _logTag);
+            // 通知失败回调
+            _onWebSocketFailed?.call(operation.cartItem!, operation.incrQuantity!);
           } else {
             logDebug('📤 执行WebSocket防抖操作: 减少数量 ${operation.cartItem!.dish.name} 增量${operation.incrQuantity}', tag: _logTag);
           }
         }).catchError((error) {
           logDebug('❌ WebSocket防抖操作异常: 减少数量 ${operation.cartItem!.dish.name}, 错误: $error', tag: _logTag);
+          // 通知失败回调
+          _onWebSocketFailed?.call(operation.cartItem!, operation.incrQuantity!);
         });
         break;
       default:

@@ -5,6 +5,7 @@ class OrderConstants {
   static const int cartDebounceTimeMs = 300;
   static const int addDebounceTimeMs = 300;
   static const int websocketBatchDebounceMs = 300;
+  static const int localCartDebounceMs = 300; // 本地购物车防抖时间
   
   // 超时配置
   static const int dishLoadingTimeoutSeconds = 5;

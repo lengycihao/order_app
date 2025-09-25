@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
-import 'package:order_app/pages/order/components/modal_utils.dart';
+import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
@@ -1043,6 +1043,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
                         });
                       } else {
                         ModalUtils.showSnackBar(
+                          context: context,
                           title: '提示',
                           message: '成人数量最少1人',
                         );

@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
-import 'package:order_app/pages/order/components/modal_utils.dart';
+import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 
 /// 敏感物筛选组件
@@ -63,6 +63,7 @@ class _AllergenModalContent extends StatelessWidget {
       return ModalContainerWithMargin(
         title: '敏感物',
         margin: EdgeInsets.zero,
+        showCloseButton: true,
         onClose: () {
           // 只清空临时选择状态，保留敏感物数据
           controller.cancelAllergenSelection();

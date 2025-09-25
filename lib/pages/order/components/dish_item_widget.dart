@@ -311,10 +311,10 @@ class DishItemWidget extends StatelessWidget {
         // 减号按钮
         if (count > 0)
           GestureDetector(
-            child: Icon(
-              Icons.remove_circle_outline,
-              color: Colors.orange,
-              size: 22,
+            child: Image(
+              image: AssetImage('assets/order_reduce_num.webp'),
+              width: 22,
+              height: 22,
             ),
             onTap: onRemoveTap,
           ),
@@ -333,10 +333,10 @@ class DishItemWidget extends StatelessWidget {
         // 加号按钮 - 直接显示，无loading状态
         GestureDetector(
           onTap: onAddTap,
-          child: Icon(
-            Icons.add_circle,
-            color: Colors.orange,
-            size: 22,
+          child: Image(
+            image: AssetImage('assets/order_add_num.webp'),
+            width: 22,
+            height: 22,
           ),
         ),
       ],

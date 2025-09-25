@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/utils/modal_utils.dart';
 
 /// 可点击数量输入组件
 class QuantityInputWidget extends StatefulWidget {
@@ -200,70 +201,48 @@ class _QuantityInputWidgetState extends State<QuantityInputWidget> {
   void _updateQuantity(int newQuantity) {
     final controller = Get.find<OrderController>();
     
-    if (newQuantity > widget.currentQuantity) {
-      // 增加数量
-      final difference = newQuantity - widget.currentQuantity;
-      for (int i = 0; i < difference; i++) {
-        controller.addCartItemQuantity(widget.cartItem);
-      }
-    } else {
-      // 减少数量
-      final difference = widget.currentQuantity - newQuantity;
-      for (int i = 0; i < difference; i++) {
-        controller.removeFromCart(widget.cartItem);
-      }
-    }
-    
-    // 刷新UI
-    if (widget.onQuantityChanged != null) {
-      widget.onQuantityChanged!();
-    }
-    
-    Navigator.of(context).pop();
+    // 直接设置目标数量，使用本地购物车管理器的优化逻辑
+    controller.updateCartItemQuantity(
+      cartItem: widget.cartItem,
+      newQuantity: newQuantity,
+      onSuccess: () {
+        // 刷新UI
+        if (widget.onQuantityChanged != null) {
+          widget.onQuantityChanged!();
+        }
+        Navigator.of(context).pop();
+      },
+      onError: (code, message) {
+        // 显示错误信息
+        ModalUtils.showAlertDialog(
+          context: context,
+          message: '更新数量失败: $message',
+          confirmText: '确定',
+        );
+      },
+    );
   }
 
   /// 显示无效输入对话框
   void _showInvalidInputDialog() {
-    showDialog(
+    ModalUtils.showAlertDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('输入无效'),
-        content: Text('请输入有效的数量'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text('确定'),
-          ),
-        ],
-      ),
+      message: '输入无效\n请输入有效的数量',
+      confirmText: '确定',
     );
   }
 
   /// 显示删除确认对话框
   void _showDeleteConfirmDialog() {
-    showDialog(
+    ModalUtils.showConfirmDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text('确认删除'),
-        content: Text('确定要删除这个商品吗？'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: Text('取消'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _deleteItem();
-            },
-            child: Text('删除'),
-          ),
-        ],
-      ),
+      message: '是否删除菜品？',
+      confirmText: '删除',
+      cancelText: '取消',
+      confirmColor: Colors.red,
+      onConfirm: () {
+        _deleteItem();
+      },
     );
   }
 
