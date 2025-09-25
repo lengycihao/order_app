@@ -762,7 +762,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
           onClose: () {
             Navigator.of(context).pop();
             // 刷新已点订单数据后切换到已点页面
-            controller.loadCurrentOrder();
+            controller.loadCurrentOrder(showLoading: false);
             _switchToOrderedTab();
           },
         );

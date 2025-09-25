@@ -97,7 +97,7 @@ class _SpecificationModalContentState
         children: [
           // 标题栏
           Container(
-            padding: EdgeInsets.only(top: 16, bottom: 8),
+            padding: EdgeInsets.only(top: 14, bottom: 8),
             child: Row(
               children: [
                 Expanded(
@@ -108,7 +108,7 @@ class _SpecificationModalContentState
                 ),
                 GestureDetector(
                   onTap: () => Get.back(),
-                  child: Icon(Icons.close, size: 24, color: Color(0xff666666)),
+                  child: Icon(Icons.close, size: 20, color: Color(0xff666666)),
                 ),
               ],
             ),
@@ -117,7 +117,7 @@ class _SpecificationModalContentState
           // 可滚动的内容区域
           Expanded(
             child: SingleChildScrollView(
-              padding: EdgeInsets.only(top: 16, bottom: 16),
+              padding: EdgeInsets.only(top: 10, bottom: 16),
 
               child: SizedBox(
                 width: double.infinity,
@@ -129,7 +129,7 @@ class _SpecificationModalContentState
                     if (widget.dish.allergens != null &&
                         widget.dish.allergens!.isNotEmpty) ...[
                       _buildAllergenSection(),
-                      SizedBox(height: 10),
+                      SizedBox(height: 8),
                     ],
                     // 规格选项
                     if (widget.dish.options != null &&
@@ -164,7 +164,7 @@ class _SpecificationModalContentState
             color: Color(0xff666666),
           ),
         ),
-        SizedBox(height: 8),
+        SizedBox(height: 6),
         Wrap(
           spacing: 10,
           runSpacing: 8,
@@ -213,7 +213,7 @@ class _SpecificationModalContentState
                     color: Color(0xff666666),
                   ),
                 ),
-                SizedBox(height: 8),
+                SizedBox(height: 6),
                 if (option.isMultiple == true) ...[
                   _buildMultipleChoiceOptions(option),
                 ] else ...[
@@ -249,7 +249,7 @@ class _SpecificationModalContentState
             });
           },
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
               color: isSelected ? Color(0x33FF9027) : Color(0xffF1F1F1),
               borderRadius: BorderRadius.circular(30),
@@ -260,7 +260,7 @@ class _SpecificationModalContentState
             child: Text(
               '${item.label ?? ''}',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 color: isSelected ? Color(0xffFF9027) : Colors.black,
               ),
             ),
@@ -285,7 +285,7 @@ class _SpecificationModalContentState
             });
           },
           child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 5),
             decoration: BoxDecoration(
               color: isSelected ? Color(0x33FF9027) : Color(0xffF1F1F1),
               borderRadius: BorderRadius.circular(30),
@@ -296,7 +296,7 @@ class _SpecificationModalContentState
             child: Text(
               '${item.label ?? ''}',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 12,
                 color: isSelected ? Color(0xffFF9027) : Colors.black,
               ),
             ),

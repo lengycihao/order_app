@@ -17,17 +17,30 @@ class ModalUtils {
       isScrollControlled: isScrollControlled,
       isDismissible: isDismissible,
       backgroundColor: backgroundColor ?? Colors.transparent,
-      builder: (context) => height != null
-          ? Container(
-              height: height,
-              child: child,
-            )
-          : margin != null
-              ? Container(
-                  margin: margin,
-                  child: child,
-                )
-              : child,
+      builder: (context) {
+        Widget wrappedChild = child;
+        
+        if (height != null) {
+          wrappedChild = Container(
+            height: height,
+            child: child,
+          );
+        } else if (margin != null) {
+          wrappedChild = Container(
+            margin: margin,
+            child: child,
+          );
+        }
+        
+        // 当 isScrollControlled 为 true 时，包装在 SingleChildScrollView 中，并设置适当的约束
+        if (isScrollControlled) {
+          return SingleChildScrollView(
+            child: wrappedChild,
+          );
+        }
+        
+        return wrappedChild;
+      },
     );
   }
   /// 显示确认弹窗

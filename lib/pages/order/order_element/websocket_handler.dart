@@ -25,6 +25,7 @@ class WebSocketHandler {
   final Function()? onCartUpdate;
   final Function()? onCartDelete;
   final Function()? onCartClear;
+  final Function()? onOrderRefresh; // 已点订单刷新回调
   final Function(int, int)? onPeopleCountChange;
   final Function(int)? onMenuChange;
   final Function(String)? onTableChange;
@@ -39,6 +40,7 @@ class WebSocketHandler {
     this.onCartUpdate,
     this.onCartDelete,
     this.onCartClear,
+    this.onOrderRefresh,
     this.onPeopleCountChange,
     this.onMenuChange,
     this.onTableChange,
@@ -134,6 +136,9 @@ class WebSocketHandler {
       case 'table':
         _handleTableMessage(data);
         break;
+      case 'order':
+        _handleOrderMessage(data);
+        break;
       case 'cart_response':
         _handleCartResponseMessage(data);
         break;
@@ -192,6 +197,20 @@ class WebSocketHandler {
         break;
       default:
         logDebug('⚠️ 未知的桌台操作: $action', tag: _logTag);
+    }
+  }
+
+  /// 处理已点订单相关消息
+  void _handleOrderMessage(Map<String, dynamic> data) {
+    final action = data['action'] as String?;
+    
+    switch (action) {
+      case 'refresh':
+        logDebug('🔄 收到服务器刷新已点订单消息', tag: _logTag);
+        onOrderRefresh?.call();
+        break;
+      default:
+        logDebug('⚠️ 未知的已点订单操作: $action', tag: _logTag);
     }
   }
 

@@ -59,6 +59,25 @@ class TableController extends GetxController {
     }
   }
 
+  /// 强制重置所有数据（用于账号切换后的数据清理）
+  Future<void> forceResetAllData() async {
+    print('🔄 TableController: 开始强制重置所有数据...');
+    
+    // 清空所有数据
+    tabDataList.clear();
+    lobbyListModel.value = LobbyListModel(halls: []);
+    menuModelList.clear();
+    selectedTab.value = 0;
+    isLoading.value = false;
+    hasNetworkError.value = false;
+    
+    // 重新加载数据
+    await getLobbyList();
+    await getMenuList();
+    
+    print('✅ TableController: 强制重置所有数据完成');
+  }
+
   Future<void> fetchDataForTab(int index) async {
     if (index >= tabDataList.length) return;
     isLoading.value = true;

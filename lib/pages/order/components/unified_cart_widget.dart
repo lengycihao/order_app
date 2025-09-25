@@ -14,9 +14,6 @@ import 'package:get_it/get_it.dart';
 class UnifiedCartWidget {
   /// 显示购物车弹窗
   static void showCartModal(BuildContext context, {VoidCallback? onSubmitOrder}) {
-    final screenHeight = MediaQuery.of(context).size.height;
-    final maxHeight = screenHeight * 0.8;
-    
     ModalUtils.showBottomModal(
       context: context,
       isScrollControlled: true,
@@ -25,7 +22,8 @@ class UnifiedCartWidget {
         onClear: () => _showClearCartDialog(context),
         child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: maxHeight,
+            minHeight: 200, // 最小高度200px
+            maxHeight: MediaQuery.of(context).size.height * 0.6, // 最大高度60%，自适应
           ),
           child: _CartModalContent(onSubmitOrder: onSubmitOrder),
         ),
@@ -425,8 +423,9 @@ class _CartItem extends StatelessWidget {
                   Text(
                     cartItem.dish.name,
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 16,
                       height: 1,
+                      color: Colors.black,
                       fontWeight: FontWeight.w500,
                     ),
                   ),

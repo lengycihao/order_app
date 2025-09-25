@@ -406,7 +406,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
       
       if (result['success'] == true) {
         // 下单成功，刷新已点订单数据后切换到已点页面
-        await controller.loadCurrentOrder();
+        await controller.loadCurrentOrder(showLoading: false);
         _switchToOrderedTab();
       } else {
         // 下单失败，显示错误弹窗

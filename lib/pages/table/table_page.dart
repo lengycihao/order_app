@@ -15,14 +15,45 @@ class TablePage extends StatefulWidget {
 class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
   final TableController controller = Get.put(TableController());
   bool _shouldShowSkeleton = true; // 默认显示骨架图
+  bool _isFromLogin = false; // 是否来自登录页面
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     
+    // 检查是否来自登录页面，如果是则强制刷新数据
+    _checkIfFromLogin();
+    
     // 检查是否应该显示骨架图
     _checkShouldShowSkeleton();
+  }
+
+  /// 检查是否来自登录页面
+  void _checkIfFromLogin() {
+    // 简单检查：如果TabController的数据为空或者路由栈很简单，认为是新登录
+    _isFromLogin = controller.tabDataList.isEmpty || 
+                   controller.lobbyListModel.value.halls?.isEmpty == true;
+    
+    if (_isFromLogin) {
+      print('✅ 检测到需要刷新数据（新登录或数据为空）');
+      // 延迟执行强制刷新，确保页面完全初始化
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _forceRefreshData();
+      });
+    }
+  }
+
+  /// 强制刷新数据
+  Future<void> _forceRefreshData() async {
+    try {
+      print('🔄 开始强制刷新桌台数据...');
+      // 调用Controller的强制重置方法
+      await controller.forceResetAllData();
+      print('✅ 强制刷新桌台数据完成');
+    } catch (e) {
+      print('❌ 强制刷新桌台数据失败: $e');
+    }
   }
 
   /// 检查是否应该显示骨架图

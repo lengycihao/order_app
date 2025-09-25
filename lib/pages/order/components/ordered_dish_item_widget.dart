@@ -47,7 +47,7 @@ class OrderedDishItemWidget extends StatelessWidget {
         child: dish.image != null && dish.image!.isNotEmpty
             ? CachedNetworkImage(
                 imageUrl: dish.image!,
-                fit: BoxFit.cover,
+                fit: BoxFit.contain,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[200],
                   child: Icon(
@@ -88,9 +88,9 @@ class OrderedDishItemWidget extends StatelessWidget {
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w500,
-            color: Colors.black87,
+            color: Colors.black,
           ),
-          maxLines: 2,
+          maxLines: 5,
           overflow: TextOverflow.ellipsis,
         ),
         SizedBox(height: 4),

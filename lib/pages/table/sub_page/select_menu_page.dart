@@ -295,17 +295,34 @@ SizedBox(height: 12,),
       }
 
       final selectedIndex = controller.selectedMenuIndex.value; // 在Obx作用域内获取值
+      
+      // 检查是否有menuType为2的菜单（只显示图片）
+      final hasImageOnlyMenus = controller.menu.any((menu) => menu.menuType == 2);
+      final hasRegularMenus = controller.menu.any((menu) => menu.menuType != 2);
+      
+      // 根据菜单类型动态设置高度
+      double itemHeight;
+      if (hasImageOnlyMenus && hasRegularMenus) {
+        // 混合类型，使用较大高度适配两种类型
+        itemHeight = 200;
+      } else if (hasImageOnlyMenus && !hasRegularMenus) {
+        // 全部是图片类型，使用较小高度
+        itemHeight = 120; // 88px图片 + 16px padding + 16px余量
+      } else {
+        // 全部是带价格信息的类型，使用标准高度
+        itemHeight = 200;
+      }
 
       return GridView.builder(
         shrinkWrap: true,
         padding: EdgeInsets.zero,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: controller.menu.length,
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 2,
+        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 200,
           crossAxisSpacing: 12,
           mainAxisSpacing: 12,
-          childAspectRatio: 0.85, // 调整比例以适应新的尺寸
+          mainAxisExtent: itemHeight,
         ),
         itemBuilder: (context, index) {
           final item = controller.menu[index];
@@ -350,26 +367,30 @@ SizedBox(height: 12,),
                             imageUrl: item.menuImage ?? '',
                             width: 147,
                             height: 88,
-                            fit: BoxFit.cover,
+                            fit: BoxFit.contain,
                             placeholder: (context, url) => Image.asset(
                               'assets/order_menu_placeholder.webp',
                               width: 147,
                               height: 88,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                             ),
                             errorWidget: (context, url, error) => Image.asset(
                               'assets/order_menu_placeholder.webp',
                               width: 147,
                               height: 88,
-                              fit: BoxFit.cover,
+                              fit: BoxFit.contain,
                             ),
                           ),
                         ),
                       ),
-                      const SizedBox(height: 8),
-
-                      // 价格信息 - 文字可换行
-                      _buildPriceInfo(item),
+                      // 根据菜单类型决定是否显示价格信息
+                      if (item.menuType != 2) ...[
+                        const SizedBox(height: 6),
+                        // 价格信息 - 文字可换行
+                        Expanded(
+                          child: _buildPriceInfo(item),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -438,15 +459,18 @@ SizedBox(height: 12,),
       for (var cost in item.menuFixedCosts) {
         if (cost.name != null && cost.amount != null && cost.unit != null) {
           costWidgets.add(
-            Text(
-              '${cost.name}: ${cost.amount}/${cost.unit}',
-              style: const TextStyle(
-                fontSize: 12,
-                color: Color(0xff666666),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 1),
+              child: Text(
+                '${cost.name}: ${cost.amount}/${cost.unit}',
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: Color(0xff666666),
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1, // 限制为单行
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2, // 允许换行
-              overflow: TextOverflow.ellipsis,
             ),
           );
         }
@@ -455,6 +479,7 @@ SizedBox(height: 12,),
       if (costWidgets.isNotEmpty) {
         return Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: costWidgets,
         );
       }
@@ -464,7 +489,7 @@ SizedBox(height: 12,),
     return Text(
       '成人：${item.adultPackagePrice}/位\n儿童：${item.childPackagePrice}/位',
       style: const TextStyle(
-        fontSize: 12,
+        fontSize: 11,
         color: Color(0xff666666),
       ),
       textAlign: TextAlign.center,

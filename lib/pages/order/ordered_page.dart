@@ -19,19 +19,26 @@ class _OrderedPageState extends State<OrderedPage> {
   @override
   void initState() {
     super.initState();
-    // 加载已点订单数据
-    _loadOrderedData();
+    // 加载已点订单数据（首次加载显示loading）
+    _loadOrderedDataWithLoading();
     
-    // 页面首次显示后再刷新一次数据，确保数据是最新的
+    // 页面首次显示后再刷新一次数据，确保数据是最新的（不显示loading）
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadOrderedData();
     });
   }
 
+  /// 加载已点订单数据（显示loading）
+  Future<void> _loadOrderedDataWithLoading() async {
+    if (controller.table.value?.tableId != null) {
+      await controller.loadCurrentOrder(showLoading: true);
+    }
+  }
+
   /// 加载已点订单数据
   Future<void> _loadOrderedData() async {
     if (controller.table.value?.tableId != null) {
-      await controller.loadCurrentOrder();
+      await controller.loadCurrentOrder(showLoading: false);
     }
   }
 

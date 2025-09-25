@@ -4,6 +4,7 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/utils/screen_adaptation.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/menu_fixed_cost.dart';
@@ -96,9 +97,9 @@ class _MoreOptionsModalContent extends StatelessWidget {
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.symmetric(horizontal: 20),
-        child: Container(
+        child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
             maxWidth: MediaQuery.of(context).size.width * 0.9,
           ),
           child: _ChangeTableModalContent(),
@@ -114,9 +115,9 @@ class _MoreOptionsModalContent extends StatelessWidget {
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.symmetric(horizontal: 20),
-        child: Container(
+        child: ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.7,
+            maxHeight: MediaQuery.of(context).size.height * 0.8,
             maxWidth: MediaQuery.of(context).size.width * 0.9,
           ),
           child: _ChangeMenuModalContent(),
@@ -282,65 +283,68 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 桌子列表
-          Flexible(
-            child: Container(
-              padding: EdgeInsets.all(16),
-              child: _isLoading
-                  ? Center(
-                      child: RestaurantLoadingWidget(size: 30),
-                    )
-                  : _availableTables.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.table_restaurant_outlined,
-                            size: 64,
-                            color: Colors.grey.shade400,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            '暂无可用桌台',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 124 / 150,
-                      ),
-                      itemCount: _availableTables.length,
-                      itemBuilder: (context, index) {
-                        final table = _availableTables[index];
-                        final tableName =
-                            '${table.hallName ?? ''}-${table.tableName ?? ''}';
-                        final isSelected =
-                            _selectedTableId == table.tableId.toInt();
-
-                        return _TableItem(
-                          tableName: tableName,
-                          adultCount: table.standardAdult.toInt(),
-                          childCount: table.standardChild.toInt(),
-                          isSelected: isSelected,
-                          onTap: () {
-                            setState(() {
-                              _selectedTableId = table.tableId.toInt();
-                            });
-                          },
-                        );
-                      },
-                    ),
+          // 桌子列表 - 自适应高度，最小220px，最大500px
+          Container(
+            constraints: BoxConstraints(
+              minHeight: 220,
+              maxHeight: ScreenAdaptation.adaptHeight(context, 500),
             ),
+            padding: EdgeInsets.all(16),
+            child: _isLoading
+                ? Center(
+                    child: RestaurantLoadingWidget(size: 30),
+                  )
+                : _availableTables.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.table_restaurant_outlined,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          '暂无可用桌台',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : GridView.builder(
+                    shrinkWrap: true,
+                    physics: ClampingScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 124 / 150,
+                    ),
+                    itemCount: _availableTables.length,
+                    itemBuilder: (context, index) {
+                      final table = _availableTables[index];
+                      final tableName =
+                          '${table.hallName ?? ''}-${table.tableName ?? ''}';
+                      final isSelected =
+                          _selectedTableId == table.tableId.toInt();
+
+                      return _TableItem(
+                        tableName: tableName,
+                        adultCount: table.standardAdult.toInt(),
+                        childCount: table.standardChild.toInt(),
+                        isSelected: isSelected,
+                        onTap: () {
+                          setState(() {
+                            _selectedTableId = table.tableId.toInt();
+                          });
+                        },
+                      );
+                    },
+                  ),
           ),
           // 确认按钮
           Container(
@@ -587,6 +591,58 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
     }
   }
 
+  /// 构建菜单网格
+  Widget _buildMenuGrid() {
+    // 检查是否有menuType为2的菜单（只显示图片）
+    final hasImageOnlyMenus = _menuList.any((menu) => menu.menuType == 2);
+    final hasRegularMenus = _menuList.any((menu) => menu.menuType != 2);
+    
+    // 根据菜单类型动态设置高度
+    double itemHeight;
+    if (hasImageOnlyMenus && hasRegularMenus) {
+      // 混合类型，使用较大高度适配两种类型
+      itemHeight = 200;
+    } else if (hasImageOnlyMenus && !hasRegularMenus) {
+      // 全部是图片类型，使用较小高度
+      itemHeight = 120; // 88px图片 + 16px padding + 16px余量
+    } else {
+      // 全部是带价格信息的类型，使用标准高度
+      itemHeight = 200;
+    }
+
+    return GridView.builder(
+      shrinkWrap: true,
+      padding: EdgeInsets.zero,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: _menuList.length,
+      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+        maxCrossAxisExtent: 200,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        mainAxisExtent: itemHeight,
+      ),
+      itemBuilder: (context, index) {
+        final menu = _menuList[index];
+        final isSelected = _selectedMenuId == menu.menuId;
+
+        return _MenuItem(
+          imageUrl: menu.menuImage ?? '',
+          menuName: menu.menuName ?? '未知菜单',
+          adultPrice: int.tryParse(menu.adultPackagePrice ?? '0') ?? 0,
+          childPrice: int.tryParse(menu.childPackagePrice ?? '0') ?? 0,
+          menuFixedCosts: menu.menuFixedCosts,
+          menuType: menu.menuType,
+          isSelected: isSelected,
+          onTap: () {
+            setState(() {
+              _selectedMenuId = menu.menuId;
+            });
+          },
+        );
+      },
+    );
+  }
+
   /// 执行更换菜单操作
   Future<void> _performChangeMenu() async {
     if (_selectedMenuId == null) {
@@ -652,67 +708,38 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 菜单列表
-          Flexible(
-            child: Container(
-              padding: EdgeInsets.all(16),
-              child: _isLoading
-                  ? Center(
-                      child: RestaurantLoadingWidget(size: 30),
-                    )
-                  : _menuList.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.restaurant_menu,
-                            size: 64,
-                            color: Colors.grey.shade400,
-                          ),
-                          SizedBox(height: 16),
-                          Text(
-                            '暂无可用菜单',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.grey.shade600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    )
-                  : GridView.builder(
-                      shrinkWrap: true,
-                      physics: NeverScrollableScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 0.85, // 调整比例以适应新的尺寸
-                      ),
-                      itemCount: _menuList.length,
-                      itemBuilder: (context, index) {
-                        final menu = _menuList[index];
-                        final isSelected = _selectedMenuId == menu.menuId;
-
-                        return _MenuItem(
-                          imageUrl: menu.menuImage ?? '',
-                          menuName: menu.menuName ?? '未知菜单',
-                          adultPrice:
-                              int.tryParse(menu.adultPackagePrice ?? '0') ?? 0,
-                          childPrice:
-                              int.tryParse(menu.childPackagePrice ?? '0') ?? 0,
-                          menuFixedCosts: menu.menuFixedCosts,
-                          isSelected: isSelected,
-                          onTap: () {
-                            setState(() {
-                              _selectedMenuId = menu.menuId;
-                            });
-                          },
-                        );
-                      },
-                    ),
+          // 菜单列表 - 自适应高度，最小220px
+          Container(
+            constraints: BoxConstraints(
+              minHeight: 220,
             ),
+            padding: EdgeInsets.all(16),
+            child: _isLoading
+                ? Center(
+                    child: RestaurantLoadingWidget(size: 30),
+                  )
+                : _menuList.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.restaurant_menu,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        SizedBox(height: 16),
+                        Text(
+                          '暂无可用菜单',
+                          style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : _buildMenuGrid(),
           ),
           // 确认按钮
           Container(
@@ -750,10 +777,11 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
 /// 菜单项
 class _MenuItem extends StatelessWidget {
   final String menuName;
-  final String imageUrl; // 这里可以添加图片URL字段
+  final String imageUrl;
   final int adultPrice;
   final int childPrice;
   final List<MenuFixedCost>? menuFixedCosts;
+  final int? menuType;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -764,6 +792,7 @@ class _MenuItem extends StatelessWidget {
     required this.imageUrl,
     required this.childPrice,
     this.menuFixedCosts,
+    this.menuType,
     required this.isSelected,
     required this.onTap,
   }) : super(key: key);
@@ -851,26 +880,28 @@ class _MenuItem extends StatelessWidget {
                       imageUrl: imageUrl,
                       width: 147,
                       height: 88,
-                      fit: BoxFit.cover,
+                      fit: BoxFit.contain,
                       placeholder: (context, url) => Image.asset(
                         'assets/order_menu_placeholder.webp',
                         width: 147,
                         height: 88,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                       ),
                       errorWidget: (context, url, error) => Image.asset(
                         'assets/order_menu_placeholder.webp',
                         width: 147,
                         height: 88,
-                        fit: BoxFit.cover,
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
-
-                // 价格信息 - 文字可换行
-                _buildPriceInfo(),
+                // 根据菜单类型决定是否显示价格信息
+                if (menuType != 2) ...[
+                  const SizedBox(height: 4),
+                  // 价格信息 - 文字可换行
+                  _buildPriceInfo(),
+                ],
               ],
             ),
           ),
@@ -909,25 +940,14 @@ class _ChangePeopleModalContent extends StatefulWidget {
 class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
   late int adultCount;
   late int childCount;
-  late int maxAdultCount;
-  late int maxChildCount;
   final _api = BaseApi();
-
-  // 用于跟踪是否已经显示过提示
-  bool _hasShownAdultMaxToast = false;
-  bool _hasShownChildMaxToast = false;
 
   @override
   void initState() {
     super.initState();
-    final controller = Get.find<OrderController>();
-    adultCount = controller.adultCount.value;
-    childCount = controller.childCount.value;
-
-    // 从桌台信息获取最大人数限制
-    final table = controller.table.value;
-    maxAdultCount = table?.standardAdult.toInt() ?? 10;
-    maxChildCount = table?.standardChild.toInt() ?? 5;
+    // 默认值设为0
+    adultCount = 0;
+    childCount = 0;
   }
 
   /// 执行更换人数操作
@@ -943,12 +963,12 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
       return;
     }
 
-    // 检查人数是否有变化，如果没有变化直接关闭弹窗
-    if (adultCount == controller.adultCount.value &&
-        childCount == controller.childCount.value) {
+    // 检查是否有人数变化，只有当任何一个大于1的时候才发WS消息
+    if (adultCount <= 0 && childCount <= 0) {
       if (mounted) {
         Navigator.of(context).pop(); // 关闭弹窗
       }
+      GlobalToast.error('请至少选择1人');
       return;
     }
 
@@ -958,15 +978,20 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
     }
 
     try {
+      // 计算新的人数（现有人数 + 新增人数）
+      final controller = Get.find<OrderController>();
+      final newAdultCount = controller.adultCount.value + adultCount;
+      final newChildCount = controller.childCount.value + childCount;
+      
       // 直接调用桌台详情API更新数据
-      await _updateTableDetailAndRefresh(currentTableId);
+      await _updateTableDetailAndRefresh(currentTableId, newAdultCount, newChildCount);
     } catch (e) {
       GlobalToast.error('更换人数操作异常：$e');
     }
   }
 
   /// 更新桌台详情并刷新数据
-  Future<void> _updateTableDetailAndRefresh(int tableId) async {
+  Future<void> _updateTableDetailAndRefresh(int tableId, int newAdultCount, int newChildCount) async {
     try {
       // 调用桌台详情API获取最新数据
       final result = await _api.getTableDetail(tableId: tableId);
@@ -978,9 +1003,9 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
         // 更新桌台信息
         controller.table.value = latestTable;
         
-        // 更新人数信息
-        controller.adultCount.value = adultCount;
-        controller.childCount.value = childCount;
+        // 更新人数信息（现有人数 + 新增人数）
+        controller.adultCount.value = newAdultCount;
+        controller.childCount.value = newChildCount;
 
         // 刷新点餐页面数据
         await controller.refreshOrderData();
@@ -997,19 +1022,11 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
   @override
   Widget build(BuildContext context) {
     return ModalContainerWithMargin(
-      title: '更换人数',
+      title: '增加人数',
       margin: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // 当前人数显示
-          Container(
-            padding: EdgeInsets.all(16),
-            child: Text(
-              '当前人数 成人$adultCount 儿童$childCount',
-              style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-            ),
-          ),
           // 人数选择
           Flexible(
             child: Container(
@@ -1017,63 +1034,38 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  SizedBox(
+                    height: 27,
+                  ),
                   _PeopleCountSelector(
-                    label: '成人',
+                    label: '大人',
                     count: adultCount,
-                    maxCount: maxAdultCount,
                     onIncrement: () {
-                      if (adultCount < maxAdultCount) {
-                        setState(() {
-                          adultCount++;
-                          // 重置提示状态，因为数量增加了
-                          _hasShownAdultMaxToast = false;
-                        });
-                      } else if (!_hasShownAdultMaxToast) {
-                        // 只在第一次达到上限时显示提示
-                        _hasShownAdultMaxToast = true;
-                        GlobalToast.error('成人数量不能超过$maxAdultCount人');
-                      }
+                      setState(() {
+                        adultCount++;
+                      });
                     },
                     onDecrement: () {
-                      if (adultCount > 1) {
+                      if (adultCount > 0) {
                         setState(() {
                           adultCount--;
-                          // 重置提示状态，因为数量减少了
-                          _hasShownAdultMaxToast = false;
                         });
-                      } else {
-                        ModalUtils.showSnackBar(
-                          context: context,
-                          title: '提示',
-                          message: '成人数量最少1人',
-                        );
                       }
                     },
                   ),
                   SizedBox(height: 20),
                   _PeopleCountSelector(
-                    label: '儿童',
+                    label: '小孩',
                     count: childCount,
-                    maxCount: maxChildCount,
                     onIncrement: () {
-                      if (childCount < maxChildCount) {
-                        setState(() {
-                          childCount++;
-                          // 重置提示状态，因为数量增加了
-                          _hasShownChildMaxToast = false;
-                        });
-                      } else if (!_hasShownChildMaxToast) {
-                        // 只在第一次达到上限时显示提示
-                        _hasShownChildMaxToast = true;
-                        GlobalToast.error('儿童数量不能超过$maxChildCount人');
-                      }
+                      setState(() {
+                        childCount++;
+                      });
                     },
                     onDecrement: () {
                       if (childCount > 0) {
                         setState(() {
                           childCount--;
-                          // 重置提示状态，因为数量减少了
-                          _hasShownChildMaxToast = false;
                         });
                       }
                     },
@@ -1082,7 +1074,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
               ),
             ),
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 10),
           // 确认按钮
           Container(
             padding: EdgeInsets.all(16),
@@ -1120,7 +1112,6 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
 class _PeopleCountSelector extends StatelessWidget {
   final String label;
   final int count;
-  final int maxCount;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
 
@@ -1128,7 +1119,6 @@ class _PeopleCountSelector extends StatelessWidget {
     Key? key,
     required this.label,
     required this.count,
-    required this.maxCount,
     required this.onIncrement,
     required this.onDecrement,
   }) : super(key: key);
@@ -1136,55 +1126,105 @@ class _PeopleCountSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-            ),
-            Text(
-              '最多$maxCount人',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-            ),
-          ],
-        ),
-        Spacer(),
-        GestureDetector(
-          onTap: onDecrement,
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color:
-                  (label == '成人' && count > 1) || (label == '儿童' && count > 0)
-                  ? Colors.orange
-                  : Colors.grey.shade300,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.remove, color: Colors.white, size: 16),
-          ),
-        ),
-        SizedBox(width: 16),
-        Text(
-          '$count',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        SizedBox(width: 16),
-        GestureDetector(
-          onTap: onIncrement,
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(
-              color: count < maxCount ? Colors.orange : Colors.grey.shade300,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.add, color: Colors.white, size: 16),
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 15)),
+        _buildStepperWidget(),
       ],
+    );
+  }
+
+  /// 构建步进器组件
+  Widget _buildStepperWidget() {
+    return Container(
+      height: 24,
+      decoration: BoxDecoration(
+        border: Border.all(color: Colors.grey.shade300, width: 1),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 减少按钮
+          GestureDetector(
+            onTap: onDecrement,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(4),
+                  bottomLeft: Radius.circular(4),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '一',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff666666),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          // 分割线
+          Container(
+            width: 1,
+            height: 40,
+            color: Colors.grey.shade300,
+          ),
+          // 数字显示区域
+          Container(
+            width: 32,
+            height: 24,
+            color: Colors.white,
+            child: Center(
+              child: Text(
+                '$count',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade800,
+                ),
+              ),
+            ),
+          ),
+          // 分割线
+          Container(
+            width: 1,
+            height: 40,
+            color: Colors.grey.shade300,
+          ),
+          // 增加按钮
+          GestureDetector(
+            onTap: onIncrement,
+            child: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(
+                  topRight: Radius.circular(4),
+                  bottomRight: Radius.circular(4),
+                ),
+              ),
+              child: Center(
+                child: Text(
+                  '+',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xff666666),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

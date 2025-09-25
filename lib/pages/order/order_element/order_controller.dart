@@ -236,6 +236,7 @@ class OrderController extends GetxController {
         onCartUpdate: _handleCartUpdate,
         onCartDelete: _handleCartDelete,
         onCartClear: _handleCartClear,
+        onOrderRefresh: _handleOrderRefresh,
         onPeopleCountChange: _handlePeopleCountChange,
         onMenuChange: _handleMenuChange,
         onTableChange: _handleTableChange,
@@ -1080,6 +1081,13 @@ class OrderController extends GetxController {
     _cartManager.refreshCartFromServer(() => _loadCartFromApi(silent: true));
   }
 
+  void _handleOrderRefresh() {
+    logDebug('🔄 收到服务器刷新已点订单消息', tag: OrderConstants.logTag);
+    logDebug('🔄 当前loading状态: ${isLoadingOrdered.value}', tag: OrderConstants.logTag);
+    // WebSocket刷新已点订单时，静默刷新（不显示loading）
+    loadCurrentOrder(showLoading: false);
+  }
+
   void _handlePeopleCountChange(int adultCount, int childCount) {
     logDebug('👥 收到服务器修改人数消息: 成人$adultCount, 儿童$childCount', tag: OrderConstants.logTag);
     _updatePeopleCountViaApi(adultCount, childCount);
@@ -1303,6 +1311,9 @@ class OrderController extends GetxController {
     try {
       if (showLoading) {
         isLoadingOrdered.value = true;
+        logDebug('📋 设置loading状态为true', tag: OrderConstants.logTag);
+      } else {
+        logDebug('📋 静默刷新，不设置loading状态 (当前状态: ${isLoadingOrdered.value})', tag: OrderConstants.logTag);
       }
       logDebug('📋 开始加载已点订单数据... (重试次数: $retryCount, 显示loading: $showLoading)', tag: OrderConstants.logTag);
 
@@ -1345,11 +1356,20 @@ class OrderController extends GetxController {
         currentOrder.value = null;
       }
     } finally {
-      // 只有在不需要重试时才设置loading状态为false
-      if (retryCount >= maxRetries || currentOrder.value != null) {
-        if (showLoading) {
-          isLoadingOrdered.value = false;
-        }
+      // 在以下情况下停止loading：
+      // 1. 达到最大重试次数
+      // 2. 有数据返回
+      // 3. 确认是空数据（不需要重试）
+      bool shouldStopLoading = retryCount >= maxRetries || 
+                               currentOrder.value != null ||
+                               (retryCount == 0); // 首次请求完成，无论结果如何都停止loading
+      
+      if (shouldStopLoading) {
+        // 无论showLoading参数如何，都要确保loading状态被正确重置
+        logDebug('📋 停止loading状态 (之前状态: ${isLoadingOrdered.value})', tag: OrderConstants.logTag);
+        isLoadingOrdered.value = false;
+      } else {
+        logDebug('📋 继续loading状态，不停止 (重试次数: $retryCount)', tag: OrderConstants.logTag);
       }
     }
   }
@@ -1379,7 +1399,7 @@ class OrderController extends GetxController {
         await Future.delayed(Duration(seconds: 1));
         
         // 提交成功后刷新已点订单数据，使用重试机制
-        await loadCurrentOrder();
+        await loadCurrentOrder(showLoading: false);
         return {
           'success': true,
           'message': '订单提交成功'

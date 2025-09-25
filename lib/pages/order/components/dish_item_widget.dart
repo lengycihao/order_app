@@ -44,43 +44,43 @@ class DishItemWidget extends StatelessWidget {
       return GestureDetector(
         onTap: onDishTap,
         child: Container(
-          height: 116,
           color: Colors.white,
-          padding: EdgeInsets.only(left: 10, right: 15),
+          padding: EdgeInsets.only(left: 10, right: 15, top: 8, bottom: 8),
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // 菜品图片
               _buildDishImage(),
               SizedBox(width: 8),
               // 菜品信息
               Expanded(
-                child: SizedBox(
-                  height: 100,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 菜品名称
-                          Text(
-                            dish.name,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // 菜品名称和过敏图标
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // 菜品名称
+                        Text(
+                          dish.name,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w400,
+                            
                           ),
-                          const SizedBox(height: 6),
-                          // 过敏图标
-                          _buildAllergenIcons(),
-                        ],
-                      ),
-                      // 价格和操作按钮
-                      _buildPriceAndActions(count),
-                    ],
-                  ),
+                          maxLines: 5,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 6),
+                        // 过敏图标
+                        _buildAllergenIcons(),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // 价格和操作按钮
+                    _buildPriceAndActions(count),
+                  ],
                 ),
               ),
             ],
@@ -101,12 +101,12 @@ class DishItemWidget extends StatelessWidget {
       imageUrl: dish.image,
       width: 100,
       height: 100,
-      fit: BoxFit.cover,
+      fit: BoxFit.contain,
       imageBuilder: (context, imageProvider) => ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: Image(
           image: imageProvider,
-          fit: BoxFit.cover,
+          fit: BoxFit.contain,
           width: 100,
           height: 100,
         ),
