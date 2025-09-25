@@ -27,6 +27,10 @@ class TableController extends GetxController {
   // WebSocket管理器
   final WebSocketManager _wsManager = wsManager;
   final isWebSocketConnected = false.obs;
+  
+  // 轮询定时器
+  Timer? _pollingTimer;
+  bool _isPollingActive = false;
 
   @override
   void onInit() {
@@ -36,6 +40,8 @@ class TableController extends GetxController {
     getMenuList();
     // 初始化WebSocket连接状态监听
     _initializeWebSocketStatus();
+    // 启动轮询
+    _startPolling();
   }
 
   Future<void> getLobbyList() async {
@@ -233,8 +239,58 @@ class TableController extends GetxController {
     return _wsManager.connectionStats;
   }
 
+  /// 启动轮询
+  void _startPolling() {
+    if (_isPollingActive) return;
+    
+    _isPollingActive = true;
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _performPollingRefresh();
+    });
+  }
+
+  /// 停止轮询
+  void _stopPolling() {
+    _pollingTimer?.cancel();
+    _pollingTimer = null;
+    _isPollingActive = false;
+  }
+
+  /// 公开的启动轮询方法（供页面调用）
+  void startPolling() {
+    _startPolling();
+  }
+
+  /// 公开的停止轮询方法（供页面调用）
+  void stopPolling() {
+    _stopPolling();
+  }
+
+  /// 执行轮询刷新
+  Future<void> _performPollingRefresh() async {
+    // 如果当前正在加载，跳过本次轮询
+    if (isLoading.value) return;
+    
+    // 刷新当前选中的tab数据
+    await refreshDataForTab(selectedTab.value);
+  }
+
+  /// 暂停轮询（页面不可见时调用）
+  void pausePolling() {
+    _stopPolling();
+  }
+
+  /// 恢复轮询（页面可见时调用）
+  void resumePolling() {
+    if (!_isPollingActive) {
+      _startPolling();
+    }
+  }
+
   @override
   void onClose() {
+    // 清理轮询定时器
+    _stopPolling();
     // 清理WebSocket连接
     _wsManager.disconnectAll();
     super.onClose();

@@ -47,7 +47,7 @@ class OrderedDishItemWidget extends StatelessWidget {
         child: dish.image != null && dish.image!.isNotEmpty
             ? CachedNetworkImage(
                 imageUrl: dish.image!,
-                fit: BoxFit.contain,
+                fit: BoxFit.cover,
                 placeholder: (context, url) => Container(
                   color: Colors.grey[200],
                   child: Icon(
@@ -93,6 +93,7 @@ class OrderedDishItemWidget extends StatelessWidget {
           maxLines: 5,
           overflow: TextOverflow.ellipsis,
         ),
+        
         SizedBox(height: 4),
        // 过敏原信息
         if (dish.allergens != null && dish.allergens!.isNotEmpty)
@@ -111,6 +112,24 @@ class OrderedDishItemWidget extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         SizedBox(height: 4),
+        // 烹饪状态标签
+        if (dish.cookingStatusName != null && dish.cookingStatusName!.isNotEmpty)
+          Container(
+            margin: EdgeInsets.only(top: 4),
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+            decoration: BoxDecoration(
+              color: Color(0xFFFF9027).withOpacity(0.2),
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text(
+              dish.cookingStatusName!,
+              style: TextStyle(
+                fontSize: 12,
+                color: Color(0xFFFF9027),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
       ],
     );
   }

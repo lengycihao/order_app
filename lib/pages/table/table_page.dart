@@ -77,9 +77,18 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    print('🔄 应用生命周期状态变化: $state');
+    
     if (state == AppLifecycleState.resumed) {
-      // 应用恢复时，检查是否应该显示骨架图
+      // 应用从后台回到前台时，检查是否需要刷新数据
+      print('✅ 应用回到前台，检查数据刷新');
       _checkShouldShowSkeleton();
+      // 恢复轮询
+      controller.resumePolling();
+    } else if (state == AppLifecycleState.paused) {
+      // 应用进入后台时暂停轮询
+      print('⏸️ 应用进入后台，暂停轮询');
+      controller.pausePolling();
     }
   }
 
@@ -219,7 +228,11 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
       
       return RestaurantRefreshIndicator(
         onRefresh: () async {
+          // 手动刷新时重置轮询计时器
+          controller.stopPolling();
           await controller.fetchDataForTab(tabIndex);
+          // 刷新完成后重新启动轮询
+          controller.startPolling();
         },
         loadingColor: const Color(0xFFFF9027),
         child: CustomScrollView(
