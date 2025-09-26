@@ -19,21 +19,12 @@ class CartApi {
     
     // 处理状态码210（数据处理中）的特殊情况
     if (result.code == 210) {
-      print('⚠️ CartAPI 返回状态码210，数据处理中，返回空购物车');
-      final emptyCart = CartInfoModel(
-        cartId: null,
-        tableId: int.tryParse(tableId),
-        items: <CartItemModel>[],
-        totalQuantity: 0,
-        totalPrice: 0.0,
-        createdAt: null,
-        updatedAt: null,
-      );
+      print('⚠️ CartAPI 返回状态码210，数据处理中，返回null保留本地数据');
       return HttpResultN<CartInfoModel>(
-        isSuccess: true,
+        isSuccess: false,
         code: 210,
         msg: '数据处理中',
-        data: emptyCart,
+        data: null,
       );
     }
     

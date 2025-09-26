@@ -4,6 +4,7 @@ import 'package:lib_base/lib_base.dart';
 import 'package:lib_domain/entrity/takeout/takeout_time_option_model.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/pages/takeaway/components/bottom_time_picker_dialog.dart';
+import 'package:order_app/pages/nav/screen_nav_page.dart';
 
 class TakeawayOrderSuccessController extends GetxController {
   // 桌台ID
@@ -65,11 +66,7 @@ class TakeawayOrderSuccessController extends GetxController {
         timeOptions.clear();
         timeOptions.addAll(model.options);
         
-        // 添加"其他时间"选项
-        timeOptions.add(TakeoutTimeOptionItem(
-          value: -1,
-          label: '其他时间',
-        ));
+        // 注意：不在这里添加"其他时间"选项，在页面中统一处理
         
         // 默认选择第一个选项
         if (timeOptions.isNotEmpty) {
@@ -88,14 +85,12 @@ class TakeawayOrderSuccessController extends GetxController {
 
   // 选择时间选项
   void selectTimeOption(int index) {
-    if (index < 0 || index >= timeOptions.length) return;
-    
-    selectedTimeIndex.value = index;
-    
-    // 如果选择的是"其他时间"
-    if (timeOptions[index].value == -1) {
+    // 检查是否是"其他时间"选项（在页面中添加的，索引为 timeOptions.length）
+    if (index == timeOptions.length) {
+      selectedTimeIndex.value = index;
       showTimePicker();
-    } else {
+    } else if (index >= 0 && index < timeOptions.length) {
+      selectedTimeIndex.value = index;
       _updateSelectedTime(index);
     }
   }
@@ -105,18 +100,10 @@ class TakeawayOrderSuccessController extends GetxController {
     if (index < 0 || index >= timeOptions.length) return;
     
     final option = timeOptions[index];
-    if (option.value == -1) {
-      // 其他时间选项
-      if (customDateTime.value != null) {
-        selectedTimeText.value = _formatTime(customDateTime.value!);
-        selectedDateTime.value = customDateTime.value;
-      }
-    } else {
-      // 预设时间选项
-      selectedTimeText.value = option.label;
-      // 使用时间戳创建DateTime
-      selectedDateTime.value = DateTime.fromMillisecondsSinceEpoch(option.value * 1000);
-    }
+    // 预设时间选项
+    selectedTimeText.value = option.label;
+    // 使用时间戳创建DateTime
+    selectedDateTime.value = DateTime.fromMillisecondsSinceEpoch(option.value * 1000);
   }
 
   // 显示时间选择器
@@ -225,8 +212,8 @@ class TakeawayOrderSuccessController extends GetxController {
       
       if (result.isSuccess) {
         ToastUtils.showSuccess(Get.context!, '订单提交成功');
-        // 跳转到订单成功页面或返回上一页
-        Get.back();
+        // 跳转到主页面并切换到外卖标签页
+        Get.offAll(() => ScreenNavPage(initialIndex: 1));
       } else {
         ToastUtils.showError(Get.context!, '订单提交失败');
       }

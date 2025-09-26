@@ -109,6 +109,7 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 16,
                 color: Colors.black,
+                fontWeight: FontWeight.bold,
               ),
             ),
             Obx(() => Text(
@@ -165,15 +166,10 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
           final index = entry.key;
           final option = entry.value;
           final isSelected = controller.selectedTimeIndex.value == index;
-          final isOtherTime = option['minutes'] == -1;
           
           return GestureDetector(
             onTap: () {
-              if (isOtherTime) {
-                controller.showTimePicker();
-              } else {
-                controller.selectTimeOption(index);
-              }
+              controller.selectTimeOption(index);
             },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
@@ -214,6 +210,7 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
           style: const TextStyle(
             fontSize: 16,
             color: Colors.black,
+            fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 12),
@@ -225,7 +222,8 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
             color: const Color(0xFFF7F7F7),
             borderRadius: BorderRadius.circular(4),
           ),
-          child: Obx(() => TextField( 
+          child: TextField( 
+            controller: controller.remarkController,
             maxLines: null,
             expands: true,
             textAlignVertical: TextAlignVertical.top,
@@ -242,7 +240,7 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
               fontSize: 14,
               color: Colors.black,
             ),
-          )),
+          ),
         ),
       ],
     );

@@ -189,14 +189,12 @@ class _OrderedTabState extends State<OrderedTab> with AutomaticKeepAliveClientMi
             Row(
               
               children: [
-                Text(
-                  '总份数 ',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.red,
-                    fontWeight: FontWeight.w500,
-                  ),
+                Image.asset(
+                  'assets/order_takeaway_price.webp',
+                  width: 33,
+                  height: 33,
                 ),
+                SizedBox(width: 8),
                 Text(
                   '$quantity',
                   style: TextStyle(

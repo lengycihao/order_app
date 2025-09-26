@@ -136,34 +136,37 @@ class OrderedDishItemWidget extends StatelessWidget {
 
   /// 构建过敏原信息（只显示图片，不显示文字和背景）
   Widget _buildAllergens() {
+    // 过滤掉空的敏感物数据
+    final validAllergens = dish.allergens!.where((allergen) => 
+      allergen.icon != null && allergen.icon!.isNotEmpty
+    ).toList();
+    
+    if (validAllergens.isEmpty) {
+      return SizedBox.shrink();
+    }
+    
     return Wrap(
       spacing: 4,
       runSpacing: 2,
-      children: dish.allergens!.take(3).map((allergen) {
+      children: validAllergens.take(3).map((allergen) {
         return Container(
           margin: EdgeInsets.only(right: 4),
-          child: allergen.icon != null && allergen.icon!.isNotEmpty
-              ? CachedNetworkImage(
-                  imageUrl: allergen.icon!,
-                  width: 16,
-                  height: 16,
-                  fit: BoxFit.contain,
-                  placeholder: (context, url) => Icon(
-                    Icons.warning,
-                    size: 16,
-                    color: Colors.orange,
-                  ),
-                  errorWidget: (context, url, error) => Icon(
-                    Icons.warning,
-                    size: 16,
-                    color: Colors.orange,
-                  ),
-                )
-              : Icon(
-                  Icons.warning,
-                  size: 16,
-                  color: Colors.orange,
-                ),
+          child: CachedNetworkImage(
+            imageUrl: allergen.icon!,
+            width: 16,
+            height: 16,
+            fit: BoxFit.contain,
+            placeholder: (context, url) => Icon(
+              Icons.warning,
+              size: 16,
+              color: Colors.orange,
+            ),
+            errorWidget: (context, url, error) => Icon(
+              Icons.warning,
+              size: 16,
+              color: Colors.orange,
+            ),
+          ),
         );
       }).toList(),
     );

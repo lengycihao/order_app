@@ -356,9 +356,13 @@ class OrderDetailPageNew extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Image(image: AssetImage('assets/order_takeaway_price.webp'), width: 36, height: 36),
-          SizedBox(
-            width: 5,
+          Text(
+            '总份数 ',
+            style: TextStyle(
+              fontSize: 12,
+              color: Color(0xffFF1010),
+              fontWeight: FontWeight.w500,
+            ),
           ),
           Text(
              _getTotalQuantity(controller.orderDetail.value?.details).toString(),

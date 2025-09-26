@@ -342,26 +342,26 @@ class _MenuItem extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 菜单图片 - 141*88 适配容器宽度
+                // 菜单图片 - 142*88 适配容器宽度
                 Container(
-                  width: 141, // 调整为容器内容区域宽度
+                  width: 142, // 调整为容器内容区域宽度
                   height: 88,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
-                      width: 141,
+                      width: 142,
                       height: 88,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Image.asset(
-                        'assets/order_menu_placeholder.webp',
-                        width: 141,
+                        'assets/order_table_menu.webp',
+                        width: 142,
                         height: 88,
                         fit: BoxFit.cover,
                       ),
                       errorWidget: (context, url, error) => Image.asset(
-                        'assets/order_menu_placeholder.webp',
-                        width: 141,
+                        'assets/order_table_menu.webp',
+                        width: 142,
                         height: 88,
                         fit: BoxFit.cover,
                       ),

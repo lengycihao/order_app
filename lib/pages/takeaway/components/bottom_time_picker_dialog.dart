@@ -75,14 +75,15 @@ class _BottomTimePickerDialogState extends State<BottomTimePickerDialog> {
                     style: TextStyle(
                       fontSize: 16,
                       color: Color(0xFF666666),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
                 const Text(
-                  '选择时间',
+                  '请选择时间',
                   style: TextStyle(
                     fontSize: 18,
-                    fontWeight: FontWeight.w500,
+                    fontWeight: FontWeight.bold,
                     color: Colors.black,
                   ),
                 ),
@@ -92,7 +93,7 @@ class _BottomTimePickerDialogState extends State<BottomTimePickerDialog> {
                     '确认',
                     style: TextStyle(
                       fontSize: 16,
-                      color: Color(0xFFFF9027),
+                      color: Color(0xFF666666),
                       fontWeight: FontWeight.w500,
                     ),
                   ),
@@ -117,67 +118,27 @@ class _BottomTimePickerDialogState extends State<BottomTimePickerDialog> {
         children: [
           // 小时选择器
           Expanded(
-            child: Column(
-              children: [
-                const Text(
-                  '时',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFE0E0E0)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: _buildWheelScrollView(
-                      controller: _hourController,
-                      itemCount: 24,
-                      onSelectedItemChanged: (index) {
-                        _selectedHour = index;
-                      },
-                      itemBuilder: (index) => '${index.toString().padLeft(2, '0')}',
-                    ),
-                  ),
-                ),
-              ],
+            child:             Expanded(
+              child: _buildWheelScrollView(
+                controller: _hourController,
+                itemCount: 24,
+                onSelectedItemChanged: (index) {
+                  _selectedHour = index;
+                },
+                itemBuilder: (index) => '${index.toString().padLeft(2, '0')}',
+              ),
             ),
           ),
           const SizedBox(width: 20),
           // 分钟选择器
           Expanded(
-            child: Column(
-              children: [
-                const Text(
-                  '分',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Colors.black,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      border: Border.all(color: const Color(0xFFE0E0E0)),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: _buildWheelScrollView(
-                      controller: _minuteController,
-                      itemCount: 60,
-                      onSelectedItemChanged: (index) {
-                        _selectedMinute = index;
-                      },
-                      itemBuilder: (index) => '${index.toString().padLeft(2, '0')}',
-                    ),
-                  ),
-                ),
-              ],
+            child: _buildWheelScrollView(
+              controller: _minuteController,
+              itemCount: 60,
+              onSelectedItemChanged: (index) {
+                _selectedMinute = index;
+              },
+              itemBuilder: (index) => '${index.toString().padLeft(2, '0')}',
             ),
           ),
         ],

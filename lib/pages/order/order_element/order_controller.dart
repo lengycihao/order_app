@@ -46,6 +46,8 @@ class OrderController extends GetxController {
   final isLoadingDishes = false.obs;
   final isLoadingCart = false.obs;
   final isCartOperationLoading = false.obs; // 购物车操作loading状态
+  final justSubmittedOrder = false.obs; // 标记是否刚刚提交了订单
+  final isInitialized = false.obs; // 标记是否已完成初始化
 
   // 从路由传递的数据
   var table = Rx<TableListModel?>(null);
@@ -362,7 +364,9 @@ class OrderController extends GetxController {
       logDebug('🔄 初始化后延迟刷新UI，确保购物车显示更新', tag: OrderConstants.logTag);
     });
     
-    logDebug('✅ 菜品和购物车数据加载完成', tag: OrderConstants.logTag);
+    // 标记初始化完成
+    isInitialized.value = true;
+    logDebug('✅ 菜品和购物车数据加载完成，初始化标记已设置', tag: OrderConstants.logTag);
   }
 
   /// 从API加载购物车数据
@@ -400,6 +404,7 @@ class OrderController extends GetxController {
         }
       } else {
         logDebug('🛒 购物车API返回空数据，保留本地购物车', tag: OrderConstants.logTag);
+        // 状态码210时，保留本地购物车数据，不进行任何操作
       }
     } catch (e) {
       logDebug('❌ 购物车数据加载异常: $e', tag: OrderConstants.logTag);
@@ -414,17 +419,17 @@ class OrderController extends GetxController {
   /// 将API购物车数据转换为本地购物车格式
   void _convertApiCartToLocalCart() {
     if (cartInfo.value?.items == null || cartInfo.value!.items!.isEmpty) {
-      // 检查是否是因为状态码210导致的空购物车
-      if (cartInfo.value?.tableId != null && cart.isNotEmpty) {
-        logDebug('⚠️ 服务器购物车为空但本地有数据，可能是状态码210，保留本地购物车', tag: OrderConstants.logTag);
-        return; // 保留本地购物车，不清空
-      } else {
+      // 服务器购物车为空，但只在非初始化时清空本地购物车
+      // 初始化时保留本地购物车数据，避免角标闪烁
+      if (isInitialized.value) {
         logDebug('🛒 服务器购物车为空，清空本地购物车', tag: OrderConstants.logTag);
         cart.clear();
         cart.refresh();
         update();
-        return;
+      } else {
+        logDebug('🛒 初始化时服务器购物车为空，保留本地购物车数据', tag: OrderConstants.logTag);
       }
+      return;
     }
     
     // 确保菜品数据已加载
@@ -1503,12 +1508,20 @@ class OrderController extends GetxController {
       if (result.isSuccess) {
         logDebug('✅ 订单提交成功', tag: OrderConstants.logTag);
         
+        // 设置标记，表示刚刚提交了订单
+        justSubmittedOrder.value = true;
+        
         // 等待1秒让服务器处理订单数据，然后刷新已点订单数据
         logDebug('⏳ 等待服务器处理订单数据...', tag: OrderConstants.logTag);
         await Future.delayed(Duration(seconds: 1));
         
         // 提交成功后刷新已点订单数据，使用重试机制
         await loadCurrentOrder(showLoading: false);
+        
+        // 刷新服务器购物车数据以确保同步
+        logDebug('🔄 刷新服务器购物车数据以确保同步', tag: OrderConstants.logTag);
+        await _loadCartFromApi(silent: true);
+        
         return {
           'success': true,
           'message': '订单提交成功'

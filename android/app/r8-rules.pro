@@ -10,3 +10,5 @@
 -dontwarn io.flutter.embedding.android.FlutterPlayStoreSplitApplication
 -dontwarn io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager
 -dontwarn io.flutter.embedding.engine.deferredcomponents.PlayStoreDeferredComponentManager$FeatureInstallStateUpdatedListener
+
+

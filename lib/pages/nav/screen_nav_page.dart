@@ -4,14 +4,24 @@ import 'package:order_app/pages/table/table_page.dart';
 import 'package:order_app/pages/takeaway/takeaway_page.dart';
 
 class ScreenNavPage extends StatefulWidget {
+  final int initialIndex;
+  
+  const ScreenNavPage({super.key, this.initialIndex = 0});
+  
   @override
   _ScreenNavPageState createState() => _ScreenNavPageState();
 }
 
 class _ScreenNavPageState extends State<ScreenNavPage> {
-  int _currentIndex = 0;
+  late int _currentIndex;
 
   final List<Widget> _pages = [TablePage(), TakeawayPage(), MinePage()];
+  
+  @override
+  void initState() {
+    super.initState();
+    _currentIndex = widget.initialIndex;
+  }
 
   @override
   Widget build(BuildContext context) {

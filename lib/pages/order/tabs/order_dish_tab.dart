@@ -14,6 +14,7 @@ import 'package:order_app/components/skeleton_widget.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
 
 class OrderDishTab extends StatefulWidget {
   const OrderDishTab({super.key});
@@ -718,12 +719,11 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   Widget _buildCategoryBottomSpace(int categoryIndex) {
     // 检查数据是否有效
     if (controller.categories.isEmpty) {
-      return Container(height: 100, color: Colors.white);
+      return Container(height: 0, color: Colors.white);
     }
     
-    final isLastCategory = categoryIndex == controller.categories.length - 1;
     return Container(
-      height: isLastCategory ? 150 : 100,
+      height: 0, // 去掉所有分类间距
       decoration: BoxDecoration(
         color: Colors.white,
       ),
@@ -743,6 +743,38 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   Future<void> _handleSubmitOrder() async {
     if (!mounted) return;
     
+    // 根据订单来源判断处理方式
+    if (controller.source.value == 'takeaway') {
+      // 外卖订单：跳转到预约时间页面
+      _navigateToAppointmentPage();
+    } else {
+      // 桌台订单：直接提交订单
+      _submitTableOrder();
+    }
+  }
+
+  /// 跳转到预约时间页面
+  void _navigateToAppointmentPage() {
+    if (!mounted) return;
+    
+    try {
+      // 跳转到预约时间页面，传递桌台ID
+      Get.to(
+        () => TakeawayOrderSuccessPage(),
+        arguments: {
+          'tableId': controller.table.value?.tableId,
+        },
+      );
+    } catch (e) {
+      print('❌ 跳转预约时间页面失败: $e');
+      GlobalToast.error('跳转失败，请重试');
+    }
+  }
+
+  /// 提交桌台订单
+  Future<void> _submitTableOrder() async {
+    if (!mounted) return;
+    
     try {
       // 显示纯动画加载弹窗（无文字）
       OrderSubmitDialog.showLoadingOnly(context);
@@ -756,17 +788,10 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       
       if (result['success'] == true) {
         // 下单成功，显示成功提示
-        await OrderSubmitDialog.showSuccess(
-          context,
-          title: '下单成功',
-          message: '订单已提交成功！',
-          onClose: () {
-            Navigator.of(context).pop();
-            // 刷新已点订单数据后切换到已点页面
-            controller.loadCurrentOrder(showLoading: false);
-            _switchToOrderedTab();
-          },
-        );
+        GlobalToast.success('订单已提交成功！');
+        // 刷新已点订单数据后切换到已点页面
+        controller.loadCurrentOrder(showLoading: false);
+        _switchToOrderedTab();
       } else {
         // 下单失败，显示错误提示
         GlobalToast.error(result['message'] ?? '订单提交失败，请重试');

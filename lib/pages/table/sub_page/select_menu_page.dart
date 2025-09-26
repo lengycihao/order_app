@@ -22,7 +22,11 @@ class SelectMenuPage extends GetView<SelectMenuController> {
           ),
           onPressed: controller.goBack,
         ),
-        title: Text(controller.table.value.hallName ?? '大厅名称'),
+        title: Text(
+          controller.table.value.tableName ?? '桌台名称',
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -250,45 +254,28 @@ SizedBox(height: 12,),
         color: Colors.white,
         borderRadius: BorderRadius.circular(8),
       ),
-      padding: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.only(bottom: 0),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
-            // 标题行 - 更换菜单左对齐，右边关闭按钮
+            // 标题行 - 选择菜单居中显示
             Padding(
               padding: const EdgeInsets.only(top: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '更换菜单',
-                    style: TextStyle(
-                      fontSize: 20,
-                      height: 1,
-                      color: Color(0xFF000000),
-                      fontWeight: FontWeight.bold,
-                    ),
+              child: Container(
+                width: double.infinity,
+                child: Text(
+                  '选择菜单',
+                  style: TextStyle(
+                    fontSize: 20,
+                    height: 1,
+                    color: Color(0xFF000000),
+                    fontWeight: FontWeight.bold,
                   ),
-                  GestureDetector(
-                    onTap: () => controller.goBack(),
-                    child: Container(
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.close,
-                        size: 16,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                  ),
-                ],
+                  textAlign: TextAlign.center,
+                ),
               ),
             ),
             SizedBox(height: 10), // 更换菜单距离上面10
@@ -322,30 +309,35 @@ SizedBox(height: 12,),
       final hasImageOnlyMenus = controller.menu.any((menu) => menu.menuType == 2);
       final hasRegularMenus = controller.menu.any((menu) => menu.menuType != 2);
       
-      // 根据菜单类型动态设置高度
+      // 根据菜单类型和数量动态设置高度
       double itemHeight;
+      int crossAxisCount = (343 / 200).ceil(); // 根据容器宽度计算每行数量
+      int rowCount = (controller.menu.length / crossAxisCount).ceil(); // 计算行数
+      
       if (hasImageOnlyMenus && hasRegularMenus) {
         // 混合类型，使用较大高度适配两种类型
         itemHeight = 200;
       } else if (hasImageOnlyMenus && !hasRegularMenus) {
         // 全部是图片类型，使用较小高度
-        itemHeight = 120; // 88px图片 + 16px padding + 16px余量
+        itemHeight = 140; // 88px图片 + 16px padding + 36px余量（增加高度）
       } else {
         // 全部是带价格信息的类型，使用标准高度
         itemHeight = 200;
       }
 
-      return GridView.builder(
-        shrinkWrap: true,
-        padding: EdgeInsets.zero,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: controller.menu.length,
-        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 200,
-          crossAxisSpacing: 12,
-          mainAxisSpacing: 12,
-          mainAxisExtent: itemHeight,
-        ),
+      return Container(
+        height: rowCount * itemHeight + (rowCount - 1) * 12, // 动态计算总高度
+        child: GridView.builder(
+          shrinkWrap: true,
+          padding: EdgeInsets.zero,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: controller.menu.length,
+          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+            maxCrossAxisExtent: 200,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            mainAxisExtent: itemHeight,
+          ),
         itemBuilder: (context, index) {
           final item = controller.menu[index];
           final isSelected = selectedIndex == index; // 使用在Obx作用域内获取的值
@@ -379,37 +371,37 @@ SizedBox(height: 12,),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 菜单图片 - 调整高度以适应容器
-                      Expanded(
-                        flex: 3,
-                        child: Container(
-                          width: 147,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(8),
-                            child: CachedNetworkImage(
-                              imageUrl: item.menuImage ?? '',
-                              width: 147,
+                      // 菜单图片 - 固定尺寸容器
+                      Container(
+                        width: 142,
+                        height: 88,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: item.menuImage ?? '',
+                            width: 142,
+                            height: 88,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Image.asset(
+                              'assets/order_table_menu.webp',
+                              width: 142,
+                              height: 88,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => Image.asset(
-                                'assets/order_menu_placeholder.webp',
-                                width: 147,
-                                fit: BoxFit.cover,
-                              ),
-                              errorWidget: (context, url, error) => Image.asset(
-                                'assets/order_menu_placeholder.webp',
-                                width: 147,
-                                fit: BoxFit.cover,
-                              ),
+                            ),
+                            errorWidget: (context, url, error) => Image.asset(
+                              'assets/order_table_menu.webp',
+                              width: 142,
+                              height: 88,
+                              fit: BoxFit.cover,
                             ),
                           ),
                         ),
                       ),
                       // 根据菜单类型决定是否显示价格信息
                       if (item.menuType != 2) ...[
-                        const SizedBox(height: 4),
-                        // 价格信息 - 文字可换行
-                        Expanded(
-                          flex: 1,
+                        const SizedBox(height: 8),
+                        // 价格信息 - 文字可换行，使用 Flexible 避免溢出
+                        Flexible(
                           child: _buildPriceInfo(item),
                         ),
                       ],
@@ -439,6 +431,7 @@ SizedBox(height: 12,),
             ),
           );
         },
+      ),
       );
     });
   }

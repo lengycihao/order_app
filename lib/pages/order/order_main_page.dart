@@ -85,6 +85,12 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
         if (!controller.isLoadingOrdered.value) {
           controller.loadCurrentOrder(showLoading: false);
         }
+        
+        // 如果刚刚提交了订单，清空购物车
+        if (controller.justSubmittedOrder.value) {
+          controller.clearCart();
+          controller.justSubmittedOrder.value = false; // 重置标记
+        }
       } else if (_tabController.index == 0) {
         // 切换回菜单页面时，刷新购物车数据
         controller.forceRefreshCart(silent: true);
