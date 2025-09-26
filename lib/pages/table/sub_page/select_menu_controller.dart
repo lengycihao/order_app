@@ -195,28 +195,6 @@ class SelectMenuController extends GetxController {
     }
   }
 
-  // /// 根据菜单索引获取菜品列表
-  // List<DishListModel> getDishListByMenuIndex(int menuIndex) {
-  //   if (menuIndex >= 0 && menuIndex < dishListModelList.length) {
-  //     return dishListModelList[menuIndex];
-  //   }
-  //   return <DishListModel>[];
-  // }
-
-  // /// 获取当前选中菜单的菜品列表
-  // List<DishListModel> get selectedMenuDishes {
-  //   return getDishListByMenuIndex(selectedMenuIndex.value);
-  // }
-
-  // /// 手动刷新菜品数据
-  // Future<void> refreshDishData() async {
-  //   final args = Get.arguments as Map<String, dynamic>?;
-  //   final tableId = args?['table_id'] as int?;
-    
-  //   if (tableId != null) {
-  //     await _loadAllMenuDishes(tableId);
-  //   }
-  // }
 
   /// 增加成人数量
   void increaseAdultCount() {
@@ -301,12 +279,8 @@ class SelectMenuController extends GetxController {
     // 准备传递给点餐页面的数据
     final selectedDishes = dishListModelList[selectedMenuIndex.value];
     logDebug('🍽️ 准备传递菜品数据:', tag: 'SelectMenuController');
-    // print('  选中菜单索引: ${selectedMenuIndex.value}');
-    // print('  菜品类目数量: ${selectedDishes.length}');
-    // print('  dishListModelList总长度: ${dishListModelList.length}');
     for (int i = 0; i < selectedDishes.length; i++) {
       // final dishModel = selectedDishes[i];
-      // print('    类目 $i: ${dishModel.name}, 菜品数量: ${dishModel.items?.length ?? 0}');
     }
     
     final orderData = {
@@ -318,11 +292,6 @@ class SelectMenuController extends GetxController {
     };
     
     logDebug('📦 准备传递的完整数据:', tag: 'SelectMenuController');
-    // print('  table: ${table.value.tableName}');
-    // print('  menu: ${getSelectedMenu()!.menuName}'); 
-    // print('  dishes: ${selectedDishes.length} 个类目');
-    // print('  adultCount: ${adultCount.value}');
-    // print('  childCount: ${childCount.value}');
 
     // 先删除可能存在的旧实例
     if (Get.isRegistered<OrderController>()) {

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:order_app/models/history_account.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class HistoryAccountService {
   static const String _key = 'history_accounts';
@@ -22,7 +23,7 @@ class HistoryAccountService {
           .toList()
         ..sort((a, b) => b.lastLoginTime.compareTo(a.lastLoginTime)); // 按登录时间倒序排列
     } catch (e) {
-      print('获取历史账号失败: $e');
+      logError('获取历史账号失败: $e', tag: 'HistoryAccountService');
       return [];
     }
   }
@@ -50,7 +51,7 @@ class HistoryAccountService {
       );
       await prefs.setString(_key, accountsJson);
     } catch (e) {
-      print('保存历史账号失败: $e');
+      logError('保存历史账号失败: $e', tag: 'HistoryAccountService');
     }
   }
 
@@ -70,7 +71,7 @@ class HistoryAccountService {
         await prefs.setString(_key, accountsJson);
       }
     } catch (e) {
-      print('删除历史账号失败: $e');
+      logError('删除历史账号失败: $e', tag: 'HistoryAccountService');
     }
   }
 
@@ -80,7 +81,7 @@ class HistoryAccountService {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_key);
     } catch (e) {
-      print('清空历史账号失败: $e');
+      logError('清空历史账号失败: $e', tag: 'HistoryAccountService');
     }
   }
 
@@ -102,7 +103,7 @@ class HistoryAccountService {
         await prefs.setString(_key, accountsJson);
       }
     } catch (e) {
-      print('更新登录时间失败: $e');
+      logError('更新登录时间失败: $e', tag: 'HistoryAccountService');
     }
   }
 }

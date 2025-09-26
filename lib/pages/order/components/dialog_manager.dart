@@ -180,7 +180,7 @@ class DialogManager {
 
   /// 调试日志
   void logDebug(String message) {
-    print('[DialogManager] $message');
+    logDebug('[DialogManager] $message');
   }
 }
 

@@ -12,6 +12,7 @@ import 'package:order_app/utils/image_cache_config.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
 import 'dish_detail_controller.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class DishDetailPage extends StatefulWidget {
   final int? dishId;
@@ -558,7 +559,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
         },
       );
     } catch (e) {
-      print('❌ 跳转预约时间页面失败: $e');
+      logError('跳转预约时间页面失败: $e', tag: 'DishDetailPage');
       GlobalToast.error('跳转失败，请重试');
     }
   }
@@ -592,7 +593,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
         GlobalToast.error(result['message'] ?? '订单提交失败，请重试');
       }
     } catch (e) {
-      print('❌ 提交订单异常: $e');
+      logError('提交订单异常: $e', tag: 'DishDetailPage');
       if (mounted) {
         // 关闭加载弹窗
         Navigator.of(context).pop();

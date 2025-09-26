@@ -13,12 +13,14 @@ import 'package:order_app/widgets/base_list_page_widget.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class MergeTablesPage extends BaseListPageWidget {
   final List<List<TableListModel>> allTabTables;
   final List<TableMenuListModel> menuModelList;
   final LobbyListModel lobbyListModel;
   final TableListModel? mergedTable;
+  final bool hasInitialNetworkError;
 
   const MergeTablesPage({
     super.key,
@@ -26,6 +28,7 @@ class MergeTablesPage extends BaseListPageWidget {
     required this.menuModelList,
     required this.lobbyListModel,
     this.mergedTable,
+    this.hasInitialNetworkError = false,
   });
 
   @override
@@ -99,16 +102,25 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   Future<void> _fetchDataForTab(int index) async {
     if (index >= tabDataList.length) return;
     
+    // 检查大厅数据是否有效
+    if (lobbyListModel.value.halls == null || 
+        lobbyListModel.value.halls!.isEmpty || 
+        index >= lobbyListModel.value.halls!.length) {
+      _hasError.value = true;
+      errorMessage.value = '大厅数据无效或索引越界';
+      tabDataList[index].value = [];
+      return;
+    }
+    
     _isLoading.value = true;
     _hasError.value = false;
     errorMessage.value = '';
     
     try {
-      final result = await _baseApi.getTableList(
-        hallId: lobbyListModel.value.halls!.isNotEmpty
-            ? lobbyListModel.value.halls![index].hallId.toString()
-            : "0",
-      );
+      final hallId = lobbyListModel.value.halls![index].hallId.toString();
+      logDebug('🔄 合并桌台页面获取tab $index 数据: hallId=$hallId');
+      
+      final result = await _baseApi.getTableList(hallId: hallId);
       
       if (result.isSuccess) {
         List<TableListModel> data = result.data!;
@@ -116,15 +128,21 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         _hasError.value = false;
         // 标记为已预加载
         _preloadedTabs.add(index);
-      } else {
+       } else {
         _hasError.value = true;
         errorMessage.value = result.msg ?? '数据加载失败';
         tabDataList[index].value = [];
+        // 加载失败时，从预加载成功列表中移除
+        _preloadedTabs.remove(index);
+        logError('❌ 合并桌台页面Tab $index 数据获取失败: ${result.msg}');
       }
     } catch (e) {
       _hasError.value = true;
       errorMessage.value = '网络连接异常，请检查网络后重试';
       tabDataList[index].value = [];
+      // 加载失败时，从预加载成功列表中移除
+      _preloadedTabs.remove(index);
+      logError('❌ 合并桌台页面Tab $index 数据获取异常: $e');
     }
     
     _isLoading.value = false;
@@ -157,25 +175,32 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   Future<void> _preloadTabData(int index) async {
     if (index >= tabDataList.length) return;
     
+    // 检查大厅数据是否有效
+    if (lobbyListModel.value.halls == null || 
+        lobbyListModel.value.halls!.isEmpty || 
+        index >= lobbyListModel.value.halls!.length) {
+      logError('❌ 合并桌台页面预加载tab $index 失败: 大厅数据无效或索引越界', tag: 'MergeTablesPage');
+      return;
+    }
+    
     _preloadingTabs.add(index);
     
     try {
-      final result = await _baseApi.getTableList(
-        hallId: lobbyListModel.value.halls!.isNotEmpty
-            ? lobbyListModel.value.halls![index].hallId.toString()
-            : "0",
-      );
+      final hallId = lobbyListModel.value.halls![index].hallId.toString();
+      logDebug('🔄 合并桌台页面预加载tab $index 数据: hallId=$hallId', tag: 'MergeTablesPage');
+      
+      final result = await _baseApi.getTableList(hallId: hallId);
       
       if (result.isSuccess) {
         List<TableListModel> data = result.data!;
         tabDataList[index].value = data;
         _preloadedTabs.add(index);
-        print('✅ 并桌页面预加载tab $index 数据成功，桌台数量: ${data.length}');
+        logDebug('✅ 合并桌台页面预加载tab $index 数据成功，桌台数量: ${data.length}', tag: 'MergeTablesPage');
       } else {
-        print('❌ 并桌页面预加载tab $index 数据失败: ${result.msg}');
+        logError('❌ 合并桌台页面预加载tab $index 数据失败: ${result.msg}', tag: 'MergeTablesPage');
       }
     } catch (e) {
-      print('❌ 并桌页面预加载tab $index 数据异常: $e');
+      logError('❌ 合并桌台页面预加载tab $index 数据异常: $e', tag: 'MergeTablesPage');
     } finally {
       _preloadingTabs.remove(index);
     }
@@ -213,14 +238,32 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   void _handleTabSwitch(int index) {
     // 如果该tab已经预加载过，直接显示数据，不需要重新加载
     if (_preloadedTabs.contains(index)) {
-      print('✅ 并桌页面Tab $index 已预加载，直接显示数据');
+      logDebug('并桌页面Tab $index 已预加载，直接显示数据', tag: 'MergeTablesPage');
       // 预加载相邻tab
       _preloadAdjacentTabs(index);
     } else {
       // 如果该tab没有预加载过，正常加载
-      print('🔄 并桌页面Tab $index 未预加载，开始加载数据');
+      logDebug('并桌页面Tab $index 未预加载，开始加载数据', tag: 'MergeTablesPage');
       _fetchDataForTab(index);
     }
+  }
+
+  /// 处理重新加载逻辑
+  Future<void> _handleReload() async {
+    // 如果是初始网络错误或者halls为空，需要通知父页面重新获取lobby数据
+    if (widget.hasInitialNetworkError || 
+        lobbyListModel.value.halls == null || 
+        lobbyListModel.value.halls!.isEmpty) {
+      logDebug('并桌页面检测到初始网络错误或halls为空，返回桌台页面重新加载', tag: 'MergeTablesPage');
+      
+      // 返回桌台页面并携带重新加载的标识
+      Navigator.of(context).pop(true); // 传递true表示需要重新加载
+      return;
+    }
+    
+    // 否则重新加载当前tab数据
+    final currentTabIndex = selectedTab.value;
+    await _fetchDataForTab(currentTabIndex);
   }
   
   @override
@@ -236,7 +279,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   bool get isLoading => _isLoading.value;
 
   @override
-  bool get hasNetworkError => _hasError.value;
+  bool get hasNetworkError => _hasError.value || widget.hasInitialNetworkError;
 
   @override
   bool get hasData {
@@ -586,7 +629,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
             // 通知刷新完成
             _refreshController.refreshCompleted();
           } catch (e) {
-            print('❌ 并桌页面刷新失败: $e');
+            logError('并桌页面刷新失败: $e', tag: 'MergeTablesPage');
             // 刷新失败也要通知完成
             _refreshController.refreshFailed();
           }
@@ -598,9 +641,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               sliver: data.isEmpty
                   ? SliverFillRemaining(
-                      child: _isLoading.value
-                          ? buildLoadingWidget()
-                          : (_hasError.value ? buildNetworkErrorState() : buildEmptyState()),
+                      child: buildEmptyState(),
                     )
                   : SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -640,6 +681,50 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
 
   @override
   String getNetworkErrorText() => '暂无网络';
+  
+  /// 重写空状态操作按钮
+  @override
+  Widget? getEmptyStateAction() {
+    return ElevatedButton(
+      onPressed: () async {
+        await _handleReload();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFFF9027),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: const Text(
+        '重新加载',
+        style: TextStyle(fontSize: 14),
+      ),
+    );
+  }
+  
+  /// 重写网络错误状态操作按钮
+  @override
+  Widget? getNetworkErrorAction() {
+    return ElevatedButton(
+      onPressed: () async {
+        await _handleReload();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFFF9027),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: const Text(
+        '重新加载',
+        style: TextStyle(fontSize: 14),
+      ),
+    );
+  }
 
   @override
   Widget buildDataContent() {
@@ -703,8 +788,16 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         return buildLoadingWidget();
       }
       
+      // 判断当前tab是否有网络错误：
+      // 1. 全局有错误状态
+      // 2. 当前tab没有数据 
+      // 3. 当前tab不在预加载成功列表中（说明加载失败了）
+      bool currentTabHasError = hasNetworkError && 
+                               data.isEmpty && 
+                               !_preloadedTabs.contains(tabIndex);
+      
       // 如果当前tab有网络错误，显示网络错误状态
-      if (hasNetworkError && data.isEmpty) {
+      if (currentTabHasError) {
         return buildNetworkErrorState();
       }
       

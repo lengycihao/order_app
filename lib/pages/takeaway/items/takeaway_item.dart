@@ -92,41 +92,6 @@ class _TakeawayItemState extends State<TakeawayItem> {
           
           // // 预计取餐时间（如果有?
           // if (widget.order.formattedEstimatePickupTime.isNotEmpty) ...[
-          //   const SizedBox(height: 8),
-          //   Row(
-          //     children: [
-          //       const Icon(Icons.access_time, size: 16, color: Colors.orange),
-          //       const SizedBox(width: 4),
-          //       Text(
-          //         '预计取餐?{widget.order.formattedEstimatePickupTime}',
-          //         style: const TextStyle(
-          //           fontSize: context.adaptFontSize(),
-          //           color: Colors.orange,
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ],
-          
-          // const SizedBox(height: 8),
-          // const Divider(height: 0.4, color: Color(0x8d999999)),
-          
-          // // 订单状态信?
-          // if (widget.order.orderStatusName != null && widget.order.orderStatusName!.isNotEmpty)
-          //   Padding(
-          //     padding: const EdgeInsets.only(top: 8),
-          //     child: Row(
-          //       children: [
-          //         const Icon(Icons.restaurant, size: 16, color: Color(0xff666666)),
-          //         const SizedBox(width: 4),
-          //         Text(
-          //           '状态：${widget.order.orderStatusName}',
-          //           style: const TextStyle(
-          //             fontSize: context.adaptFontSize(),
-          //             color: Color(0xff666666),
-          //           ),
-          //         ),
-          //       ],
           //     ),
           //   ),
           

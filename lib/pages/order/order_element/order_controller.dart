@@ -52,6 +52,7 @@ class OrderController extends GetxController {
   // 从路由传递的数据
   var table = Rx<TableListModel?>(null);
   var menu = Rx<TableMenuListModel?>(null);
+  var menuId = 0.obs; // 菜单ID，用于直接获取菜品数据
   var adultCount = 0.obs;
   var childCount = 0.obs;
   var source = "".obs; // 订单来源：table(桌台), takeaway(外卖)
@@ -96,14 +97,10 @@ class OrderController extends GetxController {
     // 初始化管理器
     _initializeManagers();
     
-    // 处理传递的参数
-    _processArguments();
+    // 处理传递的参数并加载数据
+    _processArgumentsAndLoadData();
     
-    // 初始化WebSocket连接
-    _initializeWebSocket();
-    
-    // 加载数据
-    _loadDishesAndCart();
+    // WebSocket初始化将在桌台数据处理完成后进行
   }
 
   /// 初始化管理器
@@ -122,8 +119,8 @@ class OrderController extends GetxController {
     // WebSocket处理器将在有tableId后初始化
   }
 
-  /// 处理传递的参数
-  void _processArguments() {
+  /// 处理传递的参数并加载数据
+  void _processArgumentsAndLoadData() {
     final args = Get.arguments as Map<String, dynamic>?;
     logDebug('📦 接收到的参数: $args', tag: OrderConstants.logTag);
     
@@ -133,46 +130,56 @@ class OrderController extends GetxController {
       _processPeopleCount(args);
       _processSource(args);
     }
+    
+    // 参数处理完成后，直接加载菜品和购物车数据
+    _loadDishesAndCart();
   }
+
 
   /// 处理桌台数据
   void _processTableData(Map<String, dynamic> args) {
     if (args['table'] != null) {
-      table.value = args['table'] as TableListModel;
-      logDebug('✅ 桌台信息已设置', tag: OrderConstants.logTag);
+      final tableData = args['table'] as TableListModel;
+      table.value = tableData;
+      logDebug('✅ 桌台信息已设置: tableId=${tableData.tableId}, tableName=${tableData.tableName}, hallId=${tableData.hallId}', tag: OrderConstants.logTag);
+      
+      // 检查桌台ID是否有效
+      if (tableData.tableId == 0) {
+        logDebug('⚠️ 警告：桌台ID为0，这可能导致WebSocket连接失败', tag: OrderConstants.logTag);
+      }
+      
+      // 桌台数据设置完成后，初始化WebSocket连接
+      _initializeWebSocketAfterTableData();
+    } else {
+      logDebug('❌ 未找到桌台信息', tag: OrderConstants.logTag);
     }
   }
 
   /// 处理菜单数据
   void _processMenuData(Map<String, dynamic> args) {
+    logDebug('🔍 处理菜单数据，args: $args', tag: OrderConstants.logTag);
+    
     if (args['menu'] != null) {
       final menuData = args['menu'];
+      logDebug('📋 菜单数据类型: ${menuData.runtimeType}', tag: OrderConstants.logTag);
+      
       if (menuData is TableMenuListModel) {
         menu.value = menuData;
-        logDebug('✅ 菜单信息已设置: ${menuData.menuName}', tag: OrderConstants.logTag);
-      } else if (menuData is List<TableMenuListModel>) {
-        _processMenuList(menuData, args);
+        menuId.value = menuData.menuId ?? 0;
+        logDebug('✅ 菜单信息已设置: ${menuData.menuName} (ID: ${menuData.menuId})', tag: OrderConstants.logTag);
       }
+    } else if (args['menu_id'] != null) {
+      // 如果只有menu_id参数，直接设置menuId
+      menuId.value = args['menu_id'] as int;
+      logDebug('✅ 直接设置菜单ID: ${menuId.value}', tag: OrderConstants.logTag);
+    } else {
+      menuId.value = 0;
+      logDebug('❌ 没有找到menu参数', tag: OrderConstants.logTag);
     }
   }
 
-  /// 处理菜单列表
-  void _processMenuList(List<TableMenuListModel> menuData, Map<String, dynamic> args) {
-    if (menuData.isNotEmpty) {
-      if (args['menu_id'] != null) {
-        final targetMenuId = args['menu_id'] as int;
-        final targetMenu = menuData.firstWhere(
-          (menu) => menu.menuId == targetMenuId,
-          orElse: () => menuData[0],
-        );
-        menu.value = targetMenu;
-        logDebug('✅ 菜单信息已设置(根据menu_id): ${targetMenu.menuName} (ID: ${targetMenu.menuId})', tag: OrderConstants.logTag);
-      } else {
-        menu.value = menuData[0];
-        logDebug('✅ 菜单信息已设置(从列表): ${menuData[0].menuName}', tag: OrderConstants.logTag);
-      }
-    }
-  }
+
+  /// 根据menu_id异步获取菜单数据
 
   /// 处理人数数据
   void _processPeopleCount(Map<String, dynamic> args) {
@@ -203,7 +210,7 @@ class OrderController extends GetxController {
       logDebug('✅ 订单来源: takeaway (fromTakeaway参数)', tag: OrderConstants.logTag);
     } else {
       // 根据是否有桌台信息判断来源
-      if (table.value?.tableId != null) {
+      if (table.value?.tableId != null && table.value!.tableId != 0) {
         source.value = 'table';
         logDebug('✅ 根据桌台信息推断来源为: table', tag: OrderConstants.logTag);
       } else {
@@ -213,10 +220,16 @@ class OrderController extends GetxController {
     }
   }
 
+  /// 在桌台数据设置后初始化WebSocket连接
+  Future<void> _initializeWebSocketAfterTableData() async {
+    logDebug('🔌 桌台数据已设置，开始初始化WebSocket连接...', tag: OrderConstants.logTag);
+    await _initializeWebSocket();
+  }
+
   /// 初始化WebSocket连接
   Future<void> _initializeWebSocket() async {
-    if (table.value?.tableId == null) {
-      logDebug('❌ 桌台ID为空，无法初始化WebSocket', tag: OrderConstants.logTag);
+    if (table.value?.tableId == null || table.value!.tableId == 0) {
+      logDebug('❌ 桌台ID为空或无效，无法初始化WebSocket (tableId: ${table.value?.tableId})', tag: OrderConstants.logTag);
       return;
     }
 
@@ -295,7 +308,7 @@ class OrderController extends GetxController {
   
   /// 重连WebSocket
   Future<void> _reconnectWebSocket() async {
-    if (table.value?.tableId == null) return;
+    if (table.value?.tableId == null || table.value!.tableId == 0) return;
     
     try {
       final tableId = table.value!.tableId.toString();
@@ -343,7 +356,7 @@ class OrderController extends GetxController {
   Future<void> _loadDishesAndCart() async {
     logDebug('🔄 开始按顺序加载菜品和购物车数据', tag: OrderConstants.logTag);
     
-    // 先加载菜品数据
+    // 先加载菜品数据 - 使用API获取菜品数据
     await _loadDishesFromApi();
     
     // 等待菜品数据加载完成后再加载购物车
@@ -459,42 +472,38 @@ class OrderController extends GetxController {
     cart.addAll(newCart);
     cart.refresh();
     update();
-    logDebug('✅ 购物车数据已更新: ${cart.length} 种商品', tag: OrderConstants.logTag);
+    // logDebug('✅ 购物车数据已更新: ${cart.length} 种商品', tag: OrderConstants.logTag);
     
     // 强制刷新UI以确保显示更新
     Future.delayed(Duration(milliseconds: 100), () {
       cart.refresh();
       update();
-      logDebug('🔄 延迟刷新UI，确保购物车显示更新', tag: OrderConstants.logTag);
+      // logDebug('🔄 延迟刷新UI，确保购物车显示更新', tag: OrderConstants.logTag);
     });
   }
 
   /// 从API获取菜品数据
   Future<void> _loadDishesFromApi() async {
-    if (menu.value == null) {
-      logDebug('❌ 没有菜单信息，无法获取菜品数据', tag: OrderConstants.logTag);
+    if (menuId.value == 0) {
+      GlobalToast.error('获取菜品数据失败');
       return;
     }
 
     try {
-      isLoadingDishes.value = true;
-      logDebug('🔄 开始从API获取菜品数据...', tag: OrderConstants.logTag);
+      isLoadingDishes.value = true; 
       
       final result = await _api.getMenudDishList(
         tableID: table.value?.tableId.toString(),
-        menuId: menu.value!.menuId.toString(),
+        menuId: menuId.value.toString(),
       );
       
       if (result.isSuccess && result.data != null) {
-        logDebug('✅ 成功获取菜品数据，类目数量: ${result.data!.length}', tag: OrderConstants.logTag);
-        _loadDishesFromData(result.data!);
+         _loadDishesFromData(result.data!);
       } else {
-        logDebug('❌ 获取菜品数据失败: ${result.msg}', tag: OrderConstants.logTag);
-        GlobalToast.error(result.msg ?? '获取菜品数据失败');
+         GlobalToast.error(result.msg ?? '获取菜品数据失败');
       }
     } catch (e) {
-      logDebug('❌ 获取菜品数据异常: $e', tag: OrderConstants.logTag);
-      GlobalToast.error('获取菜品数据异常');
+       GlobalToast.error('$e');
     } finally {
       isLoadingDishes.value = false;
     }
@@ -502,8 +511,7 @@ class OrderController extends GetxController {
 
   /// 从数据加载菜品
   void _loadDishesFromData(List<DishListModel> dishListModels) {
-    logDebug('🔄 开始加载菜品数据...', tag: OrderConstants.logTag);
-    
+     
     DataConverter.loadDishesFromData(
       dishListModels: dishListModels,
       categories: categories,
@@ -676,9 +684,15 @@ class OrderController extends GetxController {
         logDebug('✅ WebSocket添加指定数量菜品成功: ${dish.name} x$quantity', tag: OrderConstants.logTag);
       } else {
         logDebug('❌ WebSocket添加指定数量菜品失败: ${dish.name} x$quantity', tag: OrderConstants.logTag);
+        // WebSocket失败，回滚本地购物车
+        _rollbackAddDishWithQuantity(dish, quantity, selectedOptions);
+        GlobalToast.error('添加菜品失败，请重试');
       }
     } catch (e) {
       logDebug('❌ 发送WebSocket添加指定数量菜品异常: $e', tag: OrderConstants.logTag);
+      // 异常时也需要回滚本地购物车
+      _rollbackAddDishWithQuantity(dish, quantity, selectedOptions);
+      GlobalToast.error('添加菜品异常，请重试');
     }
   }
 
@@ -699,11 +713,14 @@ class OrderController extends GetxController {
         // 服务器会通过cart_add消息通知我们，然后我们会在_loadCartFromApi中获取完整的购物车数据
       } else {
         logDebug('❌ WebSocket添加菜品失败: ${dish.name}', tag: OrderConstants.logTag);
-        // WebSocket失败，显示错误提示
+        // WebSocket失败，回滚本地购物车并显示错误提示
+        _rollbackAddDish(dish, selectedOptions);
         GlobalToast.error('添加菜品失败，请重试');
       }
     } catch (e) {
       logDebug('❌ 发送WebSocket添加菜品异常: $e', tag: OrderConstants.logTag);
+      // 异常时也需要回滚本地购物车
+      _rollbackAddDish(dish, selectedOptions);
       GlobalToast.error('添加菜品异常，请重试');
     }
   }
@@ -1224,6 +1241,68 @@ class OrderController extends GetxController {
     _updateTableName(tableName);
   }
 
+  // ========== 购物车操作回滚方法 ==========
+
+  /// 回滚添加菜品操作（单个菜品）
+  void _rollbackAddDish(Dish dish, Map<String, List<String>>? selectedOptions) {
+    logDebug('🔙 回滚添加菜品操作: ${dish.name}', tag: OrderConstants.logTag);
+    
+    // 查找要回滚的购物车项
+    CartItem? targetCartItem;
+    for (var entry in cart.entries) {
+      if (entry.key.dish.id == dish.id && 
+          _areOptionsEqual(entry.key.selectedOptions, selectedOptions ?? {})) {
+        targetCartItem = entry.key;
+        break;
+      }
+    }
+    
+    if (targetCartItem != null) {
+      // 从本地购物车中移除
+      cart.remove(targetCartItem);
+      cart.refresh();
+      update();
+      logDebug('✅ 回滚成功，已从本地购物车移除: ${dish.name}', tag: OrderConstants.logTag);
+    } else {
+      logDebug('⚠️ 未找到要回滚的购物车项: ${dish.name}', tag: OrderConstants.logTag);
+    }
+  }
+
+  /// 回滚添加指定数量菜品操作
+  void _rollbackAddDishWithQuantity(Dish dish, int quantity, Map<String, List<String>>? selectedOptions) {
+    logDebug('🔙 回滚添加指定数量菜品操作: ${dish.name} x$quantity', tag: OrderConstants.logTag);
+    
+    // 查找要回滚的购物车项
+    CartItem? targetCartItem;
+    for (var entry in cart.entries) {
+      if (entry.key.dish.id == dish.id && 
+          _areOptionsEqual(entry.key.selectedOptions, selectedOptions ?? {})) {
+        targetCartItem = entry.key;
+        break;
+      }
+    }
+    
+    if (targetCartItem != null) {
+      final currentQuantity = cart[targetCartItem]!;
+      final rollbackQuantity = currentQuantity - quantity;
+      
+      if (rollbackQuantity <= 0) {
+        // 回滚后数量为0或负数，完全移除
+        cart.remove(targetCartItem);
+        logDebug('✅ 回滚成功，已从本地购物车完全移除: ${dish.name}', tag: OrderConstants.logTag);
+      } else {
+        // 回滚到减少后的数量
+        cart[targetCartItem] = rollbackQuantity;
+        logDebug('✅ 回滚成功，数量调整为: ${dish.name} x$rollbackQuantity', tag: OrderConstants.logTag);
+      }
+      
+      cart.refresh();
+      update();
+    } else {
+      logDebug('⚠️ 未找到要回滚的购物车项: ${dish.name}', tag: OrderConstants.logTag);
+    }
+  }
+
 
   // ========== API调用 ==========
 
@@ -1552,79 +1631,63 @@ class OrderController extends GetxController {
     }
   }
 
-  // // ========== WebSocket回调处理方法 ==========
 
-  // /// 处理菜单变更
-  // void _handleMenuChange(int menuId) {
-  //   logDebug('📋 收到菜单变更通知: $menuId', tag: OrderConstants.logTag);
-  //   // TODO: 处理菜单变更逻辑
-  // }
-
-  // /// 处理桌台变更
-  // void _handleTableChange(String tableName) {
-  //   logDebug('📋 收到桌台变更通知: $tableName', tag: OrderConstants.logTag);
-  //   // TODO: 处理桌台变更逻辑
-  // }
-
-  // /// 处理强制更新要求（409冲突）
-  // void _handleForceUpdateRequired(String message, Map<String, dynamic>? data) {
-  //   logDebug('⚠️ 收到强制更新要求: $message', tag: OrderConstants.logTag);
-  //   logDebug('📦 强制更新数据: $data', tag: OrderConstants.logTag);
+  /// 强制清理所有缓存数据
+  void forceClearAllCache() {
+    logDebug('🧹 开始强制清理所有缓存数据', tag: OrderConstants.logTag);
     
-  //   _pendingForceUpdateData = data;
+    // 清理菜品数据
+    categories.clear();
+    dishes.clear();
+    selectedCategory.value = 0;
+    searchKeyword.value = "";
+    sortType.value = SortType.none;
     
-  //   // 获取当前上下文
-  //   final context = Get.context;
-  //   if (context != null) {
-  //     // 显示强制更新确认弹窗
-  //     ForceUpdateDialog.show(
-  //       context,
-  //       message: message,
-  //       onConfirm: _performForceUpdate,
-  //       onCancel: () {
-  //         logDebug('❌ 用户取消强制更新', tag: OrderConstants.logTag);
-  //         _pendingForceUpdateData = null;
-  //         _lastOperationCartItem = null;
-  //         _lastOperationQuantity = null;
-  //       },
-  //     );
-  //   } else {
-  //     logDebug('❌ 无法获取上下文，无法显示强制更新弹窗', tag: OrderConstants.logTag);
-  //   }
-  // }
-
-  // /// 执行强制更新操作
-  // void _performForceUpdate() {
-  //   logDebug('🔄 执行强制更新操作', tag: OrderConstants.logTag);
+    // 清理购物车数据
+    cart.clear();
+    cartInfo.value = null;
     
-  //   try {
-  //     // 使用保存的操作上下文
-  //     if (_lastOperationCartItem != null && _lastOperationQuantity != null) {
-  //       final cartItem = _lastOperationCartItem!;
-  //       final quantity = _lastOperationQuantity!;
-        
-  //       logDebug('✅ 使用保存的操作上下文执行强制更新: ${cartItem.dish.name}, quantity=$quantity', tag: OrderConstants.logTag);
-  //       logDebug('📋 购物车项详情: cartId=${cartItem.cartId}, cartSpecificationId=${cartItem.cartSpecificationId}', tag: OrderConstants.logTag);
-        
-  //       // 使用现有的sendUpdateQuantity方法，设置forceOperate为true
-  //       _wsHandler.sendUpdateQuantity(
-  //         cartItem: cartItem,
-  //         quantity: quantity,
-  //         forceOperate: true,
-  //       );
-  //     } else {
-  //       logDebug('❌ 没有保存的操作上下文，无法执行强制更新', tag: OrderConstants.logTag);
-  //       logDebug('💡 _lastOperationCartItem=$_lastOperationCartItem, _lastOperationQuantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
-  //     }
-  //   } catch (e) {
-  //     logDebug('❌ 执行强制更新操作异常: $e', tag: OrderConstants.logTag);
-  //   } finally {
-  //     // 清理数据
-  //     _pendingForceUpdateData = null;
-  //     _lastOperationCartItem = null;
-  //     _lastOperationQuantity = null;
-  //   }
-  // }
+    // 清理订单数据
+    currentOrder.value = null;
+    
+    // 清理敏感物数据
+    selectedAllergens.clear();
+    tempSelectedAllergens.clear();
+    allAllergens.clear();
+    
+    // 清理菜单和桌台数据
+    table.value = null;
+    menu.value = null;
+    adultCount.value = 0;
+    childCount.value = 0;
+    source.value = "";
+    
+    // 重置状态
+    isInitialized.value = false;
+    justSubmittedOrder.value = false;
+    isLoadingDishes.value = false;
+    isLoadingCart.value = false;
+    isCartOperationLoading.value = false;
+    isLoadingOrdered.value = false;
+    hasNetworkErrorOrdered.value = false;
+    
+    // 强制刷新UI
+    categories.refresh();
+    dishes.refresh();
+    cart.refresh();
+    selectedAllergens.refresh();
+    tempSelectedAllergens.refresh();
+    allAllergens.refresh();
+    table.refresh();
+    menu.refresh();
+    adultCount.refresh();
+    childCount.refresh();
+    source.refresh();
+    cartInfo.refresh();
+    currentOrder.refresh();
+    
+    logDebug('✅ 所有缓存数据已清理完成', tag: OrderConstants.logTag);
+  }
 
   @override
   void onClose() {

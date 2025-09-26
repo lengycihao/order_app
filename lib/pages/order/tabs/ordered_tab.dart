@@ -3,8 +3,8 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/order_module_widget.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
+import 'package:order_app/pages/order/utils/order_page_utils.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
-import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 
 class OrderedTab extends BaseListPageWidget {
   const OrderedTab({super.key});
@@ -27,13 +27,12 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
   bool get hasNetworkError => controller.hasNetworkErrorOrdered.value;
 
   @override
-  bool get hasData {
-    final order = controller.currentOrder.value;
-    return order != null && order.details != null && order.details!.isNotEmpty;
-  }
+  bool get hasData => OrderPageUtils.hasOrderData(controller.currentOrder.value);
 
   @override
-  Future<void> onRefresh() => _loadOrderedData();
+  Future<void> onRefresh() async {
+    // 不需要下拉刷新功能
+  }
 
   @override
   String getEmptyStateText() => '暂无已点订单';
@@ -101,10 +100,9 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
     return GestureDetector(
       onTap: () {
         // 切换到点餐页面
-        try {
-          Get.find<OrderMainPageController>().switchToOrderTab();
-        } catch (e) {
-          print('❌ 切换到点餐页面失败: $e');
+        final mainPageController = OrderPageUtils.getControllerSafely<OrderMainPageController>();
+        if (mainPageController != null) {
+          mainPageController.switchToOrderTab();
         }
       },
       child: Container(
@@ -139,35 +137,36 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
 
   /// 加载已点订单数据（显示loading）
   Future<void> _loadOrderedDataWithLoading() async {
-    if (controller.table.value?.tableId != null) {
-      await controller.loadCurrentOrder(showLoading: true);
-    }
+    await OrderPageUtils.loadOrderData(
+      controller: controller,
+      tableId: controller.table.value?.tableId.toString() ?? '',
+      showLoading: true,
+    );
   }
 
   /// 加载已点订单数据
   Future<void> _loadOrderedData() async {
-    if (controller.table.value?.tableId != null) {
-      await controller.loadCurrentOrder(showLoading: false);
-    }
+    await OrderPageUtils.loadOrderData(
+      controller: controller,
+      tableId: controller.table.value?.tableId.toString() ?? '',
+      showLoading: false,
+    );
   }
 
 
   @override
   Widget buildDataContent() {
     final order = controller.currentOrder.value!;
-    return PullToRefreshWrapper(
-      onRefresh: _loadOrderedData,
-      child: ListView.builder(
-        padding: EdgeInsets.all(16),
-        itemCount: order.details!.length,
-        itemBuilder: (context, index) {
-          final orderDetail = order.details![index];
-          return OrderModuleWidget(
-            orderDetail: orderDetail,
-            isLast: index == order.details!.length - 1,
-          );
-        },
-      ),
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: order.details!.length,
+      itemBuilder: (context, index) {
+        final orderDetail = order.details![index];
+        return OrderModuleWidget(
+          orderDetail: orderDetail,
+          isLast: index == order.details!.length - 1,
+        );
+      },
     );
   }
 

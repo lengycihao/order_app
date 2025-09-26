@@ -9,8 +9,10 @@ import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_mo
 import 'package:get/get.dart';
 import 'package:order_app/pages/table/table_controller.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
+import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:lib_domain/api/base_api.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class TableCard extends StatelessWidget {
   final TableListModel table;
@@ -112,7 +114,7 @@ class TableCard extends StatelessWidget {
               Navigator.of(context).pop();
               
               // 获取TableController实例
-              final controller = Get.find<TableController>();
+              final controller = Get.find<TableControllerRefactored>();
               
               // 调用API切换桌台状态
               await controller.changeTableStatus(
@@ -132,23 +134,32 @@ class TableCard extends StatelessWidget {
         // 防抖处理
         final currentTime = DateTime.now().millisecondsSinceEpoch;
         if (currentTime - _lastClickTime < _debounceDelay) {
-          print('🚫 点击过于频繁，忽略此次点击');
+          logDebug('点击过于频繁，忽略此次点击', tag: 'TableCard');
           return;
         }
         _lastClickTime = currentTime;
         
         try {
           // 获取桌台最新详情
+          logDebug('🔍 准备获取桌台详情，原始tableId: ${table.tableId} (类型: ${table.tableId.runtimeType})', tag: 'TableCard');
           final baseApi = BaseApi();
           final result = await baseApi.getTableDetail(tableId: table.tableId.toInt());
           
           if (!result.isSuccess || result.data == null) {
+            logDebug('❌ 获取桌台详情失败: ${result.msg}', tag: 'TableCard');
             ToastUtils.showError(Get.context!, '获取桌台信息失败');
             return;
           }
           
           // 使用最新的桌台数据
           final latestTable = result.data!;
+          logDebug('✅ 获取桌台详情成功: tableId=${latestTable.tableId}, tableName=${latestTable.tableName}, hallId=${latestTable.hallId}', tag: 'TableCard');
+          
+          // 检查桌台ID是否有效
+          if (latestTable.tableId == 0) {
+            logDebug('⚠️ 警告：API返回的桌台ID为0', tag: 'TableCard');
+          }
+          
           final status = _getStatus(latestTable.businessStatus.toInt());
           
           // 如果是不可用或维修状态的桌台，显示提示信息
@@ -171,15 +182,29 @@ class TableCard extends StatelessWidget {
             );
           } else {
             // 其他状态（除了5,6）：直接进入点餐页面
+            // 先清理可能存在的OrderController实例
+            if (Get.isRegistered<OrderController>()) {
+              Get.delete<OrderController>();
+              logDebug('🧹 清理旧的OrderController实例', tag: 'TableCard');
+            }
+            if (Get.isRegistered<OrderMainPageController>()) {
+              Get.delete<OrderMainPageController>();
+              logDebug('🧹 清理旧的OrderMainPageController实例', tag: 'TableCard');
+            }
+            
+            // 等待清理完成
+            await Future.delayed(Duration(milliseconds: 100));
+            
+            // 直接跳转到点餐页面，让OrderController自己处理菜单数据
             Get.to(
               () => OrderMainPage(),
               arguments: {
                 'table': latestTable,
-                'menu_id': latestTable.menuId,
+                'menu_id': latestTable.menuId, // 只传递menu_id，让OrderController自己获取菜单数据
                 'table_id': latestTable.tableId,
                 'adult_count': latestTable.currentAdult > 0 ? latestTable.currentAdult : latestTable.standardAdult,
                 'child_count': latestTable.currentChild,
-                'menu': tableModelList, // 添加菜单列表，用于获取菜品数据
+                'source': 'table', // 明确标识来源
               },
             );
           }

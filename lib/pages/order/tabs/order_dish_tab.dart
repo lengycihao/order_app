@@ -16,6 +16,7 @@ import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class OrderDishTab extends StatefulWidget {
   const OrderDishTab({super.key});
@@ -253,7 +254,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
         );
       }
     } catch (e) {
-      print('❌ 滚动到类目失败: $e');
+      logError('❌ 滚动到类目失败: $e', tag: 'OrderDishTab');
     } finally {
       Future.delayed(Duration(milliseconds: 100), () {
         _isClickCategory = false;
@@ -416,12 +417,19 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   /// 构建主体内容
   Widget _buildMainContent() {
     return Expanded(
-      child: Row(
-        children: [
-          _buildCategoryList(),
-          _buildDishList(),
-        ],
-      ),
+      child: Obx(() {
+        // 如果没有菜单ID，显示整个页面的空状态
+        if (controller.menuId.value == 0) {
+          return _buildEmptyState();
+        }
+        
+        return Row(
+          children: [
+            _buildCategoryList(),
+            _buildDishList(),
+          ],
+        );
+      }),
     );
   }
 
@@ -544,6 +552,30 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     );
   }
 
+  /// 构建空状态
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Image.asset(
+            'assets/order_empty.webp',
+            width: 180,
+            height: 100,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '暂无菜品数据',
+            style: const TextStyle(
+              fontSize: 12,
+              color: Color(0xFFFF9027),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   /// 构建菜品列表
   Widget _buildDishList() {
     return Expanded(
@@ -587,7 +619,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
         return _scrollController.offset;
       }
     } catch (e) {
-      print('获取滚动偏移量时出错: $e');
+      logError('获取滚动偏移量时出错: $e', tag: 'OrderDishTab');
     }
     return 0.0;
   }
@@ -794,7 +826,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
         },
       );
     } catch (e) {
-      print('❌ 跳转预约时间页面失败: $e');
+      logError('❌ 跳转预约时间页面失败: $e', tag: 'OrderDishTab');
       GlobalToast.error('跳转失败，请重试');
     }
   }
@@ -825,7 +857,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
         GlobalToast.error(result['message'] ?? '订单提交失败，请重试');
       }
     } catch (e) {
-      print('❌ 提交订单异常: $e');
+      logError('❌ 提交订单异常: $e', tag: 'OrderDishTab');
       if (mounted) {
         // 关闭加载弹窗
         Navigator.of(context).pop();
@@ -843,7 +875,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       // 直接使用OrderMainPageController来切换Tab
       Get.find<OrderMainPageController>().switchToOrderedTab();
     } catch (e) {
-      print('❌ 切换到已点页面失败: $e');
+      logError('切换到已点页面失败: $e', tag: 'OrderDishTab');
     }
   }
 

@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:lib_base/logging/logging.dart';
 
 /// 外卖页面Tab控制器
 /// 用于管理外卖页面的tab切换状态
@@ -21,7 +22,7 @@ class TakeawayTabController extends GetxController {
         isSwitching.value = false;
       });
       
-      print('🔄 外卖页面切换到tab: $tabIndex');
+      logDebug('外卖页面切换到tab: $tabIndex', tag: 'TakeawayTabController');
     }
   }
   

@@ -10,6 +10,7 @@ import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_mo
 import 'package:lib_domain/entrity/home/table_menu_list_model/menu_fixed_cost.dart';
 import 'package:lib_domain/api/base_api.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:lib_base/logging/logging.dart';
 
 /// 更多功能弹窗组件
 class MoreOptionsModalWidget {
@@ -575,19 +576,21 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
 
         if (currentMenuIndex != -1) {
           _selectedMenuId = currentMenu.menuId;
-          print(
-            '✅ 默认选中当前菜单: ${currentMenu.menuName} (ID: ${currentMenu.menuId})',
+          logDebug(
+            '默认选中当前菜单: ${currentMenu.menuName} (ID: ${currentMenu.menuId})',
+            tag: 'MoreOptionsModalWidget',
           );
         } else {
-          print(
-            '⚠️ 当前菜单在列表中未找到: ${currentMenu.menuName} (ID: ${currentMenu.menuId})',
+          logWarning(
+            '当前菜单在列表中未找到: ${currentMenu.menuName} (ID: ${currentMenu.menuId})',
+            tag: 'MoreOptionsModalWidget',
           );
         }
       } else {
-        print('⚠️ 当前菜单信息为空');
+        logWarning('当前菜单信息为空', tag: 'MoreOptionsModalWidget');
       }
     } catch (e) {
-      print('❌ 设置默认选中菜单时出错: $e');
+      logError('设置默认选中菜单时出错: $e', tag: 'MoreOptionsModalWidget');
     }
   }
 

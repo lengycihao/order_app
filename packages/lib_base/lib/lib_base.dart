@@ -1,4 +1,3 @@
-export 'lib_base_initializer.dart';
 
 // Utils
 export 'utils/device_util.dart';

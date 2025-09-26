@@ -335,28 +335,28 @@ class ApiBusinessInterceptor extends Interceptor {
   String _getDioErrorMessage(DioException e) {
     switch (e.type) {
       case DioExceptionType.connectionTimeout:
-        return 'Connection timeout - Please check your network';
+        return '连接超时，请检查网络后重试';
       case DioExceptionType.sendTimeout:
-        return 'Send timeout - Request took too long';
+        return '发送超时，请检查网络后重试';
       case DioExceptionType.receiveTimeout:
-        return 'Receive timeout - Server response took too long';
+        return '接收超时，请检查网络后重试';
       case DioExceptionType.cancel:
-        return 'Request cancelled';
+        return '请求取消';
       case DioExceptionType.connectionError:
-        return 'Network connection error - Please check your internet';
+        return '网络异常，请检查网络后重试';
       case DioExceptionType.badCertificate:
-        return 'SSL certificate error - Secure connection failed';
+        return 'SSL证书错误，请检查网络后重试';
       case DioExceptionType.badResponse:
-        return 'Bad response format from server';
+        return '响应格式错误，请检查网络后重试';
       case DioExceptionType.unknown:
         if (e.error != null) {
           if (e.error.toString().contains("HandshakeException")) {
-            return "SSL handshake failed - Please check your network connection";
+            return "SSL握手失败，请检查网络后重试";
           } else {
             return e.error.toString();
           }
         } else {
-          return e.message ?? "Unknown network error occurred";
+          return e.message ?? "未知网络错误，请检查网络后重试";
         }
     }
   }

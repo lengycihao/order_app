@@ -9,6 +9,7 @@ import 'package:order_app/pages/table/table_controller.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/takeaway/takeaway_controller.dart';
+import 'package:lib_base/logging/logging.dart';
 // import '../../service/cart_cache_service.dart'; // 已泣释：不再需要缓存功能
 
 class MineController extends GetxController {
@@ -62,7 +63,7 @@ class MineController extends GetxController {
       
       if (confirm != true) return;
       
-      print('🔓 开始退出登录...');
+      logDebug('🔓 开始退出登录...', tag: 'MineController');
       
       // 清理所有相关的Controller和缓存数据
       await _clearAllCacheData();
@@ -75,48 +76,48 @@ class MineController extends GetxController {
       
       ToastUtils.showSuccess(Get.context!, '退出登录成功');
       
-      print('✅ 退出登录成功');
+      logDebug('✅ 退出登录成功', tag: 'MineController');
       
     } catch (e) {
       // 关闭加载对话框
       Get.back();
       ToastUtils.showError(Get.context!, '退出登录失败: $e');
-      print('❌ 退出登录失败: $e');
+      logError('❌ 退出登录失败: $e', tag: 'MineController');
     }
   }
 
   /// 清理所有缓存数据和Controller
   Future<void> _clearAllCacheData() async {
     try {
-      print('🧹 开始清理所有缓存数据...');
+      logDebug('开始清理所有缓存数据...', tag: 'MineController');
       
       // 清理TableController及其数据
-      if (Get.isRegistered<TableController>()) {
-        Get.delete<TableController>();
-        print('✅ TableController已清理');
+      if (Get.isRegistered<TableControllerRefactored>()) {
+        Get.delete<TableControllerRefactored>();
+        logDebug('TableController已清理', tag: 'MineController');
       }
       
       // 清理OrderController及其WebSocket连接
       if (Get.isRegistered<OrderController>()) {
         Get.delete<OrderController>();
-        print('✅ OrderController已清理');
+        logDebug('OrderController已清理', tag: 'MineController');
       }
       
       // 清理OrderMainPageController
       if (Get.isRegistered<OrderMainPageController>()) {
         Get.delete<OrderMainPageController>();
-        print('✅ OrderMainPageController已清理');
+        logDebug('OrderMainPageController已清理', tag: 'MineController');
       }
       
       // 清理TakeawayController（如果存在）
       if (Get.isRegistered<TakeawayController>()) {
         Get.delete<TakeawayController>();
-        print('✅ TakeawayController已清理');
+        logDebug('TakeawayController已清理', tag: 'MineController');
       }
       
-      print('✅ 所有缓存数据清理完成');
+      logDebug('所有缓存数据清理完成', tag: 'MineController');
     } catch (e) {
-      print('❌ 清理缓存数据时出现异常: $e');
+      logError('清理缓存数据时出现异常: $e', tag: 'MineController');
     }
   }
 }

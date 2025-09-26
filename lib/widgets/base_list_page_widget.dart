@@ -98,6 +98,10 @@ abstract class BaseListPageState<T extends BaseListPageWidget> extends State<T> 
               color: Color(0xFFFF9027),
             ),
           ),
+          if (getNetworkErrorAction() != null) ...[
+            const SizedBox(height: 24),
+            getNetworkErrorAction()!,
+          ],
         ],
       ),
     );
@@ -140,6 +144,9 @@ abstract class BaseListPageState<T extends BaseListPageWidget> extends State<T> 
   
   /// 获取空状态操作按钮（子类可重写）
   Widget? getEmptyStateAction() => null;
+  
+  /// 获取网络错误状态操作按钮（子类可重写）
+  Widget? getNetworkErrorAction() => null;
 }
 
 /// 基础详情页面抽象类
@@ -189,6 +196,10 @@ abstract class BaseDetailPageState<T extends BaseDetailPageWidget> {
               color: Color(0xFFFF9027),
             ),
           ),
+          if (getEmptyStateAction() != null) ...[
+            const SizedBox(height: 24),
+            getEmptyStateAction()!,
+          ],
         ],
       ),
     );
@@ -213,6 +224,10 @@ abstract class BaseDetailPageState<T extends BaseDetailPageWidget> {
               color: Color(0xFFFF9027),
             ),
           ),
+          if (getNetworkErrorAction() != null) ...[
+            const SizedBox(height: 24),
+            getNetworkErrorAction()!,
+          ],
         ],
       ),
     );
@@ -245,4 +260,10 @@ abstract class BaseDetailPageState<T extends BaseDetailPageWidget> {
   
   /// 获取网络错误文字（子类可重写）
   String getNetworkErrorText() => '暂无网络';
+  
+  /// 获取空状态操作按钮（子类可重写）
+  Widget? getEmptyStateAction() => null;
+  
+  /// 获取网络错误状态操作按钮（子类可重写）
+  Widget? getNetworkErrorAction() => null;
 }

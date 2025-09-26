@@ -10,6 +10,7 @@ import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_domain/api/base_api.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:order_app/utils/keyboard_utils.dart';
+import 'package:lib_base/logging/logging.dart';
 
 // 简单的控制器来管理主页面状态
 class OrderMainPageController extends GetxController {
@@ -44,14 +45,16 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
   void initState() {
     super.initState();
 
-    // 获取或创建OrderController实例
-    try {
-      controller = Get.find<OrderController>();
-      print('🎯 OrderMainPage 获取已存在的 controller');
-    } catch (e) {
-      controller = Get.put(OrderController());
-      print('🎯 OrderMainPage 创建新的 controller');
+    // 总是创建新的OrderController实例，避免缓存问题
+    // 先清理可能存在的旧实例
+    if (Get.isRegistered<OrderController>()) {
+      Get.delete<OrderController>();
+      logDebug('🧹 清理旧的OrderController实例', tag: 'OrderMainPage');
     }
+    
+    // 创建新的OrderController实例
+    controller = Get.put(OrderController());
+    logDebug('🎯 OrderMainPage 创建新的 controller', tag: 'OrderMainPage');
 
     // 创建主页面控制器
     mainPageController = Get.put(OrderMainPageController());

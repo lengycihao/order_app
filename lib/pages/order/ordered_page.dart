@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/order_module_widget.dart';
+import 'package:order_app/pages/order/utils/order_page_utils.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
-import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 
 class OrderedPage extends BaseListPageWidget {
   const OrderedPage({super.key});
@@ -25,13 +25,12 @@ class _OrderedPageState extends BaseListPageState<OrderedPage> {
   bool get hasNetworkError => controller.hasNetworkErrorOrdered.value;
 
   @override
-  bool get hasData {
-    final order = controller.currentOrder.value;
-    return order != null && order.details != null && order.details!.isNotEmpty;
-  }
+  bool get hasData => OrderPageUtils.hasOrderData(controller.currentOrder.value);
 
   @override
-  Future<void> onRefresh() => _loadOrderedData();
+  Future<void> onRefresh() async {
+    // 不需要下拉刷新功能
+  }
 
   @override
   String getEmptyStateText() => '暂无已点订单';
@@ -63,16 +62,20 @@ class _OrderedPageState extends BaseListPageState<OrderedPage> {
 
   /// 加载已点订单数据（显示loading）
   Future<void> _loadOrderedDataWithLoading() async {
-    if (controller.table.value?.tableId != null) {
-      await controller.loadCurrentOrder(showLoading: true);
-    }
+    await OrderPageUtils.loadOrderData(
+      controller: controller,
+      tableId: controller.table.value?.tableId.toString() ?? '',
+      showLoading: true,
+    );
   }
 
   /// 加载已点订单数据
   Future<void> _loadOrderedData() async {
-    if (controller.table.value?.tableId != null) {
-      await controller.loadCurrentOrder(showLoading: false);
-    }
+    await OrderPageUtils.loadOrderData(
+      controller: controller,
+      tableId: controller.table.value?.tableId.toString() ?? '',
+      showLoading: false,
+    );
   }
 
   /// 处理返回按钮点击
@@ -165,24 +168,21 @@ class _OrderedPageState extends BaseListPageState<OrderedPage> {
   @override
   Widget buildDataContent() {
     final order = controller.currentOrder.value!;
-    return PullToRefreshWrapper(
-      onRefresh: _loadOrderedData,
-      child: ListView.builder(
-        padding: EdgeInsets.all(16),
-        physics: AlwaysScrollableScrollPhysics(),
-        itemCount: order.details!.length,
-        itemBuilder: (context, index) {
-          final orderDetail = order.details![index];
-          return OrderModuleWidget(
-            orderDetail: orderDetail,
-            isLast: index == order.details!.length - 1,
-          );
-        },
-      ),
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      physics: AlwaysScrollableScrollPhysics(),
+      itemCount: order.details!.length,
+      itemBuilder: (context, index) {
+        final orderDetail = order.details![index];
+        return OrderModuleWidget(
+          orderDetail: orderDetail,
+          isLast: index == order.details!.length - 1,
+        );
+      },
     );
   }
 
-  /// 构建主体内容（重写以支持下拉刷新）
+  /// 构建主体内容
   @override
   Widget buildMainContent() {
     return Expanded(
@@ -192,30 +192,24 @@ class _OrderedPageState extends BaseListPageState<OrderedPage> {
         }
 
         if (hasNetworkError) {
-          return PullToRefreshWrapper(
-            onRefresh: onRefresh,
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              child: Container(
-                height: MediaQuery.of(context).size.height - 200,
-                child: Center(
-                  child: buildNetworkErrorState(),
-                ),
+          return SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            child: Container(
+              height: MediaQuery.of(context).size.height - 200,
+              child: Center(
+                child: buildNetworkErrorState(),
               ),
             ),
           );
         }
 
         if (!hasData) {
-          return PullToRefreshWrapper(
-            onRefresh: onRefresh,
-            child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
-              child: Container(
-                height: MediaQuery.of(context).size.height - 200,
-                child: Center(
-                  child: buildEmptyState(),
-                ),
+          return SingleChildScrollView(
+            physics: AlwaysScrollableScrollPhysics(),
+            child: Container(
+              height: MediaQuery.of(context).size.height - 200,
+              child: Center(
+                child: buildEmptyState(),
               ),
             ),
           );

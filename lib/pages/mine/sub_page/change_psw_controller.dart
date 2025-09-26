@@ -1,28 +1,3 @@
-//  import 'package:get/get.dart';
-
-// class ChangePasswordController extends GetxController {
-//   var newPassword = ''.obs;
-//   var confirmPassword = ''.obs;
-//   var isLoading = false.obs;
-
-//   void submit() {
-//     if (newPassword.value.isEmpty || confirmPassword.value.isEmpty) {
-//       Get.snackbar('提示', '请输入完整信息');
-//       return;
-//     }
-//     if (newPassword.value != confirmPassword.value) {
-//       Get.snackbar('提示', '两次输入的密码不一致');
-//       return;
-//     }
-//     isLoading.value = true;
-//     // 模拟网络请求
-//     Future.delayed(Duration(seconds: 2), () {
-//       isLoading.value = false;
-//       Get.snackbar('成功', '密码修改成功');
-//       // 可以在这里添加跳转逻辑
-//     });
-//   }
-// }
 
 import 'package:get/get.dart';
 import 'package:order_app/service/service_locator.dart';

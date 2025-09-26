@@ -13,6 +13,7 @@ import 'package:order_app/pages/order/components/restaurant_loading_widget.dart'
 import 'package:order_app/utils/keyboard_utils.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class TakeawayPage extends BaseListPageWidget {
   final List<String> tabs = ['未结账', '已结账'];
@@ -184,7 +185,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
                 controller.clearSearch();
               }
             } catch (e) {
-              print('Controller disposed during onChanged: $e');
+              logError('Controller disposed during onChanged: $e', tag: 'TakeawayPage');
             }
           },
           onSubmitted: (value) {
@@ -193,7 +194,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
                 controller.searchByPickupCode(value);
               }
             } catch (e) {
-              print('Controller disposed during onSubmitted: $e');
+              logError('Controller disposed during onSubmitted: $e', tag: 'TakeawayPage');
             }
           },
         ),
@@ -277,27 +278,27 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
           enablePullDown: true,
           enablePullUp: hasMore,
           onRefresh: () async {
-            print('🔄 开始刷新标签页 $tabIndex');
+            logDebug('开始刷新标签页 $tabIndex', tag: 'TakeawayPage');
             try {
               await controller.refreshData(tabIndex);
-              print('✅ 刷新完成标签页 $tabIndex');
+              logDebug('刷新完成标签页 $tabIndex', tag: 'TakeawayPage');
               // 通知刷新完成
               refreshController.refreshCompleted();
             } catch (e) {
-              print('❌ 外卖页面刷新失败: $e');
+              logError('外卖页面刷新失败: $e', tag: 'TakeawayPage');
               // 刷新失败也要通知完成
               refreshController.refreshFailed();
             }
           },
           onLoading: () async {
-            print('🔄 开始加载更多标签页 $tabIndex');
+            logDebug('开始加载更多标签页 $tabIndex', tag: 'TakeawayPage');
             try {
               await controller.loadMore(tabIndex);
-              print('✅ 加载更多完成标签页 $tabIndex');
+              logDebug('加载更多完成标签页 $tabIndex', tag: 'TakeawayPage');
               // 通知加载完成
               refreshController.loadComplete();
             } catch (e) {
-              print('❌ 加载更多失败: $e');
+              logError('加载更多失败: $e', tag: 'TakeawayPage');
               // 加载失败也要通知完成
               refreshController.loadFailed();
             }
@@ -409,6 +410,27 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
               color: Color(0xFFFF9027),
             ),
           ),
+          if (hasNetworkError) ...[
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () async {
+                // 重新加载当前tab的数据
+                await controller.refreshData(_currentTabIndex);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF9027),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                '重新加载',
+                style: TextStyle(fontSize: 14),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -419,6 +441,28 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
 
   @override
   String getNetworkErrorText() => '暂无网络';
+
+  @override
+  Widget? getNetworkErrorAction() {
+    return ElevatedButton(
+      onPressed: () async {
+        // 重新加载当前tab的数据
+        await controller.refreshData(_currentTabIndex);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFFF9027),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: const Text(
+        '重新加载',
+        style: TextStyle(fontSize: 14),
+      ),
+    );
+  }
 
   @override
   Widget buildDataContent() {

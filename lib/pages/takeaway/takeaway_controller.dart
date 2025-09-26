@@ -5,6 +5,7 @@ import 'package:lib_domain/api/takeout_api.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:order_app/utils/websocket_lifecycle_manager.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class TakeawayController extends GetxController {
   // 未结账订单列表
@@ -58,7 +59,7 @@ class TakeawayController extends GetxController {
       searchController.dispose();
     } catch (e) {
       // 如果已经销毁，忽略错误
-      print('SearchController already disposed: $e');
+      logError('SearchController already disposed: $e', tag: 'TakeawayController');
     }
     
     super.onClose();
@@ -70,12 +71,7 @@ class TakeawayController extends GetxController {
   }
 
   Future<void> refreshData(int tabIndex) async {
-    // 重置网络错误状态
-    if (tabIndex == 0) {
-      hasNetworkErrorUnpaid.value = false;
-    } else {
-      hasNetworkErrorPaid.value = false;
-    }
+    // 网络错误状态会在请求成功后重置，这里不提前重置
     
     if (tabIndex == 0) {
       // 未结账 - query_type = 2
@@ -91,6 +87,8 @@ class TakeawayController extends GetxController {
     if (refresh) {
       _unpaidPage = 1;
       hasMoreUnpaid.value = true;
+      // 刷新时清空订单列表，确保网络错误时也能显示空状态
+      unpaidOrders.clear();
     }
     
     if (!hasMoreUnpaid.value) return;
@@ -115,9 +113,8 @@ class TakeawayController extends GetxController {
         
         logDebug('📊 解析后的数据 - total: ${response.total}, data长度: ${response.data?.length}', tag: 'TakeawayController');
         
-        if (refresh) {
-          unpaidOrders.clear();
-        }
+        // 请求成功，重置网络错误状态
+        hasNetworkErrorUnpaid.value = false;
         
         if (response.data != null) {
           unpaidOrders.addAll(response.data!);
@@ -132,6 +129,7 @@ class TakeawayController extends GetxController {
         }
       } else {
         logDebug('❌ API请求失败: ${result.msg}', tag: 'TakeawayController');
+        hasNetworkErrorUnpaid.value = true;
         GlobalToast.error(result.msg ?? '获取未结账订单失败');
       }
     } catch (e) {
@@ -148,6 +146,8 @@ class TakeawayController extends GetxController {
     if (refresh) {
       _paidPage = 1;
       hasMorePaid.value = true;
+      // 刷新时清空订单列表，确保网络错误时也能显示空状态
+      paidOrders.clear();
     }
     
     if (!hasMorePaid.value) return;
@@ -172,9 +172,8 @@ class TakeawayController extends GetxController {
         
         logDebug('📊 已结账解析后的数据 - total: ${response.total}, data长度: ${response.data?.length}', tag: 'TakeawayController');
         
-        if (refresh) {
-          paidOrders.clear();
-        }
+        // 请求成功，重置网络错误状态
+        hasNetworkErrorPaid.value = false;
         
         if (response.data != null) {
           paidOrders.addAll(response.data!);
@@ -189,6 +188,7 @@ class TakeawayController extends GetxController {
         }
       } else {
         logDebug('❌ 已结账API请求失败: ${result.msg}', tag: 'TakeawayController');
+        hasNetworkErrorPaid.value = true;
         GlobalToast.error(result.msg ?? '获取已结账订单失败');
       }
     } catch (e) {

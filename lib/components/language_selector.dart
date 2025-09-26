@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:order_app/services/language_service.dart';
 import '../l10n/app_localizations.dart';
+import 'package:lib_base/logging/logging.dart';
 
 /// 语言选择器组件
 class LanguageSelector extends StatelessWidget {
@@ -180,9 +181,9 @@ class LanguageBottomSheet extends StatelessWidget {
                 ),
                 trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
                 onTap: () async {
-                  print('切换语言到: ${locale.languageCode}');
+                  logDebug('切换语言到: ${locale.languageCode}', tag: 'LanguageSelector');
                   await languageService.changeLanguage(locale);
-                  print('语言切换完成，当前语言: ${languageService.currentLocale.languageCode}');
+                  logDebug('语言切换完成，当前语言: ${languageService.currentLocale.languageCode}', tag: 'LanguageSelector');
                   Navigator.of(context).pop();
                 },
                 shape: RoundedRectangleBorder(

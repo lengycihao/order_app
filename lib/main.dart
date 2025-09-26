@@ -150,11 +150,5 @@ Future _syncInit() async {
     interceptors: httpInterceptors,
   );
 
-  // // 是不是同意了隐私协议
-  // bool isAgreePrivacy = YYCacheUtils().getBool(YYCacheKey.agreementFlag, false);
-  // if (isAgreePrivacy) {
-  //   //初始化全局管理器
-  //   await MMAppGlobalManager.instance.initApp();
-  // }
 }
 

@@ -33,12 +33,21 @@ class BaseApi {
       queryParam: params,
     );
     if (result.isSuccess) {
+       
       final List<TableListModel> list = (result.dataJson as List)
           .map((e) => TableListModel.fromJson(e as Map<String, dynamic>))
           .toList();
 
+      // 检查解析后的桌台数据
+      for (int i = 0; i < list.length; i++) {
+        final table = list[i];
+        if (table.tableId == 0) {
+         }
+      }
+
       return result.convert(data: list);
     } else {
+      logDebug('❌ 桌台列表API请求失败: ${result.msg}', tag: 'BaseApi');
       return result.convert();
     }
   }
@@ -208,10 +217,15 @@ class BaseApi {
     );
     
     if (result.isSuccess) {
-      return result.convert(
-        data: TableListModel.fromJson(result.getDataJson()),
-      );
+      final dataJson = result.getDataJson();
+      logDebug('🔍 桌台详情API返回的原始数据: $dataJson', tag: 'BaseApi');
+      
+      final tableModel = TableListModel.fromJson(dataJson);
+      logDebug('🔍 解析后的桌台模型: tableId=${tableModel.tableId}, tableName=${tableModel.tableName}', tag: 'BaseApi');
+      
+      return result.convert(data: tableModel);
     } else {
+      logDebug('❌ 桌台详情API请求失败: ${result.msg}', tag: 'BaseApi');
       return result.convert();
     }
   }

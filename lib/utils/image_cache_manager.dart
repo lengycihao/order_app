@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:lib_base/logging/logging.dart';
 
 /// 图片缓存管理器
 class ImageCacheManager {
@@ -28,9 +29,9 @@ class ImageCacheManager {
             NavigationService.navigatorKey.currentContext!,
           );
           _preloadUrls.add(url);
-          print('✅ 预加载图片成功: $url');
+          logDebug('预加载图片成功: $url', tag: 'ImageCacheManager');
         } catch (e) {
-          print('❌ 预加载图片失败: $url, 错误: $e');
+          logError('预加载图片失败: $url, 错误: $e', tag: 'ImageCacheManager');
         }
       }
     }
@@ -41,9 +42,9 @@ class ImageCacheManager {
     try {
       await CachedNetworkImage.evictFromCache('');
       _preloadUrls.clear();
-      print('✅ 清理所有图片缓存成功');
+      logDebug('清理所有图片缓存成功', tag: 'ImageCacheManager');
     } catch (e) {
-      print('❌ 清理图片缓存失败: $e');
+      logError('清理图片缓存失败: $e', tag: 'ImageCacheManager');
     }
   }
 
@@ -54,9 +55,9 @@ class ImageCacheManager {
     try {
       await CachedNetworkImage.evictFromCache(url);
       _preloadUrls.remove(url);
-      print('✅ 清理图片缓存成功: $url');
+      logDebug('清理图片缓存成功: $url', tag: 'ImageCacheManager');
     } catch (e) {
-      print('❌ 清理图片缓存失败: $url, 错误: $e');
+      logError('清理图片缓存失败: $url, 错误: $e', tag: 'ImageCacheManager');
     }
   }
 
@@ -65,13 +66,13 @@ class ImageCacheManager {
     try {
       // 这里可以根据需要实现更复杂的缓存清理逻辑
       // 比如根据时间、大小等条件清理
-      print('🔄 清理过期缓存...');
+      logDebug('清理过期缓存...', tag: 'ImageCacheManager');
       // 暂时使用简单的清理方式
       await CachedNetworkImage.evictFromCache('');
       _preloadUrls.clear();
-      print('✅ 清理过期缓存完成');
+      logDebug('清理过期缓存完成', tag: 'ImageCacheManager');
     } catch (e) {
-      print('❌ 清理过期缓存失败: $e');
+      logError('清理过期缓存失败: $e', tag: 'ImageCacheManager');
     }
   }
 
@@ -82,7 +83,7 @@ class ImageCacheManager {
       // 暂时返回预加载的图片数量作为参考
       return _preloadUrls.length;
     } catch (e) {
-      print('❌ 获取缓存大小失败: $e');
+      logError('获取缓存大小失败: $e', tag: 'ImageCacheManager');
       return 0;
     }
   }

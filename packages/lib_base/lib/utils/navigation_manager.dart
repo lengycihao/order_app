@@ -52,7 +52,7 @@ class NavigationManager {
   static Future<void> _performImplicitRefresh() async {
     try {
       // 导入TableController
-      final tableController = Get.find<TableController>();
+      final tableController = Get.find<TableControllerRefactored>();
       
       // 获取当前选中的tab索引
       final currentTabIndex = tableController.selectedTab.value;
@@ -70,7 +70,22 @@ class NavigationManager {
   /// 从选择菜单页面跳转到点餐页面
   /// 替换当前页面，避免导航栈堆积
   static void goToOrderPage(dynamic page, {Map<String, dynamic>? arguments}) {
-    Get.off(page, arguments: arguments);
+    // 先清理可能存在的OrderController实例，确保使用新的数据
+    if (Get.isRegistered<OrderController>()) {
+      Get.delete<OrderController>();
+      print('✅ 清理旧的OrderController实例');
+    }
+    
+    // 清理OrderMainPageController
+    if (Get.isRegistered<OrderMainPageController>()) {
+      Get.delete<OrderMainPageController>();
+      print('✅ 清理旧的OrderMainPageController实例');
+    }
+    
+    // 等待清理完成后再跳转
+    Future.delayed(Duration(milliseconds: 100), () {
+      Get.off(page, arguments: arguments);
+    });
   }
   
   /// 从桌台页面进入其他页面（正常导航）

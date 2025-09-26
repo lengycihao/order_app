@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:order_app/pages/table/card/table_card.dart';
 import 'package:order_app/pages/table/table_controller.dart';
+import 'package:order_app/pages/table/state/table_page_state.dart';
 import 'package:get/get.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
-import 'package:order_app/utils/smart_refresh_wrapper.dart';
+import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class TablePage extends BaseListPageWidget {
   @override
@@ -13,81 +16,98 @@ class TablePage extends BaseListPageWidget {
 }
 
 class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingObserver {
-  final TableController controller = Get.put(TableController());
-  bool _shouldShowSkeleton = true; // 默认显示骨架图
-  bool _isFromLogin = false; // 是否来自登录页面
+  final TableControllerRefactored controller = Get.put(TableControllerRefactored());
+  final TablePageState _pageState = TablePageState();
+  // 为每个tab创建独立的RefreshController
+  final Map<int, RefreshController> _refreshControllers = {};
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     
-    // 检查是否来自登录页面，如果是则强制刷新数据
-    _checkIfFromLogin();
-    
-    // 检查是否应该显示骨架图
-    _checkShouldShowSkeleton();
+    // 初始化页面状态
+    _initializePageState();
   }
 
-  /// 检查是否来自登录页面
-  void _checkIfFromLogin() {
-    // 简单检查：如果TabController的数据为空或者路由栈很简单，认为是新登录
-    _isFromLogin = controller.tabDataList.isEmpty || 
-                   controller.lobbyListModel.value.halls?.isEmpty == true;
+  /// 初始化页面状态
+  void _initializePageState() {
+    // 检查是否来自登录页面
+    final isFromLogin = _pageState.checkIfFromLogin(
+      controller.tabDataList, 
+      controller.lobbyListModel.value
+    );
     
-    if (_isFromLogin) {
-      print('✅ 检测到需要刷新数据（新登录或数据为空）');
+    if (isFromLogin) {
       // 延迟执行强制刷新，确保页面完全初始化
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _forceRefreshData();
       });
     }
+    
+    // 更新骨架图状态
+    _pageState.updateSkeletonState(
+      controller.tabDataList, 
+      controller.selectedTab.value
+    );
   }
 
   /// 强制刷新数据
   Future<void> _forceRefreshData() async {
     try {
-      print('🔄 开始强制刷新桌台数据...');
+      logDebug('🔄 开始强制刷新桌台数据...', tag: 'TablePage');
       // 调用Controller的强制重置方法
       await controller.forceResetAllData();
-      print('✅ 强制刷新桌台数据完成');
+      // 同时刷新菜单数据
+      await controller.refreshMenuList();
+      logDebug('✅ 强制刷新桌台数据完成', tag: 'TablePage');
+      
+      // 数据加载完成后更新骨架图状态
+      _pageState.updateSkeletonState(
+        controller.tabDataList, 
+        controller.selectedTab.value
+      );
     } catch (e) {
-      print('❌ 强制刷新桌台数据失败: $e');
+      logError('❌ 强制刷新桌台数据失败: $e', tag: 'TablePage');
     }
   }
 
-  /// 检查是否应该显示骨架图
-  void _checkShouldShowSkeleton() {
-    // 如果已经有数据，说明不是首次进入，不显示骨架图
-    if (controller.tabDataList.isNotEmpty && 
-        controller.tabDataList[controller.selectedTab.value].isNotEmpty) {
-      _shouldShowSkeleton = false;
-      print('✅ 检测到现有数据，不显示骨架图');
-    } else {
-      print('✅ 首次进入或从登录页进入，显示骨架图');
+  /// 获取或创建指定tab的RefreshController
+  RefreshController _getRefreshController(int tabIndex) {
+    if (!_refreshControllers.containsKey(tabIndex)) {
+      _refreshControllers[tabIndex] = RefreshController(initialRefresh: false);
     }
+    return _refreshControllers[tabIndex]!;
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    // 释放所有RefreshController
+    for (final refreshController in _refreshControllers.values) {
+      refreshController.dispose();
+    }
+    _refreshControllers.clear();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    print('🔄 应用生命周期状态变化: $state');
+    logDebug('🔄 应用生命周期状态变化: $state', tag: 'TablePage');
     
     if (state == AppLifecycleState.resumed) {
       // 应用从后台回到前台时，检查是否需要刷新数据
-      print('✅ 应用回到前台，检查数据刷新');
-      _checkShouldShowSkeleton();
+      logDebug('✅ 应用回到前台，检查数据刷新', tag: 'TablePage');
+      _pageState.updateSkeletonState(
+        controller.tabDataList, 
+        controller.selectedTab.value
+      );
       // 恢复轮询
       controller.resumePolling();
     } else if (state == AppLifecycleState.paused) {
       // 应用进入后台时暂停轮询
-      print('⏸️ 应用进入后台，暂停轮询');
+      logDebug('⏸️ 应用进入后台，暂停轮询', tag: 'TablePage');
       controller.pausePolling();
     }
   }
@@ -113,12 +133,18 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
   }
   
   @override
-  bool get shouldShowSkeleton => _shouldShowSkeleton;
+  bool get shouldShowSkeleton => _pageState.shouldShowSkeleton;
 
   @override
   Future<void> onRefresh() async {
     final currentTabIndex = controller.selectedTab.value;
     await controller.fetchDataForTab(currentTabIndex);
+    
+    // 刷新完成后更新骨架图状态
+    _pageState.updateSkeletonState(
+      controller.tabDataList, 
+      currentTabIndex
+    );
   }
   
   @override
@@ -185,15 +211,20 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
       
       // 如果没有大厅数据，显示空状态
       if (halls.isEmpty) {
+        final shouldShowSkeleton = _pageState.shouldShowSkeletonForTab(controller.tabDataList, controller.selectedTab.value);
+        
+        // 优先显示网络错误状态，避免在重新加载时闪烁
+        if (hasNetworkError) {
+          return buildNetworkErrorState();
+        }
+        
         if (shouldShowSkeleton && isLoading) {
           return buildSkeletonWidget();
         }
         if (isLoading) {
           return buildLoadingWidget();
         }
-        if (hasNetworkError) {
-          return buildNetworkErrorState();
-        }
+        
         return buildEmptyState();
       }
 
@@ -240,21 +271,26 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
   /// 下拉刷新 + 加载状态 + 空数据提示 + Grid 间距优化
   Widget buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
-      // 如果数据加载完成，标记不再需要显示骨架图
-      if (data.isNotEmpty) {
-        _shouldShowSkeleton = false;
-      }
-      
-      return SmartRefreshWrapper(
+      final refreshController = _getRefreshController(tabIndex);
+      return PullToRefreshWrapper(
+        controller: refreshController,
         onRefresh: () async {
           try {
             // 手动刷新时重置轮询计时器
             controller.stopPolling();
-            await controller.fetchDataForTab(tabIndex);
+            // 同时刷新桌台数据和菜单数据
+            await Future.wait([
+              controller.fetchDataForTab(tabIndex),
+              controller.refreshMenuList(),
+            ]);
+            // 通知刷新完成
+            refreshController.refreshCompleted();
             // 刷新完成后重新启动轮询
             controller.startPolling();
           } catch (e) {
-            print('❌ 刷新失败: $e');
+            logError('❌ 刷新失败: $e', tag: 'TablePage');
+            // 刷新失败也要通知完成
+            refreshController.refreshFailed();
           }
         },
         child: CustomScrollView(
@@ -302,6 +338,52 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
 
   @override
   String getNetworkErrorText() => '暂无网络';
+  
+  /// 重写空状态操作按钮
+  @override
+  Widget? getEmptyStateAction() {
+    return ElevatedButton(
+      onPressed: () async {
+        // 重新加载大厅数据
+        await controller.getLobbyList();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFFF9027),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: const Text(
+        '重新加载',
+        style: TextStyle(fontSize: 14),
+      ),
+    );
+  }
+  
+  /// 重写网络错误状态操作按钮
+  @override
+  Widget? getNetworkErrorAction() {
+    return Obx(() => ElevatedButton(
+      onPressed: controller.isLoading.value ? null : () async {
+        // 重新加载大厅数据，但不显示加载状态以避免闪烁
+        await controller.getLobbyList();
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFFF9027),
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      child: Text(
+        controller.isLoading.value ? '加载中...' : '重新加载',
+        style: TextStyle(fontSize: 14),
+      ),
+    ));
+  }
 
   @override
   Widget buildDataContent() {

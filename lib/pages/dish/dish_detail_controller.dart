@@ -5,6 +5,7 @@ import 'package:lib_domain/entrity/order/dish_list_model/allergen.dart' as Domai
 import 'package:lib_base/lib_base.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class DishDetailController extends GetxController {
   final int? dishId;
@@ -77,7 +78,7 @@ class DishDetailController extends GetxController {
       // 初始更新一次
       updateCartCount();
     } catch (e) {
-      print('❌ 初始化购物车监听失败: $e');
+      logError('❌ 初始化购物车监听失败: $e', tag: 'DishDetailController');
     }
   }
 
@@ -103,7 +104,7 @@ class DishDetailController extends GetxController {
         cartCount.value = totalCount;
       }
     } catch (e) {
-      print('❌ 更新购物车数量失败: $e');
+      logError('❌ 更新购物车数量失败: $e', tag: 'DishDetailController');
       cartCount.value = initialCartCount ?? 0;
     }
   }
@@ -124,14 +125,14 @@ class DishDetailController extends GetxController {
 
       if (result.isSuccess && result.dataJson != null) {
         dish.value = Item.fromJson(result.dataJson as Map<String, dynamic>);
-        print('✅ 菜品详情加载成功: ${dish.value?.name}');
+        logDebug('✅ 菜品详情加载成功: ${dish.value?.name}', tag: 'DishDetailController');
       } else {
         errorMessage.value = '加载菜品详情失败';
-        print('❌ 菜品详情加载失败: ${result.msg}');
+        logError('❌ 菜品详情加载失败: ${result.msg}', tag: 'DishDetailController');
       }
     } catch (e) {
       errorMessage.value = '网络错误: $e';
-      print('❌ 菜品详情加载异常: $e');
+      logError('❌ 菜品详情加载异常: $e', tag: 'DishDetailController');
     } finally {
       isLoading.value = false;
     }

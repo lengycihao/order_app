@@ -6,6 +6,7 @@ import 'package:order_app/service/service_locator.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/services/language_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class LoginController extends GetxController {
   // 使用 TextEditingController 管理输入框
@@ -79,7 +80,7 @@ class LoginController extends GetxController {
         }
       }
     } catch (e) {
-      print('加载近期账号失败: $e');
+      logError('加载近期账号失败: $e', tag: 'LoginController');
     }
   }
 
@@ -114,7 +115,7 @@ class LoginController extends GetxController {
       recentAccounts.value = accounts;
       recentPasswords.value = passwords;
     } catch (e) {
-      print('保存近期账号失败: $e');
+      logError('保存近期账号失败: $e', tag: 'LoginController');
     }
   }
 
@@ -129,7 +130,7 @@ class LoginController extends GetxController {
         await languageService.changeLanguage(newLocale);
         isExpanded.value = false; // 切换后收起
       } catch (e) {
-        print('语言切换失败: $e');
+        logError('语言切换失败: $e', tag: 'LoginController');
       }
     }
   }
