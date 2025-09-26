@@ -61,11 +61,12 @@
     <methods>;
 }
 
-# Google Play Core相关规则
+# Google Play Core相关规则 - 保持所有类不被混淆
 -keep class com.google.android.play.core.** { *; }
 -keep class com.google.android.play.core.splitcompat.** { *; }
 -keep class com.google.android.play.core.splitinstall.** { *; }
 -keep class com.google.android.play.core.tasks.** { *; }
+-keep class com.google.android.play.core.ktx.** { *; }
 
 # Flutter Play Store Split相关规则
 -keep class io.flutter.embedding.android.FlutterPlayStoreSplitApplication { *; }
@@ -83,6 +84,20 @@
 -keep class com.google.android.play.core.splitinstall.SplitInstallManager { *; }
 -keep class com.google.android.play.core.splitinstall.SplitInstallManagerFactory { *; }
 -keep class com.google.android.play.core.tasks.Task { *; }
+
+# 保持所有Google Play Core相关的方法和字段
+-keepclassmembers class com.google.android.play.core.** {
+    *;
+}
+-keepclassmembers class com.google.android.play.core.splitcompat.** {
+    *;
+}
+-keepclassmembers class com.google.android.play.core.splitinstall.** {
+    *;
+}
+-keepclassmembers class com.google.android.play.core.tasks.** {
+    *;
+}
 
 # 保持所有注解相关类
 -keep class javax.lang.model.element.Modifier { *; }

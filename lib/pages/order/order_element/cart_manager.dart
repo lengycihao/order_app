@@ -35,37 +35,37 @@ class CartManager {
   /// 从API加载购物车数据
   Future<CartInfoModel?> loadCartFromApi(String tableId) async {
     try {
-      logDebug('🛒 开始加载购物车数据，桌台ID: $tableId', tag: _logTag);
-      logDebug('🛒 购物车API请求URL: ${OrderConstants.cartInfoApiPath}?table_id=$tableId', tag: _logTag);
+      // logDebug('🛒 开始加载购物车数据，桌台ID: $tableId', tag: _logTag);
+      // logDebug('🛒 购物车API请求URL: ${OrderConstants.cartInfoApiPath}?table_id=$tableId', tag: _logTag);
       
       final result = await _cartApi.getCartInfo(tableId: tableId);
-      logDebug('🛒 购物车API调用结果: isSuccess=${result.isSuccess}, code=${result.code}, msg=${result.msg}', tag: _logTag);
-      logDebug('🛒 购物车API原始响应数据 result.data: ${result.data}', tag: _logTag);
-      logDebug('🛒 购物车API原始响应数据 result.dataJson: ${result.dataJson}', tag: _logTag);
-      logDebug('🛒 购物车API hasData: ${result.hasData}', tag: _logTag);
+      // logDebug('🛒 购物车API调用结果: isSuccess=${result.isSuccess}, code=${result.code}, msg=${result.msg}', tag: _logTag);
+      // logDebug('🛒 购物车API原始响应数据 result.data: ${result.data}', tag: _logTag);
+      // logDebug('🛒 购物车API原始响应数据 result.dataJson: ${result.dataJson}', tag: _logTag);
+      // logDebug('🛒 购物车API hasData: ${result.hasData}', tag: _logTag);
       
       if (result.isSuccess && result.data != null) {
-        logDebug('✅ 购物车数据加载成功: ${result.data?.items?.length ?? 0} 个商品', tag: _logTag);
-        logDebug('🛒 购物车对象类型: ${result.data.runtimeType}', tag: _logTag);
-        logDebug('🛒 购物车items字段: ${result.data?.items}', tag: _logTag);
+        // logDebug('✅ 购物车数据加载成功: ${result.data?.items?.length ?? 0} 个商品', tag: _logTag);
+        // logDebug('🛒 购物车对象类型: ${result.data.runtimeType}', tag: _logTag);
+        // logDebug('🛒 购物车items字段: ${result.data?.items}', tag: _logTag);
         
         // 打印购物车数据详情
         if (result.data?.items != null && result.data!.items!.isNotEmpty) {
           for (int i = 0; i < result.data!.items!.length; i++) {
             final item = result.data!.items![i];
-            logDebug('🛒 商品${i + 1}: ${item.dishName} x${item.quantity} ￥${item.price}', tag: _logTag);
+            // logDebug('🛒 商品${i + 1}: ${item.dishName} x${item.quantity} ￥${item.price}', tag: _logTag);
           }
         } else {
-          logDebug('🛒 购物车items为空或null: items=${result.data?.items}', tag: _logTag);
+          // logDebug('🛒 购物车items为空或null: items=${result.data?.items}', tag: _logTag);
         }
         
         return result.data;
       } else {
-        logDebug('❌ 购物车数据加载失败: ${result.msg}', tag: _logTag);
+        // logDebug('❌ 购物车数据加载失败: ${result.msg}', tag: _logTag);
         return null;
       }
     } catch (e) {
-      logDebug('❌ 购物车数据加载异常: $e', tag: _logTag);
+      // logDebug('❌ 购物车数据加载异常: $e', tag: _logTag);
       return null;
     }
   }

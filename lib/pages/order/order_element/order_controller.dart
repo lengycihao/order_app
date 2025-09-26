@@ -14,7 +14,7 @@ import 'package:lib_base/utils/websocket_manager.dart';
 import 'package:lib_base/logging/logging.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:order_app/service/service_locator.dart';
-import 'package:order_app/pages/order/components/force_update_dialog.dart';
+import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/utils/websocket_lifecycle_manager.dart';
 
@@ -62,7 +62,6 @@ class OrderController extends GetxController {
   final isLoadingOrdered = false.obs;
   
   // 409强制更新相关
-  Map<String, dynamic>? _pendingForceUpdateData;
   CartItem? _lastOperationCartItem;
   int? _lastOperationQuantity;
   
@@ -537,7 +536,13 @@ class OrderController extends GetxController {
     if (existingCartItem != null) {
       // 如果已存在，使用本地购物车管理器增加数量
       final currentQuantity = cart[existingCartItem]!;
+      final newQuantity = currentQuantity + 1;
       logDebug('  当前数量: $currentQuantity', tag: OrderConstants.logTag);
+      
+      // 保存操作上下文，用于可能的409强制更新
+      _lastOperationCartItem = existingCartItem;
+      _lastOperationQuantity = newQuantity;
+      
       _localCartManager.addDishQuantity(existingCartItem, currentQuantity);
       logDebug('➕ 本地增加已存在菜品数量: ${dish.name}', tag: OrderConstants.logTag);
     } else {
@@ -549,6 +554,10 @@ class OrderController extends GetxController {
         cartItemId: null, // 服务器会返回
         cartId: null, // 服务器会返回
       );
+      
+      // 保存操作上下文，用于可能的409强制更新
+      _lastOperationCartItem = newCartItem;
+      _lastOperationQuantity = 1;
       
       // 立即添加到本地购物车
       cart[newCartItem] = 1;
@@ -586,6 +595,10 @@ class OrderController extends GetxController {
       final newQuantity = currentQuantity + quantity;
       logDebug('  当前数量: $currentQuantity, 增加数量: $quantity, 新数量: $newQuantity', tag: OrderConstants.logTag);
       
+      // 保存操作上下文，用于可能的409强制更新
+      _lastOperationCartItem = existingCartItem;
+      _lastOperationQuantity = newQuantity;
+      
       // 立即更新本地购物车状态
       cart[existingCartItem] = newQuantity;
       cart.refresh();
@@ -604,6 +617,10 @@ class OrderController extends GetxController {
         cartItemId: null, // 服务器会返回
         cartId: null, // 服务器会返回
       );
+      
+      // 保存操作上下文，用于可能的409强制更新
+      _lastOperationCartItem = newCartItem;
+      _lastOperationQuantity = quantity;
       
       // 立即添加到本地购物车
       cart[newCartItem] = quantity;
@@ -692,6 +709,11 @@ class OrderController extends GetxController {
     isCartOperationLoading.value = true;
     
     final currentQuantity = cart[cartItem]!;
+    final newQuantity = currentQuantity - 1;
+    
+    // 保存操作上下文，用于可能的409强制更新
+    _lastOperationCartItem = cartItem;
+    _lastOperationQuantity = newQuantity;
     
     // 使用本地购物车管理器进行本地优先的增减操作
     _localCartManager.removeDishQuantity(cartItem, currentQuantity);
@@ -714,7 +736,7 @@ class OrderController extends GetxController {
     }
     
     // 同步到WebSocket
-    _wsHandler.sendUpdateQuantity(cartItem: cartItem, quantity: currentQuantity - 1).then((success) {
+    _wsHandler.sendUpdateQuantity(cartItem: cartItem, quantity: newQuantity).then((success) {
       if (success) {
         logDebug('✅ 减少菜品数量同步到WebSocket成功: ${cartItem.dish.name}', tag: OrderConstants.logTag);
       } else {
@@ -784,6 +806,11 @@ class OrderController extends GetxController {
     isCartOperationLoading.value = true;
     
     final currentQuantity = cart[cartItem]!;
+    final newQuantity = currentQuantity + 1;
+    
+    // 保存操作上下文，用于可能的409强制更新
+    _lastOperationCartItem = cartItem;
+    _lastOperationQuantity = newQuantity;
     
     // 使用本地购物车管理器进行本地优先的增减操作
     _localCartManager.addDishQuantity(cartItem, currentQuantity);
@@ -806,7 +833,7 @@ class OrderController extends GetxController {
     }
     
     // 同步到WebSocket
-    _wsHandler.sendUpdateQuantity(cartItem: cartItem, quantity: currentQuantity + 1).then((success) {
+    _wsHandler.sendUpdateQuantity(cartItem: cartItem, quantity: newQuantity).then((success) {
       if (success) {
         logDebug('✅ 增加菜品数量同步到WebSocket成功: ${cartItem.dish.name}', tag: OrderConstants.logTag);
       } else {
@@ -851,6 +878,10 @@ class OrderController extends GetxController {
       return;
     }
 
+    // 保存操作上下文，用于可能的409强制更新
+    _lastOperationCartItem = cartItem;
+    _lastOperationQuantity = newQuantity;
+    
     // 使用本地购物车管理器进行本地优先的数量设置
     _localCartManager.setDishQuantity(cartItem, newQuantity);
     
@@ -859,27 +890,6 @@ class OrderController extends GetxController {
   }
 
 
-  /// 强制更新数量（忽略限制）
-  Future<void> _forceUpdateQuantity(
-    CartItem cartItem,
-    int newQuantity,
-    VoidCallback onSuccess,
-    Function(int code, String message) onError,
-  ) async {
-    // 使用防抖管理器发送强制更新请求
-    _wsDebounceManager.debounceUpdateQuantity(
-      cartItem: cartItem,
-      quantity: newQuantity,
-      forceOperate: true, // 添加强制操作标志
-    );
-    
-    // 服务器确认成功后才更新本地数量
-    cart[cartItem] = newQuantity;
-    cart.refresh();
-    update();
-    logDebug('✅ 强制更新数量成功: ${cartItem.dish.name} -> $newQuantity', tag: OrderConstants.logTag);
-    onSuccess();
-  }
 
   void _removeDishFromCart(Dish dish) {
     CartItem? targetCartItem;
@@ -1287,22 +1297,24 @@ class OrderController extends GetxController {
     logDebug('⚠️ 处理409状态码，显示强制更新确认弹窗: $message', tag: OrderConstants.logTag);
     logDebug('📋 收到的完整409数据: $data', tag: OrderConstants.logTag);
     
-    // 保存待处理的数据
-    _pendingForceUpdateData = data;
     
     // 获取当前上下文
     final context = Get.context;
     if (context != null) {
-      // 显示强制更新确认弹窗
-      ForceUpdateDialog.show(
-        context,
+      // 使用ModalUtils显示确认弹窗
+      ModalUtils.showConfirmDialog(
+        context: context,
+        title: '操作确认',
         message: message,
-        onConfirm: _performForceUpdate,
+        confirmText: '确认',
+        cancelText: '取消',
+        confirmColor: const Color(0xFFFF8C00),
+        onConfirm: () {
+          logDebug('✅ 用户确认409强制更新', tag: OrderConstants.logTag);
+          _performForceUpdate();
+        },
         onCancel: () {
           logDebug('❌ 用户取消强制更新', tag: OrderConstants.logTag);
-          _pendingForceUpdateData = null;
-          // 关闭弹窗
-          Navigator.of(context).pop();
         },
       );
     } else {
@@ -1343,7 +1355,6 @@ class OrderController extends GetxController {
         }
         
         // 强制更新成功后清理数据
-        _pendingForceUpdateData = null;
         _lastOperationCartItem = null;
         _lastOperationQuantity = null;
         logDebug('✅ 强制更新操作完成，已清理操作上下文', tag: OrderConstants.logTag);
@@ -1351,14 +1362,11 @@ class OrderController extends GetxController {
         logDebug('❌ 没有保存的操作上下文，无法执行强制更新', tag: OrderConstants.logTag);
         logDebug('💡 _lastOperationCartItem=$_lastOperationCartItem, _lastOperationQuantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
         
-        // 即使没有操作上下文，也要清理待处理数据
-        _pendingForceUpdateData = null;
       }
     } catch (e) {
       logDebug('❌ 执行强制更新操作异常: $e', tag: OrderConstants.logTag);
       
       // 异常时也要清理数据
-      _pendingForceUpdateData = null;
       _lastOperationCartItem = null;
       _lastOperationQuantity = null;
     }

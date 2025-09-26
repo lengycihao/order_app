@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:order_app/pages/order/components/force_update_dialog.dart';
+import 'package:order_app/utils/modal_utils.dart';
 
 /// 弹窗管理器 - 确保同时只显示一个弹窗
 class DialogManager {
@@ -46,9 +46,13 @@ class DialogManager {
     logDebug('✅ 开始显示409强制更新弹窗');
     
     try {
-      await ForceUpdateDialog.show(
-        context,
+      await ModalUtils.showConfirmDialog(
+        context: context,
+        title: '操作确认',
         message: message,
+        confirmText: '确认',
+        cancelText: '取消',
+        confirmColor: const Color(0xFFFF8C00),
         onConfirm: () {
           logDebug('✅ 用户确认409强制更新');
           _clearDialogState();
