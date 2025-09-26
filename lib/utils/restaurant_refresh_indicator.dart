@@ -24,7 +24,7 @@ class RestaurantRefreshIndicator extends StatefulWidget {
 
 class _RestaurantRefreshIndicatorState extends State<RestaurantRefreshIndicator>
     with TickerProviderStateMixin {
-  static const _indicatorSize = 120.0;
+  static const _indicatorSize = 70.0; // 优化回弹位置：动画组件高度(60) + 上下边距(10)
   static const _loadingSize = 60.0;
 
   late AnimationController _rotationController;

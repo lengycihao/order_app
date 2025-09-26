@@ -32,25 +32,33 @@ class SelectMenuPage extends GetView<SelectMenuController> {
         elevation: 0,
       ),
       body: KeyboardUtils.buildDismissiblePage(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
-          
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 选择人数卡片
-              _buildPersonCountCard(),
+        child: Stack(
+          children: [
+            // 主要内容区域
+            SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 选择人数卡片
+                  _buildPersonCountCard(),
 
-              // 选择菜单卡片
-              _buildMenuSelectionCard(),
+                  // 选择菜单卡片
+                  _buildMenuSelectionCard(),
 
-              const SizedBox(height: 80), // 给底部按钮留空间
-              // 底部按钮
-              _buildBottomButton(),
-
-              const SizedBox(height: 16),
-            ],
-          ),
+                  const SizedBox(height: 80), // 给底部按钮留空间
+                ],
+              ),
+            ),
+            
+            // 固定在底部的按钮
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 30, // 距离底部30px
+              child: _buildBottomButton(),
+            ),
+          ],
         ),
       ),
     );
@@ -296,6 +304,22 @@ SizedBox(height: 12,),
   /// 构建菜单网格
   Widget _buildMenuGrid() {
     return Obx(() {
+      if (controller.isLoadingDishes.value) {
+        return const SizedBox(
+          height: 200,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('正在加载菜单数据...'),
+              ],
+            ),
+          ),
+        );
+      }
+      
       if (controller.menu.isEmpty) {
         return const SizedBox(
           height: 200,
@@ -438,23 +462,23 @@ SizedBox(height: 12,),
 
   /// 构建底部按钮
   Widget _buildBottomButton() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 60),
+    return Center(
       child: SizedBox(
-        width: double.infinity,
+        width: 253, // 固定宽度253px
+        height: 40,  // 固定高度40px
         child: ElevatedButton(
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFFFF9027),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.circular(20), // 调整圆角以适应新尺寸
             ),
-            padding: const EdgeInsets.symmetric(vertical: 14),
+            padding: EdgeInsets.zero, // 移除内边距，使用固定尺寸
           ),
           onPressed: () => controller.startOrdering(),
           child: const Text(
             '开始点餐',
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 16, // 调整字体大小以适应新尺寸
               color: Colors.white,
               fontWeight: FontWeight.bold,
             ),

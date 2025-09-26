@@ -216,7 +216,7 @@ class _OrderedTabState extends State<OrderedTab> with AutomaticKeepAliveClientMi
                   ),
                 ),
                 Text(
-                  '${totalAmount.toStringAsFixed(0)}',
+                  '$totalAmount',
                   style: TextStyle(
                     fontSize: 24,
                     color: Colors.red,

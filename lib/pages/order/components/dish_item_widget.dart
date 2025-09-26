@@ -227,7 +227,7 @@ class DishItemWidget extends StatelessWidget {
               ),
             ),
             Text(
-              "${dish.price.toStringAsFixed(0)}",
+              "${dish.price}",
               style: TextStyle(
                 fontSize: 16,
                 color: Color(0xFF000000),

@@ -202,10 +202,6 @@ class OrderedDishItemWidget extends StatelessWidget {
 
   /// 格式化价格
   String _formatPrice(double price) {
-    if (price == price.toInt()) {
-      return price.toInt().toString();
-    } else {
-      return price.toStringAsFixed(2);
-    }
+    return price.toString();
   }
 }

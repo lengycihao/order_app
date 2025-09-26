@@ -102,11 +102,14 @@ class _SpecificationModalContentState
             child: Row(
               children: [
                 Expanded(
-                  child: Text(
-                    widget.dish.name,
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 24),
+                    child: Text(
+                      widget.dish.name,
+                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ),
                 GestureDetector(
@@ -524,7 +527,7 @@ class _SpecificationModalContentState
                 ),
               ),
               Text(
-                totalPrice.toStringAsFixed(0),
+                '$totalPrice',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

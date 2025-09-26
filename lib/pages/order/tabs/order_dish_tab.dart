@@ -107,6 +107,8 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     
     // 设置防抖定时器，延迟300ms执行
     _searchDebounceTimer = Timer(Duration(milliseconds: 300), () {
+      // 重置位置计算状态，强制重新计算
+      _categoryPositionsCalculated = false;
       _calculateCategoryPositions();
     });
   }
@@ -142,7 +144,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     double currentPosition = 0.0;
     const double itemHeight = 116.0;
     const double categoryHeaderHeight = 40.0;
-    const double categoryBottomSpace = 100.0;
+    const double categoryBottomSpace = 0.0; // 已移除底部间距
 
     for (int categoryIndex = 0; categoryIndex < controller.categories.length; categoryIndex++) {
       _categoryPositions.add(currentPosition);
@@ -155,14 +157,8 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
           .where((d) => d.categoryId == categoryIndex)
           .length;
       
-      // 菜品列表高度 - 使用固定值避免MediaQuery问题
-      const double defaultScreenHeight = 800.0; // 默认屏幕高度
-      final minItemsPerScreen = ((defaultScreenHeight - 200) / itemHeight).floor();
-      final actualItemCount = dishesInCategory > 0 
-          ? (dishesInCategory < minItemsPerScreen ? minItemsPerScreen : dishesInCategory)
-          : minItemsPerScreen;
-      
-      currentPosition += actualItemCount * itemHeight;
+      // 菜品列表高度 - 使用实际菜品数量，不再使用固定值
+      currentPosition += dishesInCategory * itemHeight;
       currentPosition += categoryBottomSpace;
     }
     
@@ -205,8 +201,11 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     int newSelectedCategory = 0;
 
     // 根据滚动位置确定当前选中的分类
+    // 添加一个小的偏移量来确保更准确的匹配
+    const double offsetThreshold = 20.0;
+    
     for (int i = _categoryPositions.length - 1; i >= 0; i--) {
-      if (scrollOffset >= _categoryPositions[i]) {
+      if (scrollOffset >= (_categoryPositions[i] - offsetThreshold)) {
         newSelectedCategory = i;
         break;
       }
@@ -233,12 +232,21 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     }
 
     _isClickCategory = true;
+    // 立即更新选中的分类，确保吸顶头部文字立即更新
     controller.selectedCategory.value = categoryIndex;
     
     try {
       if (categoryIndex < _categoryPositions.length) {
+        // 计算目标滚动位置：向上滚动100像素，让分类标题更接近吸顶头部
+        double targetPosition = _categoryPositions[categoryIndex] + 100;
+        
+        // 确保滚动位置不为负数
+        if (targetPosition < 0) {
+          targetPosition = 0;
+        }
+        
         await _scrollController.animateTo(
-          _categoryPositions[categoryIndex],
+          targetPosition,
           duration: Duration(milliseconds: 300),
           curve: Curves.easeInOut,
         );
@@ -555,6 +563,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
               onNotification: (notification) {
                 if (notification is ScrollEndNotification) {
                   // 滚动结束时重新计算位置，使用防抖
+                  _categoryPositionsCalculated = false;
                   _calculateCategoryPositions();
                 }
                 // 移除ScrollUpdateNotification的处理，因为_onScroll已经处理了
@@ -600,7 +609,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
     
     // 添加统一的吸顶分类头
     slivers.add(
-      SliverPersistentHeader(
+      Obx(() => SliverPersistentHeader(
         pinned: true,
         delegate: _UnifiedStickyHeaderDelegate(
           height: 40,
@@ -615,7 +624,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
             }
           },
         ),
-      ),
+      )),
     );
     
     for (int categoryIndex = 0; categoryIndex < controller.categories.length; categoryIndex++) {
@@ -708,12 +717,19 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
       onRemoveTap: () {
         controller.removeFromCart(dish);
       },
-      onDishTap: () {
+      onDishTap: () async {
         // 跳转到菜品详情页面
-        Get.toNamed('/dish-detail-route', arguments: {'dish': dish});
+        final result = await Get.toNamed('/dish-detail-route', arguments: {'dish': dish});
+        
+        // 检查是否从菜品详情页面提交了订单
+        if (result == 'order_submitted') {
+          // 自动切换到已点页面
+          _switchToOrderedTab();
+        }
       },
     );
   }
+
 
   /// 构建类目底部空间
   Widget _buildCategoryBottomSpace(int categoryIndex) {
@@ -898,7 +914,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                       ),
                     ),
                     Text(
-                      totalCount > 0 ? totalPrice.toStringAsFixed(0) : '0',
+                      totalCount > 0 ? '$totalPrice' : '0',
                       style: TextStyle(
                         fontSize: 24,
                         height: 1,
@@ -1126,8 +1142,10 @@ class _UnifiedStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
-    // 计算当前应该显示的类目
-    int currentCategoryIndex = _getCurrentCategoryIndex();
+    // 优先使用selectedCategory，如果没有则根据滚动位置计算
+    int currentCategoryIndex = selectedCategory >= 0 && selectedCategory < categories.length 
+        ? selectedCategory 
+        : _getCurrentCategoryIndex();
     
     // 检查索引是否有效
     if (currentCategoryIndex < 0 || currentCategoryIndex >= categories.length) {
@@ -1155,8 +1173,11 @@ class _UnifiedStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
     if (categoryPositions.isEmpty || categories.isEmpty) return 0;
     
     // 根据滚动位置确定当前类目
+    // 添加一个小的偏移量来确保更准确的匹配
+    const double offsetThreshold = 20.0;
+    
     for (int i = categoryPositions.length - 1; i >= 0; i--) {
-      if (scrollOffset >= categoryPositions[i]) {
+      if (scrollOffset >= (categoryPositions[i] - offsetThreshold)) {
         return i;
       }
     }

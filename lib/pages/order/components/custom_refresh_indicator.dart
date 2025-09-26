@@ -13,7 +13,7 @@ class CustomRefreshIndicator extends StatefulWidget {
     Key? key,
     required this.child,
     required this.onRefresh,
-    this.displacement = 40.0,
+    this.displacement = 70.0, // 与RestaurantRefreshIndicator保持一致
     this.color,
     this.backgroundColor,
   }) : super(key: key);
@@ -101,7 +101,7 @@ class CustomRefreshableListView extends StatelessWidget {
     required this.onRefresh,
     this.padding,
     this.physics,
-    this.displacement = 40.0,
+    this.displacement = 70.0, // 与RestaurantRefreshIndicator保持一致
     this.color,
     this.backgroundColor,
   }) : super(key: key);
@@ -140,7 +140,7 @@ class CustomRefreshableListViewBuilder extends StatelessWidget {
     required this.onRefresh,
     this.padding,
     this.physics,
-    this.displacement = 40.0,
+    this.displacement = 70.0, // 与RestaurantRefreshIndicator保持一致
     this.color,
     this.backgroundColor,
   }) : super(key: key);

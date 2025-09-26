@@ -8,9 +8,9 @@ import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/components/unified_cart_widget.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
-import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/utils/image_cache_config.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
 import 'dish_detail_controller.dart';
 
 class DishDetailPage extends StatefulWidget {
@@ -489,7 +489,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
                       ),
                     ),
                     Text(
-                      totalCount > 0 ? totalPrice.toStringAsFixed(0) : '0',
+                      totalCount > 0 ? '$totalPrice' : '0',
                       style: TextStyle(
                         fontSize: 24,
                         height: 1,
@@ -533,11 +533,44 @@ class _DishDetailPageState extends State<DishDetailPage> {
   Future<void> _handleSubmitOrder() async {
     if (!mounted) return;
     
+    final controller = Get.find<OrderController>();
+    
+    // 根据订单来源判断处理方式
+    if (controller.source.value == 'takeaway') {
+      // 外卖订单：跳转到预约时间页面
+      _navigateToAppointmentPage(controller);
+    } else {
+      // 桌台订单：直接提交订单
+      _submitTableOrder(controller);
+    }
+  }
+
+  /// 跳转到预约时间页面
+  void _navigateToAppointmentPage(OrderController controller) {
+    if (!mounted) return;
+    
+    try {
+      // 跳转到预约时间页面，传递桌台ID
+      Get.to(
+        () => TakeawayOrderSuccessPage(),
+        arguments: {
+          'tableId': controller.table.value?.tableId,
+        },
+      );
+    } catch (e) {
+      print('❌ 跳转预约时间页面失败: $e');
+      GlobalToast.error('跳转失败，请重试');
+    }
+  }
+
+  /// 提交桌台订单
+  Future<void> _submitTableOrder(OrderController controller) async {
+    if (!mounted) return;
+    
     try {
       // 显示纯动画加载弹窗（无文字）
       OrderSubmitDialog.showLoadingOnly(context);
       
-      final controller = Get.find<OrderController>();
       final result = await controller.submitOrder();
       
       if (!mounted) return;
@@ -546,12 +579,17 @@ class _DishDetailPageState extends State<DishDetailPage> {
       Navigator.of(context).pop();
       
       if (result['success'] == true) {
-        // 下单成功，刷新已点订单数据后切换到已点页面
-        await controller.loadCurrentOrder(showLoading: false);
-        _switchToOrderedTab();
+        // 下单成功，显示成功提示
+        GlobalToast.success('订单已提交成功！');
+        // 设置标记，表示需要切换到已点页面
+        controller.justSubmittedOrder.value = true;
+        // 立即返回到点餐页面，点餐页面会检测到这个标记并自动切换到已点页面
+        Get.back(result: 'order_submitted');
+        // 异步刷新已点订单数据（不阻塞跳转）
+        controller.loadCurrentOrder(showLoading: false);
       } else {
-        // 下单失败，显示错误提示
-        GlobalToast.error('订单提交失败，请重试');
+        // 下单失败，显示真实接口返回的错误信息
+        GlobalToast.error(result['message'] ?? '订单提交失败，请重试');
       }
     } catch (e) {
       print('❌ 提交订单异常: $e');
@@ -561,18 +599,6 @@ class _DishDetailPageState extends State<DishDetailPage> {
         // 显示错误提示
         GlobalToast.error('提交订单时发生错误，请重试');
       }
-    }
-  }
-
-  /// 切换到已点页面
-  void _switchToOrderedTab() {
-    if (!mounted) return;
-    
-    try {
-      // 直接使用OrderMainPageController来切换Tab
-      Get.find<OrderMainPageController>().switchToOrderedTab();
-    } catch (e) {
-      print('❌ 切换到已点页面失败: $e');
     }
   }
 }

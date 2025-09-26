@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,8 +6,6 @@ import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/components/skeleton_widget.dart';
-import 'package:lib_base/network/interceptor/auth_service.dart';
-import 'package:get_it/get_it.dart';
 
 /// 统一的购物车弹窗组件
 class UnifiedCartWidget {
@@ -47,137 +44,6 @@ class UnifiedCartWidget {
   }
 }
 
-/// 用户头像组件（带loading动画）
-class _UserAvatarWithLoading extends StatefulWidget {
-  final bool isLoading;
-  
-  const _UserAvatarWithLoading({
-    Key? key,
-    required this.isLoading,
-  }) : super(key: key);
-
-  @override
-  State<_UserAvatarWithLoading> createState() => _UserAvatarWithLoadingState();
-}
-
-class _UserAvatarWithLoadingState extends State<_UserAvatarWithLoading>
-    with TickerProviderStateMixin {
-  late AnimationController _loadingController;
-  Timer? _timeoutTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadingController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-  }
-
-  @override
-  void didUpdateWidget(_UserAvatarWithLoading oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    
-    if (widget.isLoading && !oldWidget.isLoading) {
-      // 开始loading
-      _startLoading();
-    } else if (!widget.isLoading && oldWidget.isLoading) {
-      // 停止loading
-      _stopLoading();
-    }
-  }
-
-  void _startLoading() {
-    _loadingController.repeat();
-    // 设置超时逻辑 - 10秒后自动停止loading
-    _timeoutTimer?.cancel();
-    _timeoutTimer = Timer(const Duration(seconds: 10), () {
-      if (mounted && widget.isLoading) {
-        _stopLoading();
-      }
-    });
-  }
-
-  void _stopLoading() {
-    _loadingController.stop();
-    _timeoutTimer?.cancel();
-  }
-
-  @override
-  void dispose() {
-    _loadingController.dispose();
-    _timeoutTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final authService = GetIt.instance<AuthService>();
-    final user = authService.currentUser;
-    return Stack(
-      children: [
-        // 用户头像 - 使用真实头像或占位图
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            // 完全移除背景色和边框
-          ),
-          child: ClipOval(
-            child: user?.avatar != null && user?.avatar?.isNotEmpty == true
-                ? Image.network(
-                    user?.avatar ?? '',
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Image.asset(
-                        'assets/order_mine_placeholder.webp',
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                      );
-                    },
-                  )
-                : Image.asset(
-                    'assets/order_mine_placeholder.webp',
-                    width: 40,
-                    height: 40,
-                    fit: BoxFit.cover,
-                  ),
-          ),
-        ),
-        // Loading动画 - 在头像内部显示转圈动画
-        if (widget.isLoading)
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.black.withOpacity(0.3),
-              ),
-              child: Center(
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: AnimatedBuilder(
-                    animation: _loadingController,
-                    builder: (context, child) {
-                      return CircularProgressIndicator(
-                        value: _loadingController.value,
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      );
-                    },
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
 
 /// 购物车弹窗内容
 class _CartModalContent extends StatelessWidget {
@@ -297,7 +163,7 @@ class _CartModalContent extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          controller.totalPrice.toStringAsFixed(0),
+                          '${controller.totalPrice}',
                           style: TextStyle(
                             fontSize: 24,
                             height: 1,
@@ -491,7 +357,7 @@ class _CartItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        "${cartItem.dish.price.toStringAsFixed(0)}",
+                        "${cartItem.dish.price}",
                         style: TextStyle(
                           fontSize: 16,
                           color: Color(0xFF000000),
@@ -596,13 +462,6 @@ class CartModalContainer extends StatelessWidget {
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             child: Row(
               children: [
-                // 用户头像
-                Obx(() {
-                  final controller = Get.find<OrderController>();
-                  return _UserAvatarWithLoading(
-                    isLoading: controller.isCartOperationLoading.value,
-                  );
-                }),
                 Spacer(),
                 GestureDetector(
                   onTap: onClear,

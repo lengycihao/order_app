@@ -374,7 +374,7 @@ class OrderDetailPageNew extends StatelessWidget {
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Color(0xffFF1010)),
           ),
           Text(
-            controller.totalAmount.toStringAsFixed(0),
+            '${controller.totalAmount}',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xffFF1010)),
           ),
         ],
@@ -386,10 +386,9 @@ class OrderDetailPageNew extends StatelessWidget {
   /// 获取商品单价
   String _getItemUnitPrice(TakeawayOrderDetailItem item) {
     if (item.unitPrice != null && item.unitPrice!.isNotEmpty) {
-      final price = double.tryParse(item.unitPrice!) ?? 0.0;
-      return price.toStringAsFixed(0);
+      return item.unitPrice!;
     }
-    return item.unitPrice ?? '0';
+    return '0';
   }
 
   /// 获取总数量

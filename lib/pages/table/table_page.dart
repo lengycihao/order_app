@@ -138,6 +138,7 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
               color: Colors.transparent,
 
               child: SingleChildScrollView(
+                controller: controller.tabScrollController,
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.start,

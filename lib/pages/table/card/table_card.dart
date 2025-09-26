@@ -161,11 +161,11 @@ class TableCard extends StatelessWidget {
           // 根据状态决定跳转页面
           if (latestTable.businessStatus == 0) {
             // 状态0：进入菜单选择页面
+            // 直接跳转到选择菜单页面，让选择菜单页面自己请求数据
             Get.to(
               () => const SelectMenuPage(),
               arguments: {
                 'table': latestTable,
-                'menu': tableModelList,
                 'table_id': latestTable.tableId
               },
             );
@@ -299,7 +299,7 @@ class TableCard extends StatelessWidget {
               child: Center(
                 child: table.businessStatus == 3
                     ? Text(
-                        '€ ${table.orderAmount.toStringAsFixed(2)}',
+                        '€ ${table.orderAmount}',
                         style: TextStyle(
                           color: Colors.black,
                           fontSize: 16,
@@ -418,4 +418,5 @@ class TableCard extends StatelessWidget {
       },
     );
   }
+
 }

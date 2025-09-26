@@ -69,18 +69,46 @@ class SelectMenuController extends GetxController {
         table.value = args['table'] as TableListModel;
       }
       
-      // 更新 menu 信息
+      // 如果有传入的菜单数据，使用传入的数据
       if (args['menu'] != null) {
         menu.value = args['menu'] as List<TableMenuListModel>;
-        
-        // 根据桌台的menuId设置默认选中的菜单
         _setDefaultSelectedMenu();
-        
-        // 有菜单数据后，异步获取菜品列表
         if (menu.isNotEmpty && tableId != null) {
           _loadAllMenuDishes(tableId);
         }
+      } else {
+        // 如果没有传入菜单数据，自己请求菜单数据
+        if (tableId != null) {
+          _loadMenuData(tableId);
+        }
       }
+    }
+  }
+
+  /// 请求菜单数据
+  Future<void> _loadMenuData(int tableId) async {
+    try {
+      isLoadingDishes.value = true;
+      
+      // 请求菜单列表
+      final menuResult = await _baseApi.getTableMenuList();
+      
+      if (menuResult.isSuccess && menuResult.data != null) {
+        menu.value = menuResult.data!;
+        _setDefaultSelectedMenu();
+        
+        // 有菜单数据后，异步获取菜品列表
+        if (menu.isNotEmpty) {
+          _loadAllMenuDishes(tableId);
+        }
+      } else {
+        ToastUtils.showError(Get.context!, '获取菜单失败: ${menuResult.msg}');
+      }
+    } catch (e) {
+      logError('❌ 请求菜单数据失败: $e', tag: 'SelectMenuController');
+      ToastUtils.showError(Get.context!, '网络错误: $e');
+    } finally {
+      isLoadingDishes.value = false;
     }
   }
 
@@ -192,13 +220,7 @@ class SelectMenuController extends GetxController {
 
   /// 增加成人数量
   void increaseAdultCount() {
-    final maxAdult = table.value.standardAdult.toInt();
-    if (adultCount.value < maxAdult) {
-      adultCount.value++;
-    } else {
-      // 达到最大时再增加提示
-      ToastUtils.showError(Get.context!, '成人数量不能超过桌台上限 ${maxAdult} 人');
-    }
+    adultCount.value++;
   }
 
   /// 减少成人数量
@@ -210,13 +232,7 @@ class SelectMenuController extends GetxController {
 
   /// 增加儿童数量
   void increaseChildCount() {
-    final maxChild = table.value.standardChild.toInt();
-    if (childCount.value < maxChild) {
-      childCount.value++;
-    } else {
-      // 达到最大时再增加提示
-      ToastUtils.showError(Get.context!, '儿童数量不能超过桌台上限 ${maxChild} 人');
-    }
+    childCount.value++;
   }
 
   /// 减少儿童数量

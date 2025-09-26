@@ -19,6 +19,7 @@ class TableController extends GetxController {
   var lobbyListModel = LobbyListModel(halls: []).obs;
   late List<TableMenuListModel> menuModelList = [];
   PageController pageController = PageController();
+  ScrollController tabScrollController = ScrollController();
   var isLoading = false.obs;
   var isMergeMode = false.obs;
   var selectedTables = <String>[].obs; // 存储选中的桌台ID或编号
@@ -161,6 +162,8 @@ class TableController extends GetxController {
   void onPageChanged(int index) {
     selectedTab.value = index;
     fetchDataForTab(index);
+    // 滚动tab到可视区域
+    _scrollToTab(index);
   }
 
   void toggleMergeMode() {
@@ -287,12 +290,45 @@ class TableController extends GetxController {
     }
   }
 
+  /// 滚动tab到屏幕中间
+  void _scrollToTab(int index) {
+    if (!tabScrollController.hasClients) return;
+    
+    // 由于tab宽度是自适应的，我们使用一个更简单的方法
+    // 根据tab的索引比例来滚动，让选中的tab显示在屏幕中央
+    
+    // 获取总tab数量
+    int totalTabs = lobbyListModel.value.halls?.length ?? 0;
+    if (totalTabs == 0) return;
+    
+    // 计算目标tab在总宽度中的比例位置
+    double tabRatio = index / (totalTabs - 1).clamp(1, double.infinity);
+    
+    // 计算目标滚动位置，让选中的tab显示在屏幕中央
+    double maxScrollPosition = tabScrollController.position.maxScrollExtent;
+    
+    // 使用更简单的计算方式，直接根据比例滚动到对应位置
+    double targetScrollPosition = maxScrollPosition * tabRatio;
+    
+    // 确保滚动位置在有效范围内
+    targetScrollPosition = targetScrollPosition.clamp(0.0, maxScrollPosition);
+    
+    // 执行滚动动画
+    tabScrollController.animateTo(
+      targetScrollPosition,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
   @override
   void onClose() {
     // 清理轮询定时器
     _stopPolling();
     // 清理WebSocket连接
     _wsManager.disconnectAll();
+    // 清理ScrollController
+    tabScrollController.dispose();
     super.onClose();
   }
 }

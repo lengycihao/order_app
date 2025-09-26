@@ -423,6 +423,10 @@ class OrderController extends GetxController {
       // 初始化时保留本地购物车数据，避免角标闪烁
       if (isInitialized.value) {
         logDebug('🛒 服务器购物车为空，清空本地购物车', tag: OrderConstants.logTag);
+        // 取消所有待执行的WebSocket防抖操作，避免在购物车清空后执行无效操作
+        _wsDebounceManager.cancelAllPendingOperations();
+        // 取消所有待执行的本地购物车防抖操作
+        _localCartManager.clearAllPendingOperations();
         cart.clear();
         cart.refresh();
         update();
@@ -514,6 +518,10 @@ class OrderController extends GetxController {
 
   void clearCart() {
     _cartManager.debounceOperation('clear_cart', () {
+      // 取消所有待执行的WebSocket防抖操作
+      _wsDebounceManager.cancelAllPendingOperations();
+      // 取消所有待执行的本地购物车防抖操作
+      _localCartManager.clearAllPendingOperations();
       cart.clear();
       update();
       _wsHandler.sendClearCart();
@@ -1137,16 +1145,12 @@ class OrderController extends GetxController {
       return;
     }
     
-    // 使用WebSocket防抖管理器发送消息
-    if (quantity > 0) {
-      _wsDebounceManager.debounceUpdateQuantity(
-        cartItem: cartItem,
-        quantity: quantity,
-      );
-    } else {
-      // 数量为0，发送删除消息
-      _wsHandler.sendDeleteDish(cartItem);
-    }
+    // 统一使用WebSocket防抖管理器发送更新消息，包括数量为0的情况
+    // 服务器应该能够处理数量为0的更新操作，而不需要单独的删除操作
+    _wsDebounceManager.debounceUpdateQuantity(
+      cartItem: cartItem,
+      quantity: quantity,
+    );
     
     logDebug('📤 本地WebSocket发送: ${cartItem.dish.name} -> $quantity', tag: OrderConstants.logTag);
   }
