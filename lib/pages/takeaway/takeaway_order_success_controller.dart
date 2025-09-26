@@ -100,10 +100,16 @@ class TakeawayOrderSuccessController extends GetxController {
     if (index < 0 || index >= timeOptions.length) return;
     
     final option = timeOptions[index];
-    // 预设时间选项
-    selectedTimeText.value = option.label;
-    // 使用时间戳创建DateTime
-    selectedDateTime.value = DateTime.fromMillisecondsSinceEpoch(option.value * 1000);
+    final now = DateTime.now();
+    
+    // 计算取餐时间：当前时间 + 选择的分钟数
+    final pickupTime = now.add(Duration(minutes: option.value));
+    
+    // 格式化为 hh:mm
+    final timeStr = '${pickupTime.hour.toString().padLeft(2, '0')}:${pickupTime.minute.toString().padLeft(2, '0')}';
+    
+    selectedTimeText.value = timeStr;
+    selectedDateTime.value = pickupTime;
   }
 
   // 显示时间选择器
@@ -124,6 +130,8 @@ class TakeawayOrderSuccessController extends GetxController {
           // 更新显示的时间文本
           selectedTimeText.value = _formatTime(finalDateTime);
           this.selectedDateTime.value = finalDateTime;
+          // 设置为"其他时间"选项
+          selectedTimeIndex.value = timeOptions.length;
         },
       ),
       isScrollControlled: true,
@@ -136,6 +144,9 @@ class TakeawayOrderSuccessController extends GetxController {
         selectedTimeIndex.value = 0;
         _updateSelectedTime(0);
       }
+    } else {
+      // 用户确认了时间选择，保持"其他时间"选项的选中状态
+      // selectedTimeIndex.value 已经在 onTimeSelected 回调中设置为 timeOptions.length
     }
   }
 
@@ -166,8 +177,7 @@ class TakeawayOrderSuccessController extends GetxController {
   String get currentSelectedTimeText => selectedTimeText.value;
   
   // 是否选择了其他时间选项
-  bool get isOtherTimeSelected => selectedTimeIndex.value < timeOptions.length && 
-      timeOptions[selectedTimeIndex.value].value == -1;
+  bool get isOtherTimeSelected => selectedTimeIndex.value >= timeOptions.length;
 
   // 确认订单（供页面底部确认按钮调用）
   Future<void> confirmOrder() async {
@@ -215,10 +225,13 @@ class TakeawayOrderSuccessController extends GetxController {
         // 跳转到主页面并切换到外卖标签页
         Get.offAll(() => ScreenNavPage(initialIndex: 1));
       } else {
-        ToastUtils.showError(Get.context!, '订单提交失败');
+        // 显示服务器返回的真实错误信息
+        final errorMessage = result.msg ?? '订单提交失败';
+        ToastUtils.showError(Get.context!, errorMessage);
       }
     } catch (e) {
-      ToastUtils.showError(Get.context!, '订单提交失败');
+      // 显示具体的异常信息
+      ToastUtils.showError(Get.context!, '网络错误: ${e.toString()}');
     } finally {
       isSubmitting.value = false;
     }

@@ -262,6 +262,9 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
 
   /// 构建导航按钮
   Widget _buildNavButton(String text, bool isSelected) {
+    // 判断是否为外卖来源
+    bool isTakeawaySource = controller.source.value == 'takeaway';
+    
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Column(
@@ -270,12 +273,17 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
           Text(
             text,
             style: TextStyle(
-              color: isSelected ? Colors.orange : Color(0xFF666666),
-              fontSize: 16,
-              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isTakeawaySource 
+                ? Colors.black  // 外卖来源：黑色
+                : (isSelected ? Colors.orange : Color(0xFF666666)), // 其他来源：保持原样
+              fontSize: isTakeawaySource ? 24 : 16, // 外卖来源：24pt，其他来源：16pt
+              fontWeight: isTakeawaySource 
+                ? FontWeight.bold  // 外卖来源：加粗
+                : (isSelected ? FontWeight.bold : FontWeight.normal), // 其他来源：保持原样
             ),
           ),
-          if (isSelected)
+          // 外卖来源不显示状态条，其他来源保持原样
+          if (!isTakeawaySource && isSelected)
             Container(
               margin: EdgeInsets.only(top: 4),
               height: 2,

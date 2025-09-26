@@ -12,6 +12,7 @@ WaiterLoginModel _$WaiterLoginModelFromJson(Map<String, dynamic> json) =>
       waiterId: (json['waiter_id'] as num?)?.toInt(),
       waiterName: json['waiter_name'] as String?,
       languageCode: json['language_code'] as String?,
+      avatar: json['avatar'] as String?,
     );
 
 Map<String, dynamic> _$WaiterLoginModelToJson(WaiterLoginModel instance) =>
@@ -20,4 +21,5 @@ Map<String, dynamic> _$WaiterLoginModelToJson(WaiterLoginModel instance) =>
       'waiter_id': instance.waiterId,
       'waiter_name': instance.waiterName,
       'language_code': instance.languageCode,
+      'avatar': instance.avatar,
     };

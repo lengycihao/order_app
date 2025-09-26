@@ -15,6 +15,7 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
       builder: (controller) {
         return Scaffold(
           backgroundColor: GlobalColors.primaryBackground,
+          resizeToAvoidBottomInset: false, // 防止页面跟随键盘调整大小
           appBar: AppBar(
             title: Text(
               context.l10n.takeaway,
@@ -32,23 +33,29 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
               onPressed: () => Navigator.of(context).pop(),
             ),
           ),
-          body: Column(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      // 其他信息卡片
-                      _buildOtherInfoCard(context, controller),
-                      const SizedBox(height: 20),
-                    ],
+          body: GestureDetector(
+            onTap: () {
+              // 点击页面收回键盘
+              FocusScope.of(context).unfocus();
+            },
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        // 其他信息卡片
+                        _buildOtherInfoCard(context, controller),
+                        const SizedBox(height: 20),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              // 底部确认按钮
-              _buildConfirmButton(context, controller),
-            ],
+                // 底部确认按钮 - 固定在底部
+                _buildConfirmButton(context, controller),
+              ],
+            ),
           ),
         );
       },
@@ -250,38 +257,40 @@ class TakeawayOrderSuccessPage extends StatelessWidget {
   Widget _buildConfirmButton(BuildContext context, TakeawayOrderSuccessController controller) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      child: Center(
-        child: SizedBox(
-          width: 250,
-          height: 40,
-          child: Obx(() => ElevatedButton(
-            onPressed: controller.isLoading.value ? null : () => controller.confirmOrder(),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFFF9027),
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+      child: SafeArea(
+        child: Center(
+          child: SizedBox(
+            width: 250,
+            height: 40,
+            child: Obx(() => ElevatedButton(
+              onPressed: controller.isLoading.value ? null : () => controller.confirmOrder(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFFF9027),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                elevation: 0,
               ),
-              elevation: 0,
-            ),
-            child: controller.isLoading.value
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              child: controller.isLoading.value
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : Text(
+                      context.l10n.confirm,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
-                  )
-                : Text(
-                    context.l10n.confirm,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-          )),
+            )),
+          ),
         ),
       ),
     );

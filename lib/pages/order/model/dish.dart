@@ -11,6 +11,7 @@ class Dish {
   final List<Option>? options;
   final List<Allergen>? allergens;
   final List<String>? tags; // 规格属性
+  final int dishType; // 菜品类型：1-正常菜品，3-特殊项目（桌号、人数等）
 
   Dish({
     required this.id,
@@ -22,5 +23,6 @@ class Dish {
     this.options,
     this.allergens,
     this.tags,
+    this.dishType = 1, // 默认为正常菜品
   });
 }

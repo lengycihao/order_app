@@ -3,8 +3,10 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'order_detail_controller_new.dart';
 import 'model/takeaway_order_detail_model.dart';
+import 'package:order_app/widgets/base_list_page_widget.dart';
+import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 
-class OrderDetailPageNew extends StatelessWidget {
+class OrderDetailPageNew extends BaseDetailPageWidget {
   const OrderDetailPageNew({Key? key}) : super(key: key);
 
   @override
@@ -12,82 +14,73 @@ class OrderDetailPageNew extends StatelessWidget {
     return GetBuilder<OrderDetailControllerNew>(
       init: OrderDetailControllerNew(),
       builder: (controller) {
-        return Scaffold(
-          backgroundColor: const Color(0xfff9f9f9),
-          appBar: AppBar(
-            title: const Text(''),
-            centerTitle: true,
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios),
-              onPressed: () => Get.back(),
-            ),
-            // actions: [
-            //   IconButton(
-            //     icon: const Icon(Icons.refresh),
-            //     onPressed: controller.refreshOrderDetail,
-            //   ),
-            // ],
-          ),
-          body: Obx(() {
-            if (controller.isLoading.value &&
-                controller.orderDetail.value == null) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            final order = controller.orderDetail.value;
-            if (order == null) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset(
-                      'assets/order_nonet.webp',
-                      width: 120,
-                      height: 120,
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      '加载失败',
-                      style: TextStyle(fontSize: 16, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            }
-
-            return RefreshIndicator(
-              onRefresh: controller.refreshOrderDetail,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 订单状态
-                    // _buildOrderStatusCard(order),
-
-                    // const SizedBox(height: 20),
-
-                    // 订单基本信息
-                    _buildOrderInfoCard(order),
-
-                    const SizedBox(height: 10),
-
-                    // 商品列表
-                    _buildOrderItemsCard(order), 
-
-                    const SizedBox(height: 100), // 底部按钮预留空间
-                  ],
-                ),
-              ),
-            );
-          }),
-          bottomNavigationBar: _buildBottomActions(controller),
-        );
+        return _OrderDetailPageState(controller: controller).build(context);
       },
+    );
+  }
+}
+
+class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
+  final OrderDetailControllerNew controller;
+
+  _OrderDetailPageState({required this.controller});
+
+  @override
+  bool get isLoading => controller.isLoading.value;
+
+  @override
+  bool get hasNetworkError => controller.orderDetail.value == null && !isLoading;
+
+  @override
+  bool get hasData => controller.orderDetail.value != null;
+
+  @override
+  Future<void> onRefresh() => controller.refreshOrderDetail();
+
+  @override
+  String getEmptyStateText() => '暂无详情';
+
+  @override
+  Widget buildDataContent() {
+    return PullToRefreshWrapper(
+      onRefresh: controller.refreshOrderDetail,
+      child: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 订单基本信息
+            _buildOrderInfoCard(controller.orderDetail.value!),
+
+            const SizedBox(height: 10),
+
+            // 商品列表
+            _buildOrderItemsCard(controller.orderDetail.value!),
+
+            const SizedBox(height: 100), // 底部按钮预留空间
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xfff9f9f9),
+      appBar: AppBar(
+        title: const Text(''),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        foregroundColor: Colors.black,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios),
+          onPressed: () => Get.back(),
+        ),
+      ),
+      body: buildMainContent(),
+      bottomNavigationBar: _buildBottomActions(controller),
     );
   }
 
@@ -271,8 +264,8 @@ class OrderDetailPageNew extends StatelessWidget {
                                 color: Color(0xff999999),
                               ),
                             ),
-                          if (item.processStatusName != null &&
-                              item.processStatusName!.isNotEmpty)
+                          if (item.cookingStatusName != null &&
+                              item.cookingStatusName!.isNotEmpty)
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
@@ -283,7 +276,7 @@ class OrderDetailPageNew extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                               child: Text(
-                                item.processStatusName,
+                                item.cookingStatusName,
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Color(0xffFF9027),
@@ -327,13 +320,16 @@ class OrderDetailPageNew extends StatelessWidget {
                   const SizedBox(height: 40),
                   Image.asset(
                     'assets/order_empty.webp',
-                    width: 120,
-                    height: 120,
+                    width: 180,
+                    height: 100,
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   const Text(
                     '暂无详情',
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFFF9027),
+                    ),
                   ),
                 ],
               ),

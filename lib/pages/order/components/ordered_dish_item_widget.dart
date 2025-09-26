@@ -148,7 +148,7 @@ class OrderedDishItemWidget extends StatelessWidget {
     return Wrap(
       spacing: 4,
       runSpacing: 2,
-      children: validAllergens.take(3).map((allergen) {
+      children: validAllergens.map((allergen) {
         return Container(
           margin: EdgeInsets.only(right: 4),
           child: CachedNetworkImage(

@@ -4,17 +4,50 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/order_module_widget.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/components/skeleton_widget.dart';
-import 'package:order_app/utils/restaurant_refresh_indicator.dart';
+import 'package:order_app/widgets/base_list_page_widget.dart';
+import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 
-class OrderedPage extends StatefulWidget {
+class OrderedPage extends BaseListPageWidget {
   const OrderedPage({super.key});
 
   @override
   State<OrderedPage> createState() => _OrderedPageState();
 }
 
-class _OrderedPageState extends State<OrderedPage> {
+class _OrderedPageState extends BaseListPageState<OrderedPage> {
   final OrderController controller = Get.find<OrderController>();
+
+  // 实现基类抽象方法
+  @override
+  bool get isLoading => controller.isLoadingOrdered.value;
+
+  @override
+  bool get hasNetworkError => controller.hasNetworkErrorOrdered.value;
+
+  @override
+  bool get hasData {
+    final order = controller.currentOrder.value;
+    return order != null && order.details != null && order.details!.isNotEmpty;
+  }
+
+  @override
+  Future<void> onRefresh() => _loadOrderedData();
+
+  @override
+  String getEmptyStateText() => '暂无已点订单';
+
+  @override
+  bool get shouldShowSkeleton => isLoading && !hasData;
+
+  @override
+  Widget buildSkeletonWidget() {
+    return const OrderedPageSkeleton();
+  }
+
+  @override
+  Widget buildLoadingWidget() {
+    return const OrderedPageSkeleton();
+  }
 
   @override
   void initState() {
@@ -129,118 +162,70 @@ class _OrderedPageState extends State<OrderedPage> {
     );
   }
 
-  /// 构建主体内容
-  Widget _buildMainContent() {
+  @override
+  Widget buildDataContent() {
+    final order = controller.currentOrder.value!;
+    return PullToRefreshWrapper(
+      onRefresh: _loadOrderedData,
+      child: ListView.builder(
+        padding: EdgeInsets.all(16),
+        physics: AlwaysScrollableScrollPhysics(),
+        itemCount: order.details!.length,
+        itemBuilder: (context, index) {
+          final orderDetail = order.details![index];
+          return OrderModuleWidget(
+            orderDetail: orderDetail,
+            isLast: index == order.details!.length - 1,
+          );
+        },
+      ),
+    );
+  }
+
+  /// 构建主体内容（重写以支持下拉刷新）
+  @override
+  Widget buildMainContent() {
     return Expanded(
       child: Obx(() {
-        if (controller.isLoadingOrdered.value) {
-          return const OrderedPageSkeleton();
+        if (isLoading) {
+          return buildLoadingWidget();
         }
 
-        if (controller.currentOrder.value == null) {
-          return RestaurantRefreshIndicator(
-            onRefresh: _loadOrderedData,
-            loadingColor: const Color(0xFFFF9027),
+        if (hasNetworkError) {
+          return PullToRefreshWrapper(
+            onRefresh: onRefresh,
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
               child: Container(
                 height: MediaQuery.of(context).size.height - 200,
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.restaurant_menu,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        '暂无已点订单',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        '请先点餐',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: buildNetworkErrorState(),
                 ),
               ),
             ),
           );
         }
 
-        final order = controller.currentOrder.value!;
-        if (order.details == null || order.details!.isEmpty) {
-          return RestaurantRefreshIndicator(
-            onRefresh: _loadOrderedData,
-            loadingColor: const Color(0xFFFF9027),
+        if (!hasData) {
+          return PullToRefreshWrapper(
+            onRefresh: onRefresh,
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
               child: Container(
                 height: MediaQuery.of(context).size.height - 200,
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.restaurant_menu,
-                        size: 64,
-                        color: Colors.grey[400],
-                      ),
-                      SizedBox(height: 16),
-                      Text(
-                        '暂无已点订单',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        '请先点餐',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey[500],
-                        ),
-                      ),
-                    ],
-                  ),
+                  child: buildEmptyState(),
                 ),
               ),
             ),
           );
         }
 
-        return RestaurantRefreshIndicator(
-          onRefresh: _loadOrderedData,
-          loadingColor: const Color(0xFFFF9027),
-          child: ListView.builder(
-            padding: EdgeInsets.all(16),
-            physics: AlwaysScrollableScrollPhysics(),
-            itemCount: order.details!.length,
-            itemBuilder: (context, index) {
-              final orderDetail = order.details![index];
-              return OrderModuleWidget(
-                orderDetail: orderDetail,
-                isLast: index == order.details!.length - 1,
-              );
-            },
-          ),
-        );
+        return buildDataContent();
       }),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -251,7 +236,7 @@ class _OrderedPageState extends State<OrderedPage> {
           // 顶部导航栏
           _buildTopNavigation(),
           // 主体内容区域
-          _buildMainContent(),
+          buildMainContent(),
         ],
       ),
     );

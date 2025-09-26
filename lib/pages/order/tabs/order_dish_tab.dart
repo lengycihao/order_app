@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/dish_item_widget.dart';
+import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/components/allergen_filter_widget.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
 import 'package:order_app/pages/order/components/unified_cart_widget.dart';
@@ -444,7 +445,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
             return GetBuilder<OrderController>(
               builder: (controller) {
                 final categoryCount = controller.cart.entries
-                    .where((e) => e.key.dish.categoryId == index)
+                    .where((e) => e.key.dish.categoryId == index && _isRegularDish(e.key.dish))
                     .fold<int>(0, (sum, e) => sum + e.value);
 
                 final selectedIndex = controller.selectedCategory.value;
@@ -510,25 +511,23 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
                               child: Container(
                                 constraints: BoxConstraints(
                                   minWidth: 15,
-                                  maxWidth: 20,
-                                  minHeight: 15,
-                                  maxHeight: 15
+                                  minHeight: 15
                                 ),
-                                // padding: EdgeInsets.symmetric(horizontal: 4),
+                                padding: EdgeInsets.symmetric(horizontal: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.red,
                                   borderRadius: BorderRadius.circular(8),
-                                   
                                 ),
                                 child: Center(
                                   child: Text(
-                                    "$categoryCount",
+                                    categoryCount > 99 ? "99+" : "$categoryCount",
                                     style: TextStyle(
                                       color: Colors.white,
-                                      fontSize: 12,
+                                      fontSize: 10,
                                       height: 1,
                                       fontWeight: FontWeight.bold,
                                     ),
+                                    textAlign: TextAlign.center,
                                   ),
                                 ),
                               ),
@@ -731,6 +730,19 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   }
 
 
+  /// 判断是否为普通菜品（排除包餐费等非菜品项目）
+  bool _isRegularDish(Dish dish) {
+    // 优先使用 dish_type 字段判断
+    // dish_type = 1: 正常菜品
+    // dish_type = 3: 特殊项目（桌号、人数等），不计入分类数量
+    if (dish.dishType == 3) {
+      return false; // 特殊项目，不计入分类数量
+    }
+    
+    // 如果 dish_type 不是 3，则认为是正常菜品
+    return true;
+  }
+
   /// 构建类目底部空间
   Widget _buildCategoryBottomSpace(int categoryIndex) {
     // 检查数据是否有效
@@ -929,20 +941,17 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
               GestureDetector(
                 onTap: _handleSubmitOrder,
                 child: Container(
-                  width: 80,
-                  height: 30,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9027),
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  child: const Center(
-                    child: Text(
-                      '下单',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
+                  child: const Text(
+                    '下单',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
@@ -970,14 +979,26 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
         }
       },
       behavior: HitTestBehavior.translucent,
-      child: Column(
+      child: Stack(
         children: [
-          // 搜索 + 排序
-          _buildSearchAndFilter(),
-          // 主体内容区域
-          _buildMainContent(),
-          // 底部购物车按钮
-          _buildBottomCartButton(),
+          // 主要内容区域
+          Column(
+            children: [
+              // 搜索 + 排序
+              _buildSearchAndFilter(),
+              // 主体内容区域
+              _buildMainContent(),
+              // 底部占位空间，为固定按钮留出空间
+              SizedBox(height: 60),
+            ],
+          ),
+          // 固定在底部的购物车按钮
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildBottomCartButton(),
+          ),
         ],
       ),
     );

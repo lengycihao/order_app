@@ -32,6 +32,11 @@ class TableController extends GetxController {
   // 轮询定时器
   Timer? _pollingTimer;
   bool _isPollingActive = false;
+  
+  // 预加载相关
+  var _preloadedTabs = <int>{}.obs; // 已预加载的tab索引
+  var _preloadingTabs = <int>{}.obs; // 正在预加载的tab索引
+  final int _maxPreloadRange = 1; // 预加载范围：前后各1个tab
 
   @override
   void onInit() {
@@ -54,6 +59,9 @@ class TableController extends GetxController {
         lobbyListModel.value.halls?.length ?? 0,
         (_) => <TableListModel>[].obs,
       );
+      // 清空预加载状态
+      _preloadedTabs.clear();
+      _preloadingTabs.clear();
       // 获取第一个 tab 数据
       fetchDataForTab(0);
     }
@@ -100,6 +108,8 @@ class TableController extends GetxController {
         List<TableListModel> data = result.data!;
         tabDataList[index].value = data;
         hasNetworkError.value = false;
+        // 标记为已预加载
+        _preloadedTabs.add(index);
       } else {
         hasNetworkError.value = true;
       }
@@ -108,6 +118,9 @@ class TableController extends GetxController {
     } finally {
       isLoading.value = false;
     }
+    
+    // 当前tab加载完成后，预加载相邻tab
+    _preloadAdjacentTabs(index);
   }
 
   /// 隐式刷新数据（不显示加载状态）
@@ -125,11 +138,61 @@ class TableController extends GetxController {
         List<TableListModel> data = result.data!;
         tabDataList[index].value = data;
         hasNetworkError.value = false;
+        // 标记为已预加载
+        _preloadedTabs.add(index);
       } else {
         hasNetworkError.value = true;
       }
     } catch (e) {
       hasNetworkError.value = true;
+    }
+  }
+
+  /// 预加载相邻tab的数据
+  void _preloadAdjacentTabs(int currentIndex) {
+    final totalTabs = lobbyListModel.value.halls?.length ?? 0;
+    if (totalTabs <= 1) return; // 只有一个tab时不需要预加载
+    
+    // 计算需要预加载的tab范围
+    final startIndex = (currentIndex - _maxPreloadRange).clamp(0, totalTabs - 1);
+    final endIndex = (currentIndex + _maxPreloadRange).clamp(0, totalTabs - 1);
+    
+    // 预加载范围内的tab（排除当前tab）
+    for (int i = startIndex; i <= endIndex; i++) {
+      if (i != currentIndex && 
+          i < tabDataList.length && 
+          !_preloadedTabs.contains(i) && 
+          !_preloadingTabs.contains(i)) {
+        _preloadTabData(i);
+      }
+    }
+  }
+
+  /// 预加载指定tab的数据
+  Future<void> _preloadTabData(int index) async {
+    if (index >= tabDataList.length) return;
+    
+    _preloadingTabs.add(index);
+    
+    try {
+      final result = await _baseApi.getTableList(
+        hallId: lobbyListModel.value.halls!.isNotEmpty
+            ? lobbyListModel.value.halls![index].hallId.toString()
+            : "0",
+      );
+      
+      if (result.isSuccess) {
+        List<TableListModel> data = result.data!;
+        tabDataList[index].value = data;
+        _preloadedTabs.add(index);
+        print('✅ 预加载tab $index 数据成功，桌台数量: ${data.length}');
+      } else {
+        print('❌ 预加载tab $index 数据失败: ${result.msg}');
+      }
+    } catch (e) {
+      print('❌ 预加载tab $index 数据异常: $e');
+    } finally {
+      _preloadingTabs.remove(index);
     }
   }
 
@@ -156,14 +219,28 @@ class TableController extends GetxController {
       duration: Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
-    fetchDataForTab(index);
+    _handleTabSwitch(index);
   }
 
   void onPageChanged(int index) {
     selectedTab.value = index;
-    fetchDataForTab(index);
+    _handleTabSwitch(index);
     // 滚动tab到可视区域
     _scrollToTab(index);
+  }
+
+  /// 处理tab切换逻辑
+  void _handleTabSwitch(int index) {
+    // 如果该tab已经预加载过，直接显示数据，不需要重新加载
+    if (_preloadedTabs.contains(index)) {
+      print('✅ Tab $index 已预加载，直接显示数据');
+      // 预加载相邻tab
+      _preloadAdjacentTabs(index);
+    } else {
+      // 如果该tab没有预加载过，正常加载
+      print('🔄 Tab $index 未预加载，开始加载数据');
+      fetchDataForTab(index);
+    }
   }
 
   void toggleMergeMode() {
@@ -276,6 +353,29 @@ class TableController extends GetxController {
     
     // 刷新当前选中的tab数据
     await refreshDataForTab(selectedTab.value);
+    
+    // 同时刷新已预加载的相邻tab数据
+    _refreshPreloadedTabs();
+  }
+
+  /// 刷新已预加载的tab数据
+  void _refreshPreloadedTabs() {
+    final currentIndex = selectedTab.value;
+    final totalTabs = lobbyListModel.value.halls?.length ?? 0;
+    
+    // 计算需要刷新的tab范围
+    final startIndex = (currentIndex - _maxPreloadRange).clamp(0, totalTabs - 1);
+    final endIndex = (currentIndex + _maxPreloadRange).clamp(0, totalTabs - 1);
+    
+    // 刷新范围内的已预加载tab（排除当前tab）
+    for (int i = startIndex; i <= endIndex; i++) {
+      if (i != currentIndex && 
+          i < tabDataList.length && 
+          _preloadedTabs.contains(i) &&
+          !_preloadingTabs.contains(i)) {
+        _preloadTabData(i); // 重新预加载，会更新数据
+      }
+    }
   }
 
   /// 暂停轮询（页面不可见时调用）
@@ -287,6 +387,32 @@ class TableController extends GetxController {
   void resumePolling() {
     if (!_isPollingActive) {
       _startPolling();
+    }
+  }
+
+  /// 获取预加载状态信息
+  Map<String, dynamic> getPreloadStatus() {
+    return {
+      'preloadedTabs': _preloadedTabs.toList(),
+      'preloadingTabs': _preloadingTabs.toList(),
+      'maxPreloadRange': _maxPreloadRange,
+    };
+  }
+
+  /// 检查指定tab是否已预加载
+  bool isTabPreloaded(int index) {
+    return _preloadedTabs.contains(index);
+  }
+
+  /// 检查指定tab是否正在预加载
+  bool isTabPreloading(int index) {
+    return _preloadingTabs.contains(index);
+  }
+
+  /// 手动触发预加载（用于测试或特殊场景）
+  void triggerPreload(int index) {
+    if (index >= 0 && index < tabDataList.length && !_preloadedTabs.contains(index)) {
+      _preloadTabData(index);
     }
   }
 

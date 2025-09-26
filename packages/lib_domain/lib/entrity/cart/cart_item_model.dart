@@ -104,6 +104,10 @@ class CartItemModel {
   @JsonKey(name: 'type')
   int? type;
   
+  /// 菜品类型
+  @JsonKey(name: 'dish_type')
+  int? dishType;
+  
   /// 服务员ID
   @JsonKey(name: 'waiter_id')
   int? waiterId;
@@ -151,6 +155,7 @@ class CartItemModel {
     this.options,
     this.source,
     this.type,
+    this.dishType,
     this.waiterId,
     this.customerId,
     this.browserFingerprintHash,

@@ -114,6 +114,7 @@ class CartManager {
           allergens: [],
           options: [],
           tags: null, // 临时菜品没有tags信息
+          dishType: apiCartItem.dishType ?? 1, // 传递菜品类型，默认为正常菜品
         );
         logDebug('🆕 创建临时菜品: ${existingDish.name} (分类ID: $correctCategoryId)', tag: _logTag);
       }

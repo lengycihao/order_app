@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 /// 底部弹窗时间选择器
 class BottomTimePickerDialog extends StatefulWidget {
@@ -215,18 +216,12 @@ class _BottomTimePickerDialogState extends State<BottomTimePickerDialog> {
 
     // 检查选择的时间是否大于当前时间
     if (selectedTime.isBefore(now)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('不可选择早于当前的时间'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      ToastUtils.showError(context, '不可早于当前时间');
       return;
     }
 
     // 返回选择的时间
     widget.onTimeSelected(selectedTime);
-    Navigator.of(context).pop();
+    Navigator.of(context).pop(selectedTime);
   }
 }

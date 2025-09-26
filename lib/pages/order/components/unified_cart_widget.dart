@@ -87,11 +87,19 @@ class _CartModalContent extends StatelessWidget {
                       child: ListView.builder(
                         padding: EdgeInsets.all(16),
                         itemCount: controller.cart.length,
+                        // 添加缓存和性能优化
+                        cacheExtent: 200,
+                        // 禁用滚动，让列表固定
+                        physics: NeverScrollableScrollPhysics(),
                         itemBuilder: (context, index) {
                           final entry = controller.cart.entries.elementAt(index);
                           final cartItem = entry.key;
                           final count = entry.value;
-                          return _CartItem(cartItem: cartItem, count: count);
+                          return _CartItem(
+                            key: ValueKey('cart_item_${cartItem.cartSpecificationId ?? cartItem.dish.id}'),
+                            cartItem: cartItem, 
+                            count: count
+                          );
                         },
                       ),
                     ),
@@ -103,7 +111,7 @@ class _CartModalContent extends StatelessWidget {
                 color: Colors.white,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     offset: Offset(0, -1),
                     blurRadius: 4,
                   ),
@@ -228,8 +236,9 @@ class _CartItem extends StatelessWidget {
     final controller = Get.find<OrderController>();
     return Slidable(
       key: Key('cart_item_${cartItem.cartSpecificationId ?? cartItem.dish.id}'),
+      // 使用更轻量的动画配置
       endActionPane: ActionPane(
-        motion: const ScrollMotion(),
+        motion: const BehindMotion(), // 使用更简单的动画
         extentRatio: 0.25,
         children: [
           SlidableAction(
@@ -250,9 +259,13 @@ class _CartItem extends StatelessWidget {
             icon: Icons.delete,
             label: '删除',
             borderRadius: BorderRadius.circular(8),
+            // 添加性能优化
+            flex: 1,
           ),
         ],
       ),
+      // 添加性能优化配置
+      closeOnScroll: true,
       child: Container(
         padding: EdgeInsets.symmetric(vertical: 12),
         child: Row(
@@ -298,49 +311,12 @@ class _CartItem extends StatelessWidget {
                   SizedBox(height: 4),
                   // 2. 敏感物图标（只显示图标，不显示文字，去除背景）
                   if (cartItem.dish.allergens != null && cartItem.dish.allergens?.isNotEmpty == true)
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 2,
-                      children: (cartItem.dish.allergens ?? []).where((allergen) => 
-                        allergen.icon != null && allergen.icon!.isNotEmpty
-                      ).map((allergen) {
-                        return CachedNetworkImage(
-                          imageUrl: allergen.icon!,
-                          width: 12,
-                          height: 12,
-                          fit: BoxFit.contain,
-                          placeholder: (context, url) => SizedBox.shrink(),
-                          errorWidget: (context, url, error) => SizedBox.shrink(),
-                        );
-                      }).toList(),
-                    ),
+                    _AllergenIcons(allergens: cartItem.dish.allergens!),
                   // 3. 标签（tags）
                   if (cartItem.dish.tags != null && cartItem.dish.tags?.isNotEmpty == true)
                     Padding(
                       padding: EdgeInsets.only(top: 6),
-                      child: Wrap(
-                        spacing: 4,
-                        runSpacing: 2,
-                        children: (cartItem.dish.tags ?? []).where((tag) => 
-                          tag.isNotEmpty
-                        ).take(3).map((tag) {
-                          return Container(
-                            padding: EdgeInsets.symmetric(horizontal: 4),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.orange[700]!),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              tag,
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.orange[700],
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
+                      child: _DishTags(tags: cartItem.dish.tags!),
                     ),
                   SizedBox(height: 8),
                   // 4. 价格显示（单价）：￥（8pt 000000）价格（16pt 000000）/份（6pt #999999）
@@ -491,6 +467,73 @@ class CartModalContainer extends StatelessWidget {
           child,
         ],
       ),
+    );
+  }
+}
+
+/// 敏感物图标组件（优化性能）
+class _AllergenIcons extends StatelessWidget {
+  final List<dynamic> allergens;
+  
+  const _AllergenIcons({Key? key, required this.allergens}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final validAllergens = allergens.where((allergen) => 
+      allergen.icon != null && allergen.icon!.isNotEmpty
+    ).toList();
+    
+    if (validAllergens.isEmpty) return SizedBox.shrink();
+    
+    return Wrap(
+      spacing: 4,
+      runSpacing: 2,
+      children: validAllergens.map((allergen) {
+        return CachedNetworkImage(
+          imageUrl: allergen.icon!,
+          width: 12,
+          height: 12,
+          fit: BoxFit.contain,
+          placeholder: (context, url) => SizedBox.shrink(),
+          errorWidget: (context, url, error) => SizedBox.shrink(),
+        );
+      }).toList(),
+    );
+  }
+}
+
+/// 菜品标签组件（优化性能）
+class _DishTags extends StatelessWidget {
+  final List<String> tags;
+  
+  const _DishTags({Key? key, required this.tags}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final validTags = tags.where((tag) => tag.isNotEmpty).toList();
+    
+    if (validTags.isEmpty) return SizedBox.shrink();
+    
+    return Wrap(
+      spacing: 4,
+      runSpacing: 2,
+      children: validTags.map((tag) {
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 4),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.orange[700]!),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Text(
+            tag,
+            style: TextStyle(
+              fontSize: 10,
+              color: Colors.orange[700],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

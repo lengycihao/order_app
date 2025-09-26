@@ -62,6 +62,7 @@ class OrderController extends GetxController {
   // 已点订单数据
   var currentOrder = Rx<CurrentOrderModel?>(null);
   final isLoadingOrdered = false.obs;
+  final hasNetworkErrorOrdered = false.obs; // 已点订单网络错误状态
   
   // 409强制更新相关
   CartItem? _lastOperationCartItem;
@@ -1000,7 +1001,7 @@ class OrderController extends GetxController {
   int getCategoryCount(int categoryIndex) {
     int count = 0;
     cart.forEach((cartItem, quantity) {
-      if (cartItem.dish.categoryId == categoryIndex) {
+      if (cartItem.dish.categoryId == categoryIndex && cartItem.dish.dishType != 3) {
         count += quantity;
       }
     });
@@ -1433,6 +1434,8 @@ class OrderController extends GetxController {
       } else {
         logDebug('📋 静默刷新，不设置loading状态 (当前状态: ${isLoadingOrdered.value})', tag: OrderConstants.logTag);
       }
+      // 重置网络错误状态
+      hasNetworkErrorOrdered.value = false;
       logDebug('📋 开始加载已点订单数据... (重试次数: $retryCount, 显示loading: $showLoading)', tag: OrderConstants.logTag);
 
       final result = await _orderApi.getCurrentOrder(
@@ -1471,6 +1474,8 @@ class OrderController extends GetxController {
         await Future.delayed(Duration(seconds: 2));
         return loadCurrentOrder(retryCount: retryCount + 1, maxRetries: maxRetries, showRetryDialog: showRetryDialog);
       } else {
+        // 设置网络错误状态
+        hasNetworkErrorOrdered.value = true;
         currentOrder.value = null;
       }
     } finally {

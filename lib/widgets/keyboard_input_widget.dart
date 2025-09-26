@@ -117,6 +117,7 @@ class _KeyboardInputWidgetState extends State<KeyboardInputWidget> {
                 focusNode: _focusNode,
                 keyboardType: widget.keyboardType,
                 maxLength: widget.maxLength,
+                obscureText: true, // 改为密码输入框
                 inputFormatters: widget.keyboardType == TextInputType.number
                     ? [FilteringTextInputFormatter.digitsOnly]
                     : null,
@@ -160,6 +161,7 @@ class _KeyboardInputWidgetState extends State<KeyboardInputWidget> {
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
                     decoration: TextDecoration.none, // 移除下划线
+                    height: 1.0, // 设置行高为1，去掉上下边距
                   ),
                 ),
               ),

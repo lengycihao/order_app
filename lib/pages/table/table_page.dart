@@ -3,16 +3,16 @@ import 'package:order_app/pages/table/card/table_card.dart';
 import 'package:order_app/pages/table/table_controller.dart';
 import 'package:get/get.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
-import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/components/skeleton_widget.dart';
-import 'package:order_app/utils/restaurant_refresh_indicator.dart';
+import 'package:order_app/widgets/base_list_page_widget.dart';
+import 'package:order_app/utils/smart_refresh_wrapper.dart';
 
-class TablePage extends StatefulWidget {
+class TablePage extends BaseListPageWidget {
   @override
   _TablePageState createState() => _TablePageState();
 }
 
-class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
+class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingObserver {
   final TableController controller = Get.put(TableController());
   bool _shouldShowSkeleton = true; // 默认显示骨架图
   bool _isFromLogin = false; // 是否来自登录页面
@@ -92,6 +92,40 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
     }
   }
 
+  // 实现抽象类要求的方法
+  @override
+  bool get isLoading => controller.isLoading.value;
+
+  @override
+  bool get hasNetworkError => controller.hasNetworkError.value;
+
+  @override
+  bool get hasData {
+    final halls = controller.lobbyListModel.value.halls ?? [];
+    if (halls.isEmpty) return false;
+    
+    // 检查当前选中的tab是否有数据
+    final currentTabIndex = controller.selectedTab.value;
+    if (currentTabIndex < controller.tabDataList.length) {
+      return controller.tabDataList[currentTabIndex].isNotEmpty;
+    }
+    return false;
+  }
+  
+  @override
+  bool get shouldShowSkeleton => _shouldShowSkeleton;
+
+  @override
+  Future<void> onRefresh() async {
+    final currentTabIndex = controller.selectedTab.value;
+    await controller.fetchDataForTab(currentTabIndex);
+  }
+  
+  @override
+  Widget buildSkeletonWidget() {
+    return const TablePageSkeleton();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,8 +135,26 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
         title: Text('桌台'),
         backgroundColor: Colors.white,
         centerTitle: true,
-        shadowColor: Colors.grey.withOpacity(0.3),
+        shadowColor: Colors.grey.withValues(alpha: 0.3),
         actions: [
+          // 预加载状态调试按钮（仅在调试模式下显示）
+          // 如需启用调试功能，将下面的false改为true
+          // if (false) // 设置为true可显示调试按钮
+          //   GestureDetector(
+          //     onTap: () => _showPreloadStatus(),
+          //     child: Container(
+          //       margin: EdgeInsets.only(right: 8),
+          //       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          //       decoration: BoxDecoration(
+          //         borderRadius: BorderRadius.circular(12),
+          //         color: Colors.blue.withOpacity(0.8),
+          //       ),
+          //       child: Text(
+          //         '预加载状态',
+          //         style: TextStyle(color: Colors.white, fontSize: 12),
+          //       ),
+          //     ),
+          //   ),
           GestureDetector(
             onTap: () => controller.toggleMergeMode(),
             child: Container(
@@ -122,61 +174,32 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
           ),
         ],
       ),
-      body: Obx(() {
-        final halls = controller.lobbyListModel.value.halls ?? [];
-
-        // 保证 tabDataList 与 halls 对齐
-        while (controller.tabDataList.length < halls.length) {
-          controller.tabDataList.add(<TableListModel>[].obs);
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Tab Row
-            Container(
-              color: Colors.transparent,
-
-              child: SingleChildScrollView(
-                controller: controller.tabScrollController,
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: List.generate(halls.length, (index) {
-                    final hallName = halls[index].hallName ?? '未知';
-                    return Row(
-                      children: [
-                        SizedBox(width: 12),
-                        tabButton(
-                          hallName,
-                          index,
-                          halls[index].tableCount ?? 0,
-                        ),
-                      ],
-                    );
-                  }),
-                ),
-              ),
-            ),
-            // PageView
-            Expanded(
-              child: PageView.builder(
-                controller: controller.pageController,
-                onPageChanged: controller.onPageChanged,
-                itemCount: halls.length,
-                itemBuilder: (context, index) {
-                  return buildRefreshableGrid(
-                    controller.tabDataList[index],
-                    index,
-                  );
-                },
-              ),
-            ),
-          ],
-        );
-      }),
+      body: _buildTablePageBody(),
     );
+  }
+
+  /// 构建桌台页面主体内容
+  Widget _buildTablePageBody() {
+    return Obx(() {
+      final halls = controller.lobbyListModel.value.halls ?? [];
+      
+      // 如果没有大厅数据，显示空状态
+      if (halls.isEmpty) {
+        if (shouldShowSkeleton && isLoading) {
+          return buildSkeletonWidget();
+        }
+        if (isLoading) {
+          return buildLoadingWidget();
+        }
+        if (hasNetworkError) {
+          return buildNetworkErrorState();
+        }
+        return buildEmptyState();
+      }
+
+      // 有大厅数据时，显示带tab的内容
+      return buildDataContent();
+    });
   }
 
   /// Tab 按钮
@@ -217,35 +240,33 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
   /// 下拉刷新 + 加载状态 + 空数据提示 + Grid 间距优化
   Widget buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
-      // 只有在应该显示骨架图且正在加载且没有数据时才显示骨架图
-      if (_shouldShowSkeleton && controller.isLoading.value && data.isEmpty) {
-        return const TablePageSkeleton();
-      }
-      
       // 如果数据加载完成，标记不再需要显示骨架图
       if (data.isNotEmpty) {
         _shouldShowSkeleton = false;
       }
       
-      return RestaurantRefreshIndicator(
+      return SmartRefreshWrapper(
         onRefresh: () async {
-          // 手动刷新时重置轮询计时器
-          controller.stopPolling();
-          await controller.fetchDataForTab(tabIndex);
-          // 刷新完成后重新启动轮询
-          controller.startPolling();
+          try {
+            // 手动刷新时重置轮询计时器
+            controller.stopPolling();
+            await controller.fetchDataForTab(tabIndex);
+            // 刷新完成后重新启动轮询
+            controller.startPolling();
+          } catch (e) {
+            print('❌ 刷新失败: $e');
+          }
         },
-        loadingColor: const Color(0xFFFF9027),
         child: CustomScrollView(
-          physics: AlwaysScrollableScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               sliver: data.isEmpty
                   ? SliverFillRemaining(
                       child: controller.isLoading.value
-                          ? Center(child: RestaurantLoadingWidget(size: 40))
-                          : (controller.hasNetworkError.value ? _buildNetworkErrorState() : _buildEmptyState()),
+                          ? buildLoadingWidget()
+                          : (controller.hasNetworkError.value ? buildNetworkErrorState() : buildEmptyState()),
                     )
                   : SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -276,48 +297,130 @@ class _TablePageState extends State<TablePage> with WidgetsBindingObserver {
     });
   }
 
-  /// 构建空状态
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  @override
+  String getEmptyStateText() => '暂无桌台';
+
+  @override
+  String getNetworkErrorText() => '暂无网络';
+
+  @override
+  Widget buildDataContent() {
+    return Obx(() {
+      final halls = controller.lobbyListModel.value.halls ?? [];
+
+      // 保证 tabDataList 与 halls 对齐
+      while (controller.tabDataList.length < halls.length) {
+        controller.tabDataList.add(<TableListModel>[].obs);
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset(
-            'assets/order_empty.webp',
-            width: 180,
-            height: 100,
+          // Tab Row
+          Container(
+            color: Colors.transparent,
+            child: SingleChildScrollView(
+              controller: controller.tabScrollController,
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(halls.length, (index) {
+                  final hallName = halls[index].hallName ?? '未知';
+                  return Row(
+                    children: [
+                      SizedBox(width: 12),
+                      tabButton(
+                        hallName,
+                        index,
+                        halls[index].tableCount ?? 0,
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
           ),
-          SizedBox(height: 8),
-          Text(
-            '暂无桌台',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFFFF9027),
+          // PageView
+          Expanded(
+            child: PageView.builder(
+              controller: controller.pageController,
+              onPageChanged: controller.onPageChanged,
+              itemCount: halls.length,
+              itemBuilder: (context, index) {
+                return _buildTabContent(index);
+              },
             ),
           ),
         ],
-      ),
-    );
+      );
+    });
   }
 
-  /// 构建网络错误状态
-  Widget _buildNetworkErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/order_nonet.webp',
-            width: 180,
-            height: 100,
-          ),
-          SizedBox(height: 8),
-          Text(
-            '暂无网络',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFFFF9027),
-            ),
+  /// 构建单个tab的内容
+  Widget _buildTabContent(int tabIndex) {
+    return Obx(() {
+      final data = controller.tabDataList[tabIndex];
+      final isCurrentTab = controller.selectedTab.value == tabIndex;
+      
+      // 如果当前tab正在加载且没有数据，显示加载状态
+      if (isCurrentTab && controller.isLoading.value && data.isEmpty) {
+        return buildLoadingWidget();
+      }
+      
+      // 如果当前tab有网络错误，显示网络错误状态
+      if (isCurrentTab && controller.hasNetworkError.value && data.isEmpty) {
+        return buildNetworkErrorState();
+      }
+      
+      // 无论是否有数据，都使用可刷新的网格布局
+      // 这样空数据状态也能进行下拉刷新
+      return buildRefreshableGrid(data, tabIndex);
+    });
+  }
+
+  /// 显示预加载状态（调试用）
+  // ignore: unused_element
+  void _showPreloadStatus() {
+    final status = controller.getPreloadStatus();
+    final halls = controller.lobbyListModel.value.halls ?? [];
+    
+    String message = '预加载状态:\n';
+    message += '预加载范围: ${status['maxPreloadRange']}\n';
+    message += '已预加载: ${status['preloadedTabs']}\n';
+    message += '正在预加载: ${status['preloadingTabs']}\n\n';
+    
+    message += '各Tab状态:\n';
+    for (int i = 0; i < halls.length; i++) {
+      final hallName = halls[i].hallName ?? '未知';
+      final isPreloaded = controller.isTabPreloaded(i);
+      final isPreloading = controller.isTabPreloading(i);
+      final hasData = controller.tabDataList[i].isNotEmpty;
+      
+      String tabStatus = '';
+      if (isPreloading) {
+        tabStatus = '预加载中';
+      } else if (isPreloaded) {
+        tabStatus = '已预加载';
+      } else if (hasData) {
+        tabStatus = '已加载';
+      } else {
+        tabStatus = '未加载';
+      }
+      
+      message += 'Tab $i ($hallName): $tabStatus\n';
+    }
+    
+    Get.dialog(
+      AlertDialog(
+        title: Text('预加载状态'),
+        content: SingleChildScrollView(
+          child: Text(message),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text('关闭'),
           ),
         ],
       ),

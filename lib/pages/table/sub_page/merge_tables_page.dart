@@ -9,9 +9,12 @@ import 'package:order_app/pages/table/sub_page/select_menu_page.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/table/card/table_card.dart';
-import 'package:order_app/utils/restaurant_refresh_indicator.dart';
+import 'package:order_app/widgets/base_list_page_widget.dart';
+import 'package:order_app/components/skeleton_widget.dart';
+import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart';
 
-class MergeTablesPage extends StatefulWidget {
+class MergeTablesPage extends BaseListPageWidget {
   final List<List<TableListModel>> allTabTables;
   final List<TableMenuListModel> menuModelList;
   final LobbyListModel lobbyListModel;
@@ -29,7 +32,8 @@ class MergeTablesPage extends StatefulWidget {
   State<MergeTablesPage> createState() => _MergeTablesPageState();
 }
 
-class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderStateMixin {
+class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with TickerProviderStateMixin {
+  final RefreshController _refreshController = RefreshController();
   final List<String> selectedTableIds = [];
   final BaseApi _baseApi = BaseApi();
   bool _isMerging = false;
@@ -39,9 +43,17 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
   var lobbyListModel = LobbyListModel(halls: []).obs;
   var tabDataList = <RxList<TableListModel>>[].obs;
   var selectedTab = 0.obs;
-  var isLoading = false.obs;
-  var hasError = false.obs;
+  var _isLoading = false.obs;
+  var _hasError = false.obs;
   var errorMessage = ''.obs;
+  
+  // 预加载相关
+  var _preloadedTabs = <int>{}.obs; // 已预加载的tab索引
+  var _preloadingTabs = <int>{}.obs; // 正在预加载的tab索引
+  final int _maxPreloadRange = 1; // 预加载范围：前后各1个tab
+  
+  // Tab滚动相关
+  late ScrollController _tabScrollController;
 
   @override
   void initState() {
@@ -50,6 +62,9 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
     if (widget.mergedTable != null) {
       selectedTableIds.add(widget.mergedTable!.tableId.toString());
     }
+    
+    // 初始化tab滚动控制器
+    _tabScrollController = ScrollController();
     
     // 初始化tab数据
     _initializeTabData();
@@ -70,6 +85,10 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
     _tabController = TabController(length: halls.length, vsync: this);
     _tabController.addListener(() {
       selectedTab.value = _tabController.index;
+      // 处理tab切换逻辑
+      _handleTabSwitch(_tabController.index);
+      // 滚动tab到可视区域
+      _scrollToTab(_tabController.index);
     });
     
     // 获取第一个tab的数据
@@ -80,8 +99,8 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
   Future<void> _fetchDataForTab(int index) async {
     if (index >= tabDataList.length) return;
     
-    isLoading.value = true;
-    hasError.value = false;
+    _isLoading.value = true;
+    _hasError.value = false;
     errorMessage.value = '';
     
     try {
@@ -94,25 +113,152 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
       if (result.isSuccess) {
         List<TableListModel> data = result.data!;
         tabDataList[index].value = data;
-        hasError.value = false;
+        _hasError.value = false;
+        // 标记为已预加载
+        _preloadedTabs.add(index);
       } else {
-        hasError.value = true;
+        _hasError.value = true;
         errorMessage.value = result.msg ?? '数据加载失败';
         tabDataList[index].value = [];
       }
     } catch (e) {
-      hasError.value = true;
+      _hasError.value = true;
       errorMessage.value = '网络连接异常，请检查网络后重试';
       tabDataList[index].value = [];
     }
     
-    isLoading.value = false;
+    _isLoading.value = false;
+    
+    // 当前tab加载完成后，预加载相邻tab
+    _preloadAdjacentTabs(index);
+  }
+  
+  /// 预加载相邻tab的数据
+  void _preloadAdjacentTabs(int currentIndex) {
+    final totalTabs = lobbyListModel.value.halls?.length ?? 0;
+    if (totalTabs <= 1) return; // 只有一个tab时不需要预加载
+    
+    // 计算需要预加载的tab范围
+    final startIndex = (currentIndex - _maxPreloadRange).clamp(0, totalTabs - 1);
+    final endIndex = (currentIndex + _maxPreloadRange).clamp(0, totalTabs - 1);
+    
+    // 预加载范围内的tab（排除当前tab）
+    for (int i = startIndex; i <= endIndex; i++) {
+      if (i != currentIndex && 
+          i < tabDataList.length && 
+          !_preloadedTabs.contains(i) && 
+          !_preloadingTabs.contains(i)) {
+        _preloadTabData(i);
+      }
+    }
+  }
+
+  /// 预加载指定tab的数据
+  Future<void> _preloadTabData(int index) async {
+    if (index >= tabDataList.length) return;
+    
+    _preloadingTabs.add(index);
+    
+    try {
+      final result = await _baseApi.getTableList(
+        hallId: lobbyListModel.value.halls!.isNotEmpty
+            ? lobbyListModel.value.halls![index].hallId.toString()
+            : "0",
+      );
+      
+      if (result.isSuccess) {
+        List<TableListModel> data = result.data!;
+        tabDataList[index].value = data;
+        _preloadedTabs.add(index);
+        print('✅ 并桌页面预加载tab $index 数据成功，桌台数量: ${data.length}');
+      } else {
+        print('❌ 并桌页面预加载tab $index 数据失败: ${result.msg}');
+      }
+    } catch (e) {
+      print('❌ 并桌页面预加载tab $index 数据异常: $e');
+    } finally {
+      _preloadingTabs.remove(index);
+    }
+  }
+  
+  /// 滚动tab到屏幕中间
+  void _scrollToTab(int index) {
+    if (!_tabScrollController.hasClients) return;
+    
+    // 获取总tab数量
+    int totalTabs = lobbyListModel.value.halls?.length ?? 0;
+    if (totalTabs == 0) return;
+    
+    // 计算目标tab在总宽度中的比例位置
+    double tabRatio = index / (totalTabs - 1).clamp(1, double.infinity);
+    
+    // 计算目标滚动位置，让选中的tab显示在屏幕中央
+    double maxScrollPosition = _tabScrollController.position.maxScrollExtent;
+    
+    // 使用更简单的计算方式，直接根据比例滚动到对应位置
+    double targetScrollPosition = maxScrollPosition * tabRatio;
+    
+    // 确保滚动位置在有效范围内
+    targetScrollPosition = targetScrollPosition.clamp(0.0, maxScrollPosition);
+    
+    // 执行滚动动画
+    _tabScrollController.animateTo(
+      targetScrollPosition,
+      duration: Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+  
+  /// 处理tab切换逻辑
+  void _handleTabSwitch(int index) {
+    // 如果该tab已经预加载过，直接显示数据，不需要重新加载
+    if (_preloadedTabs.contains(index)) {
+      print('✅ 并桌页面Tab $index 已预加载，直接显示数据');
+      // 预加载相邻tab
+      _preloadAdjacentTabs(index);
+    } else {
+      // 如果该tab没有预加载过，正常加载
+      print('🔄 并桌页面Tab $index 未预加载，开始加载数据');
+      _fetchDataForTab(index);
+    }
   }
   
   @override
   void dispose() {
     _tabController.dispose();
+    _tabScrollController.dispose();
+    _refreshController.dispose();
     super.dispose();
+  }
+
+  // 实现抽象类要求的方法
+  @override
+  bool get isLoading => _isLoading.value;
+
+  @override
+  bool get hasNetworkError => _hasError.value;
+
+  @override
+  bool get hasData {
+    final currentTabIndex = selectedTab.value;
+    if (currentTabIndex < tabDataList.length) {
+      return tabDataList[currentTabIndex].isNotEmpty;
+    }
+    return false;
+  }
+  
+  @override
+  bool get shouldShowSkeleton => !hasData;
+
+  @override
+  Future<void> onRefresh() async {
+    final currentTabIndex = selectedTab.value;
+    await _fetchDataForTab(currentTabIndex);
+  }
+  
+  @override
+  Widget buildSkeletonWidget() {
+    return const TablePageSkeleton();
   }
 
   /// 获取所有可用的桌台（合并所有tab的数据）
@@ -361,57 +507,32 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
           ),
         ],
       ),
-      body: Obx(() {
-        final halls = lobbyListModel.value.halls ?? [];
-
-        // 保证 tabDataList 与 halls 对齐
-        while (tabDataList.length < halls.length) {
-          tabDataList.add(<TableListModel>[].obs);
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Tab Row - 与桌台页面相同的样式
-            Container(
-              color: Colors.transparent,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: List.generate(halls.length, (index) {
-                    final hallName = halls[index].hallName ?? '未知';
-                    return Row(
-                      children: [
-                        SizedBox(width: 12),
-                        _tabButton(
-                          hallName,
-                          index,
-                          halls[index].tableCount ?? 0,
-                        ),
-                      ],
-                    );
-                  }),
-                ),
-              ),
-            ),
-            // TabBarView
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: List.generate(halls.length, (index) {
-                  return _buildRefreshableGrid(
-                    tabDataList[index],
-                    index,
-                  );
-                }),
-              ),
-            ),
-          ],
-        );
-      }),
+      body: _buildMergeTablesPageBody(),
     );
+  }
+
+  /// 构建并桌页面主体内容
+  Widget _buildMergeTablesPageBody() {
+    return Obx(() {
+      final halls = lobbyListModel.value.halls ?? [];
+      
+      // 如果没有大厅数据，显示空状态
+      if (halls.isEmpty) {
+        if (shouldShowSkeleton && isLoading) {
+          return buildSkeletonWidget();
+        }
+        if (isLoading) {
+          return buildLoadingWidget();
+        }
+        if (hasNetworkError) {
+          return buildNetworkErrorState();
+        }
+        return buildEmptyState();
+      }
+
+      // 有大厅数据时，显示带tab的内容
+      return buildDataContent();
+    });
   }
   
   /// Tab 按钮 - 与桌台页面相同的样式
@@ -421,7 +542,9 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
       return GestureDetector(
         onTap: () {
           _tabController.animateTo(index);
-          _fetchDataForTab(index);
+          _handleTabSwitch(index);
+          // 滚动tab到可视区域
+          _scrollToTab(index);
         },
         child: Container(
           padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
@@ -455,11 +578,19 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
   /// 构建可刷新的网格 - 与桌台页面相同的样式
   Widget _buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
-      return RestaurantRefreshIndicator(
+      return PullToRefreshWrapper(
+        controller: _refreshController,
         onRefresh: () async {
-          await _fetchDataForTab(tabIndex);
+          try {
+            await _fetchDataForTab(tabIndex);
+            // 通知刷新完成
+            _refreshController.refreshCompleted();
+          } catch (e) {
+            print('❌ 并桌页面刷新失败: $e');
+            // 刷新失败也要通知完成
+            _refreshController.refreshFailed();
+          }
         },
-        loadingColor: const Color(0xFFFF9027),
         child: CustomScrollView(
           physics: AlwaysScrollableScrollPhysics(),
           slivers: [
@@ -467,9 +598,9 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               sliver: data.isEmpty
                   ? SliverFillRemaining(
-                      child: isLoading.value
-                          ? Center(child: CircularProgressIndicator())
-                          : (hasError.value ? _buildNetworkErrorState() : _buildEmptyState()),
+                      child: _isLoading.value
+                          ? buildLoadingWidget()
+                          : (_hasError.value ? buildNetworkErrorState() : buildEmptyState()),
                     )
                   : SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -503,51 +634,83 @@ class _MergeTablesPageState extends State<MergeTablesPage> with TickerProviderSt
     });
   }
   
-  /// 构建空状态
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+
+  @override
+  String getEmptyStateText() => '暂无桌台';
+
+  @override
+  String getNetworkErrorText() => '暂无网络';
+
+  @override
+  Widget buildDataContent() {
+    return Obx(() {
+      final halls = lobbyListModel.value.halls ?? [];
+
+      // 保证 tabDataList 与 halls 对齐
+      while (tabDataList.length < halls.length) {
+        tabDataList.add(<TableListModel>[].obs);
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Image.asset(
-            'assets/order_empty.webp',
-            width: 180,
-            height: 100,
+          // Tab Row - 与桌台页面相同的样式
+          Container(
+            color: Colors.transparent,
+            child: SingleChildScrollView(
+              controller: _tabScrollController,
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: List.generate(halls.length, (index) {
+                  final hallName = halls[index].hallName ?? '未知';
+                  return Row(
+                    children: [
+                      SizedBox(width: 12),
+                      _tabButton(
+                        hallName,
+                        index,
+                        halls[index].tableCount ?? 0,
+                      ),
+                    ],
+                  );
+                }),
+              ),
+            ),
           ),
-          SizedBox(height: 8),
-          Text(
-            '暂无桌台',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFFFF9027),
+          // TabBarView
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: List.generate(halls.length, (index) {
+                return _buildTabContent(index);
+              }),
             ),
           ),
         ],
-      ),
-    );
+      );
+    });
   }
 
-  /// 构建网络错误状态
-  Widget _buildNetworkErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            'assets/order_nonet.webp',
-            width: 180,
-            height: 100,
-          ),
-          SizedBox(height: 8),
-          Text(
-            '暂无网络',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xFFFF9027),
-            ),
-          ),
-        ],
-      ),
-    );
+  /// 构建单个tab的内容
+  Widget _buildTabContent(int tabIndex) {
+    return Obx(() {
+      final data = tabDataList[tabIndex];
+      
+      // 如果当前tab正在加载且没有数据，显示加载状态
+      if (isLoading && data.isEmpty) {
+        return buildLoadingWidget();
+      }
+      
+      // 如果当前tab有网络错误，显示网络错误状态
+      if (hasNetworkError && data.isEmpty) {
+        return buildNetworkErrorState();
+      }
+      
+      // 无论是否有数据，都使用可刷新的网格布局
+      // 这样空数据状态也能进行下拉刷新
+      return _buildRefreshableGrid(data, tabIndex);
+    });
   }
 }

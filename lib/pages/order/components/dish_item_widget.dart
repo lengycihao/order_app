@@ -176,7 +176,7 @@ class DishItemWidget extends StatelessWidget {
           Wrap(
             spacing: 4,
             runSpacing: 2,
-            children: validTags.take(3).map((tag) {
+            children: validTags.map((tag) {
               return Container(
                 padding: EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(

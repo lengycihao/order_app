@@ -1,23 +1,129 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
-import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/pages/order/components/order_module_widget.dart';
-import 'package:order_app/pages/order/components/custom_refresh_indicator.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
+import 'package:order_app/widgets/base_list_page_widget.dart';
+import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 
-class OrderedTab extends StatefulWidget {
+class OrderedTab extends BaseListPageWidget {
   const OrderedTab({super.key});
 
   @override
   State<OrderedTab> createState() => _OrderedTabState();
 }
 
-class _OrderedTabState extends State<OrderedTab> with AutomaticKeepAliveClientMixin {
+class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepAliveClientMixin {
   final OrderController controller = Get.find<OrderController>();
 
   @override
   bool get wantKeepAlive => true; // 保持页面状态
+
+  // 实现基类抽象方法
+  @override
+  bool get isLoading => controller.isLoadingOrdered.value;
+
+  @override
+  bool get hasNetworkError => controller.hasNetworkErrorOrdered.value;
+
+  @override
+  bool get hasData {
+    final order = controller.currentOrder.value;
+    return order != null && order.details != null && order.details!.isNotEmpty;
+  }
+
+  @override
+  Future<void> onRefresh() => _loadOrderedData();
+
+  @override
+  String getEmptyStateText() => '暂无已点订单';
+
+  @override
+  bool get shouldShowSkeleton => isLoading && !hasData;
+
+  @override
+  Widget buildSkeletonWidget() {
+    return ListView.builder(
+      padding: EdgeInsets.all(16),
+      itemCount: 3, // 显示3个骨架项
+      itemBuilder: (context, index) {
+        return Container(
+          margin: EdgeInsets.only(bottom: 16),
+          padding: EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 菜品名称骨架
+              Container(
+                height: 20,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              SizedBox(height: 8),
+              // 价格和数量骨架
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Container(
+                    height: 16,
+                    width: 80,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  Container(
+                    height: 16,
+                    width: 60,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget? getEmptyStateAction() {
+    return GestureDetector(
+      onTap: () {
+        // 切换到点餐页面
+        try {
+          Get.find<OrderMainPageController>().switchToOrderTab();
+        } catch (e) {
+          print('❌ 切换到点餐页面失败: $e');
+        }
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: Colors.orange,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          '去点餐',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    );
+  }
 
   @override
   void initState() {
@@ -46,118 +152,25 @@ class _OrderedTabState extends State<OrderedTab> with AutomaticKeepAliveClientMi
   }
 
 
-  /// 构建主体内容
-  Widget _buildMainContent() {
-    return Expanded(
-      child: Obx(() {
-        if (controller.isLoadingOrdered.value) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                RestaurantLoadingWidget(size: 40),
-                // SizedBox(height: 16),
-                // Text(
-                //   '加载中...',
-                //   style: TextStyle(
-                //     fontSize: 16,
-                //     color: Colors.grey[600],
-                //   ),
-                // ),
-              ],
-            ),
+  @override
+  Widget buildDataContent() {
+    final order = controller.currentOrder.value!;
+    return PullToRefreshWrapper(
+      onRefresh: _loadOrderedData,
+      child: ListView.builder(
+        padding: EdgeInsets.all(16),
+        itemCount: order.details!.length,
+        itemBuilder: (context, index) {
+          final orderDetail = order.details![index];
+          return OrderModuleWidget(
+            orderDetail: orderDetail,
+            isLast: index == order.details!.length - 1,
           );
-        }
-
-        if (controller.currentOrder.value == null) {
-          return _buildEmptyState();
-        }
-
-        final order = controller.currentOrder.value!;
-        if (order.details == null || order.details!.isEmpty) {
-          return _buildEmptyState();
-        }
-
-        return CustomRefreshIndicator(
-          onRefresh: _loadOrderedData,
-          displacement: 50.0,
-          color: Colors.orange,
-          backgroundColor: Colors.white,
-          child: ListView.builder(
-            padding: EdgeInsets.all(16),
-            itemCount: order.details!.length,
-            itemBuilder: (context, index) {
-              final orderDetail = order.details![index];
-              return OrderModuleWidget(
-                orderDetail: orderDetail,
-                isLast: index == order.details!.length - 1,
-              );
-            },
-          ),
-        );
-      }),
-    );
-  }
-
-  /// 构建空状态
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.restaurant_menu,
-            size: 64,
-            color: Colors.grey[400],
-          ),
-          SizedBox(height: 16),
-          Text(
-            '暂无已点订单',
-            style: TextStyle(
-              fontSize: 18,
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            '请先点餐',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-          SizedBox(height: 24),
-          // 添加一个去点餐按钮
-          GestureDetector(
-            onTap: () {
-              // 切换到点餐页面
-              try {
-                Get.find<OrderMainPageController>().switchToOrderTab();
-              } catch (e) {
-                print('❌ 切换到点餐页面失败: $e');
-              }
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                '去点餐',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-          ),
-        ],
+        },
       ),
     );
   }
+
 
   /// 构建底部汇总信息
   Widget _buildBottomSummary() {
@@ -177,7 +190,7 @@ class _OrderedTabState extends State<OrderedTab> with AutomaticKeepAliveClientMi
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 2,
               offset: Offset(0, -1),
             ),
@@ -240,11 +253,37 @@ class _OrderedTabState extends State<OrderedTab> with AutomaticKeepAliveClientMi
       child: Column(
         children: [
           // 主体内容区域
-          _buildMainContent(),
+          Expanded(
+            child: _buildOrderedTabContent(),
+          ),
           // 底部汇总信息
           _buildBottomSummary(),
         ],
       ),
     );
+  }
+
+  /// 构建已点订单页面内容
+  Widget _buildOrderedTabContent() {
+    return Obx(() {
+      // 如果应该显示骨架图且正在加载且没有数据，显示骨架图
+      if (shouldShowSkeleton && isLoading && !hasData) {
+        return buildSkeletonWidget();
+      }
+
+      if (isLoading && !hasData) {
+        return buildLoadingWidget();
+      }
+
+      if (hasNetworkError) {
+        return buildNetworkErrorState();
+      }
+
+      if (!hasData) {
+        return buildEmptyState();
+      }
+
+      return buildDataContent();
+    });
   }
 }

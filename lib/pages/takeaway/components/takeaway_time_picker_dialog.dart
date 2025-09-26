@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:order_app/utils/toast_utils.dart';
 
 /// 外卖时间选择弹窗
 class TakeawayTimePickerDialog extends StatefulWidget {
@@ -256,13 +257,7 @@ class _TakeawayTimePickerDialogState extends State<TakeawayTimePickerDialog> {
 
     // 检查选择的时间是否大于当前时间
     if (selectedTime.isBefore(now)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('不可选择早于当前的时间'),
-          backgroundColor: Colors.red,
-          duration: Duration(seconds: 2),
-        ),
-      );
+      ToastUtils.showError(context, '选择的时间不能早于当前时间');
       return;
     }
 
