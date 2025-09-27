@@ -1513,8 +1513,9 @@ class OrderController extends GetxController {
       } else {
         logDebug('📋 静默刷新，不设置loading状态 (当前状态: ${isLoadingOrdered.value})', tag: OrderConstants.logTag);
       }
-      // 重置网络错误状态
-      hasNetworkErrorOrdered.value = false;
+      
+      // 智能重置网络错误状态：记录之前的网络错误状态
+      final hadPreviousError = hasNetworkErrorOrdered.value;
       logDebug('📋 开始加载已点订单数据... (重试次数: $retryCount, 显示loading: $showLoading)', tag: OrderConstants.logTag);
 
       final result = await _orderApi.getCurrentOrder(
@@ -1523,6 +1524,8 @@ class OrderController extends GetxController {
 
       if (result.isSuccess && result.data != null) {
         currentOrder.value = result.data;
+        // 只有确实获取到数据时才清除网络错误状态
+        hasNetworkErrorOrdered.value = false;
         logDebug('✅ 已点订单数据加载成功: ${result.data?.details?.length ?? 0}个订单', tag: OrderConstants.logTag);
       } else {
         // 检查是否是真正的空数据（没有订单）还是服务器处理中
@@ -1530,6 +1533,8 @@ class OrderController extends GetxController {
           // 这是真正的空数据，直接显示空状态，不重试
           logDebug('📭 当前桌台没有已点订单，显示空状态', tag: OrderConstants.logTag);
           currentOrder.value = null;
+          // 真正的空数据，清除网络错误状态
+          hasNetworkErrorOrdered.value = false;
         } else if ((result.code == 210 || result.msg?.contains('数据处理中') == true) 
             && retryCount < maxRetries) {
           // 只有服务器明确表示数据处理中时才重试
@@ -1541,19 +1546,42 @@ class OrderController extends GetxController {
         } else {
           logDebug('❌ 已点订单数据加载失败: ${result.msg} (状态码: ${result.code})', tag: OrderConstants.logTag);
           currentOrder.value = null;
+          // 智能判断：如果之前有网络错误且现在返回空数据，保持网络错误状态
+          if (hadPreviousError) {
+            hasNetworkErrorOrdered.value = true;
+            logDebug('🔄 保持网络错误状态，因为之前有网络问题且现在仍无数据', tag: OrderConstants.logTag);
+          }
         }
       }
     } catch (e, stackTrace) {
       logDebug('❌ 已点订单数据加载异常: $e', tag: OrderConstants.logTag);
       logDebug('❌ StackTrace: $stackTrace', tag: OrderConstants.logTag);
       
-      // 对于异常情况，如果还有重试机会，也进行重试
-      if (retryCount < maxRetries && (e.toString().contains('null') || e.toString().contains('NoSuchMethodError'))) {
+      // 判断是否是网络连接异常
+      bool isNetworkError = e.toString().contains('SocketException') || 
+                           e.toString().contains('Connection failed') ||
+                           e.toString().contains('Network is unreachable') ||
+                           e.toString().contains('DioException') ||
+                           e.toString().contains('connection error');
+      
+      // 添加调试信息
+      logDebug('🔍 异常类型检测: isNetworkError=$isNetworkError, 异常内容: ${e.toString()}', tag: OrderConstants.logTag);
+      
+      // 对于网络异常，直接设置网络错误状态，不再重试
+      if (isNetworkError) {
+        logDebug('🌐 检测到网络连接异常，设置网络错误状态', tag: OrderConstants.logTag);
+        hasNetworkErrorOrdered.value = true;
+        currentOrder.value = null;
+        // 网络异常时立即停止loading并返回，不继续重试
+        isLoadingOrdered.value = false;
+        return;
+      } else if (retryCount < maxRetries && (e.toString().contains('null') || e.toString().contains('NoSuchMethodError'))) {
+        // 只对空指针异常进行重试
         logDebug('⚠️ 检测到空指针异常，${2}秒后重试... (${retryCount + 1}/$maxRetries)', tag: OrderConstants.logTag);
         await Future.delayed(Duration(seconds: 2));
         return loadCurrentOrder(retryCount: retryCount + 1, maxRetries: maxRetries, showRetryDialog: showRetryDialog);
       } else {
-        // 设置网络错误状态
+        // 其他异常也设置网络错误状态
         hasNetworkErrorOrdered.value = true;
         currentOrder.value = null;
       }
@@ -1562,8 +1590,10 @@ class OrderController extends GetxController {
       // 1. 达到最大重试次数
       // 2. 有数据返回
       // 3. 确认是空数据（不需要重试）
+      // 4. 有网络错误状态
       bool shouldStopLoading = retryCount >= maxRetries || 
                                currentOrder.value != null ||
+                               hasNetworkErrorOrdered.value ||
                                (retryCount == 0); // 首次请求完成，无论结果如何都停止loading
       
       if (shouldStopLoading) {

@@ -124,6 +124,30 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
   }
 
   @override
+  Widget? getNetworkErrorAction() {
+    return Obx(() => GestureDetector(
+      onTap: controller.isLoadingOrdered.value ? null : () async {
+        await _loadOrderedDataWithLoading();
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: controller.isLoadingOrdered.value ? Colors.grey : Colors.orange,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          controller.isLoadingOrdered.value ? '加载中...' : '重新加载',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    ));
+  }
+
+  @override
   void initState() {
     super.initState();
     // 加载已点订单数据（首次加载显示loading）
@@ -265,6 +289,11 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
   /// 构建已点订单页面内容
   Widget _buildOrderedTabContent() {
     return Obx(() {
+      // 网络错误状态优先显示（即使正在加载）
+      if (hasNetworkError) {
+        return buildNetworkErrorState();
+      }
+
       // 如果应该显示骨架图且正在加载且没有数据，显示骨架图
       if (shouldShowSkeleton && isLoading && !hasData) {
         return buildSkeletonWidget();
@@ -272,10 +301,6 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
 
       if (isLoading && !hasData) {
         return buildLoadingWidget();
-      }
-
-      if (hasNetworkError) {
-        return buildNetworkErrorState();
       }
 
       if (!hasData) {

@@ -36,6 +36,30 @@ class _OrderedPageState extends BaseListPageState<OrderedPage> {
   String getEmptyStateText() => '暂无已点订单';
 
   @override
+  Widget? getNetworkErrorAction() {
+    return Obx(() => GestureDetector(
+      onTap: controller.isLoadingOrdered.value ? null : () async {
+        await _loadOrderedDataWithLoading();
+      },
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+        decoration: BoxDecoration(
+          color: controller.isLoadingOrdered.value ? Colors.grey : Colors.orange,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          controller.isLoadingOrdered.value ? '加载中...' : '重新加载',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+      ),
+    ));
+  }
+
+  @override
   bool get shouldShowSkeleton => isLoading && !hasData;
 
   @override

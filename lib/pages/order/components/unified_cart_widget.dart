@@ -89,8 +89,8 @@ class _CartModalContent extends StatelessWidget {
                         itemCount: controller.cart.length,
                         // 添加缓存和性能优化
                         cacheExtent: 200,
-                        // 禁用滚动，让列表固定
-                        physics: NeverScrollableScrollPhysics(),
+                        // 启用滚动功能
+                        physics: ClampingScrollPhysics(),
                         itemBuilder: (context, index) {
                           final entry = controller.cart.entries.elementAt(index);
                           final cartItem = entry.key;
