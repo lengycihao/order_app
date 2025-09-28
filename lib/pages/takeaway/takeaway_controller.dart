@@ -87,8 +87,8 @@ class TakeawayController extends GetxController {
     if (refresh) {
       _unpaidPage = 1;
       hasMoreUnpaid.value = true;
-      // 刷新时清空订单列表，确保网络错误时也能显示空状态
-      unpaidOrders.clear();
+      // 刷新时不立即清空数据，避免UI闪烁
+      // unpaidOrders.clear(); // 移除立即清空，改为在请求成功后替换
     }
     
     if (!hasMoreUnpaid.value) return;
@@ -117,7 +117,13 @@ class TakeawayController extends GetxController {
         hasNetworkErrorUnpaid.value = false;
         
         if (response.data != null) {
-          unpaidOrders.addAll(response.data!);
+          if (refresh) {
+            // 刷新时替换全部数据，而不是追加
+            unpaidOrders.assignAll(response.data!);
+          } else {
+            // 加载更多时追加数据
+            unpaidOrders.addAll(response.data!);
+          }
           logDebug('✅ 未结账订单数量: ${unpaidOrders.length}', tag: 'TakeawayController');
         }
         
@@ -130,6 +136,10 @@ class TakeawayController extends GetxController {
       } else {
         logDebug('❌ API请求失败: ${result.msg}', tag: 'TakeawayController');
         hasNetworkErrorUnpaid.value = true;
+        // 只有在没有数据时才清空，避免已有数据时的闪烁
+        if (refresh && unpaidOrders.isEmpty) {
+          // 保持数据不变，让用户仍能看到之前的数据
+        }
         GlobalToast.error(result.msg ?? '获取未结账订单失败');
       }
     } catch (e) {
@@ -146,8 +156,8 @@ class TakeawayController extends GetxController {
     if (refresh) {
       _paidPage = 1;
       hasMorePaid.value = true;
-      // 刷新时清空订单列表，确保网络错误时也能显示空状态
-      paidOrders.clear();
+      // 刷新时不立即清空数据，避免UI闪烁
+      // paidOrders.clear(); // 移除立即清空，改为在请求成功后替换
     }
     
     if (!hasMorePaid.value) return;
@@ -176,7 +186,13 @@ class TakeawayController extends GetxController {
         hasNetworkErrorPaid.value = false;
         
         if (response.data != null) {
-          paidOrders.addAll(response.data!);
+          if (refresh) {
+            // 刷新时替换全部数据，而不是追加
+            paidOrders.assignAll(response.data!);
+          } else {
+            // 加载更多时追加数据
+            paidOrders.addAll(response.data!);
+          }
           logDebug('✅ 已结账订单数量: ${paidOrders.length}', tag: 'TakeawayController');
         }
         
@@ -189,6 +205,10 @@ class TakeawayController extends GetxController {
       } else {
         logDebug('❌ 已结账API请求失败: ${result.msg}', tag: 'TakeawayController');
         hasNetworkErrorPaid.value = true;
+        // 只有在没有数据时才清空，避免已有数据时的闪烁
+        if (refresh && paidOrders.isEmpty) {
+          // 保持数据不变，让用户仍能看到之前的数据
+        }
         GlobalToast.error(result.msg ?? '获取已结账订单失败');
       }
     } catch (e) {
@@ -283,20 +303,16 @@ class TakeawayController extends GetxController {
     _currentSearchCode = pickupCode;
     logDebug('🔍 开始搜索取餐码: $pickupCode', tag: 'TakeawayController');
     
-    // 清空当前数据
-    unpaidOrders.clear();
-    paidOrders.clear();
-    
-    // 重置分页
+    // 重置分页状态，但不清空数据避免闪烁
     _unpaidPage = 1;
     _paidPage = 1;
     hasMoreUnpaid.value = true;
     hasMorePaid.value = true;
     
-    // 同时搜索未结账和已结账订单
+    // 同时搜索未结账和已结账订单，使用refresh参数确保替换数据
     await Future.wait([
-      _loadUnpaidOrders(),
-      _loadPaidOrders(),
+      _loadUnpaidOrders(refresh: true),
+      _loadPaidOrders(refresh: true),
     ]);
   }
 

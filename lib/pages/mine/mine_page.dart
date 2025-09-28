@@ -52,7 +52,7 @@ class MinePage extends StatelessWidget {
                               ),
                               SizedBox(height: 8),
                               Text(
-                                "账户: ${c.loginId.value}",
+                                "账户: ${c.account.value.isNotEmpty ? c.account.value : c.loginId.value}",
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.black,
@@ -84,12 +84,14 @@ class MinePage extends StatelessWidget {
                         width: double.infinity,
                         height: 48,
                         alignment: Alignment.centerLeft,
-                        child: Text(
-                          '欧化智创餐饮有限公司',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.white,
+                        child: Obx(
+                          () => Text(
+                            c.storeName.value.isNotEmpty ? c.storeName.value : '欧化智创餐饮有限公司',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
@@ -128,7 +130,9 @@ class MinePage extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      '${c.accountDate.value.year}-${c.accountDate.value.month.toString().padLeft(2, '0')}-${c.accountDate.value.day.toString().padLeft(2, '0')}',
+                                      c.authExpireDate.value.isNotEmpty 
+                                        ? c.authExpireDate.value
+                                        : '${c.accountDate.value.year}-${c.accountDate.value.month.toString().padLeft(2, '0')}-${c.accountDate.value.day.toString().padLeft(2, '0')}',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Colors.black,
@@ -156,7 +160,9 @@ class MinePage extends StatelessWidget {
                                       ),
                                     ),
                                     Text(
-                                      '${c.remainDay.value.toString().padLeft(2, '0')}天',
+                                      c.surplusDays.value > 0
+                                        ? '${c.surplusDays.value.toString().padLeft(2, '0')}天'
+                                        : '${c.remainDay.value.toString().padLeft(2, '0')}天',
                                       style: TextStyle(
                                         fontSize: 12,
                                         color: Color(0xffFF9027),

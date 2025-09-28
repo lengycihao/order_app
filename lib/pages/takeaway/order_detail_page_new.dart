@@ -4,19 +4,14 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'order_detail_controller_new.dart';
 import 'model/takeaway_order_detail_model.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
-import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 
 class OrderDetailPageNew extends BaseDetailPageWidget {
   const OrderDetailPageNew({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return GetBuilder<OrderDetailControllerNew>(
-      init: OrderDetailControllerNew(),
-      builder: (controller) {
-        return _OrderDetailPageState(controller: controller).build(context);
-      },
-    );
+    final controller = Get.put(OrderDetailControllerNew());
+    return _OrderDetailPageState(controller: controller).build(context);
   }
 }
 
@@ -42,26 +37,19 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
 
   @override
   Widget buildDataContent() {
-    return PullToRefreshWrapper(
-      onRefresh: controller.refreshOrderDetail,
-      child: SingleChildScrollView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // 订单基本信息
-            _buildOrderInfoCard(controller.orderDetail.value!),
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        // 订单基本信息
+        _buildOrderInfoCard(controller.orderDetail.value!),
 
-            const SizedBox(height: 10),
+        const SizedBox(height: 10),
 
-            // 商品列表
-            _buildOrderItemsCard(controller.orderDetail.value!),
+        // 商品列表
+        _buildOrderItemsCard(controller.orderDetail.value!),
 
-            const SizedBox(height: 100), // 底部按钮预留空间
-          ],
-        ),
-      ),
+        const SizedBox(height: 20), // 底部预留空间
+      ],
     );
   }
 
@@ -79,8 +67,22 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
           onPressed: () => Get.back(),
         ),
       ),
-      body: buildMainContent(),
-      bottomNavigationBar: _buildBottomActions(controller),
+      body: Obx(() {
+        if (isLoading && !hasData) {
+          return buildLoadingWidget();
+        }
+
+        if (hasNetworkError) {
+          return buildNetworkErrorState();
+        }
+
+        if (!hasData) {
+          return buildEmptyState();
+        }
+
+        return buildDataContent();
+      }),
+      bottomNavigationBar: Obx(() => _buildBottomActions(controller)),
     );
   }
 
@@ -124,11 +126,11 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
             order.formattedEstimatePickupTime ?? '9999-99-99 00:00:00',
           ),
           const SizedBox(height: 8),
-          _buildInfoRow('备注:', order.remark ?? '海鲜过敏、小份、不要香菜、不要葱姜蒜'),
+          _buildInfoRow('备注：', order.remark ?? ''),
           const SizedBox(height: 8),
-          _buildInfoRow('订单编号:', order.orderNo ?? '132805345879601452014'),
+          _buildInfoRow('订单编号:', order.orderNo ?? ''),
           const SizedBox(height: 8),
-          _buildInfoRow('单据来源:', order.sourceName ?? '点餐机/服务员/收银端'),
+          _buildInfoRow('单据来源:', order.sourceName ?? ''),
           const SizedBox(height: 8),
           _buildInfoRow(
             '下单时间:',
@@ -240,8 +242,18 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
                                   width: 16,
                                   height: 16,
                                   fit: BoxFit.contain,
-                                  placeholder: (context, url) => SizedBox.shrink(),
-                                  errorWidget: (context, url, error) => SizedBox.shrink(),
+                                  placeholder: (context, url) => Image.asset(
+                                    'assets/order_minganwu_place.webp',
+                                    width: 16,
+                                    height: 16,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  errorWidget: (context, url, error) => Image.asset(
+                                    'assets/order_minganwu_place.webp',
+                                    width: 16,
+                                    height: 16,
+                                    fit: BoxFit.contain,
+                                  ),
                                 );
                               }).toList(),
                             ),
@@ -352,13 +364,11 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            '总份数 ',
-            style: TextStyle(
-              fontSize: 12,
-              color: Color(0xffFF1010),
-              fontWeight: FontWeight.w500,
-            ),
+          // 替换总份数文字为图标
+          Image.asset(
+            'assets/order_takeaway_price.webp',
+            width: 36,
+            height: 36,
           ),
           Text(
              _getTotalQuantity(controller.orderDetail.value?.details).toString(),
@@ -370,7 +380,7 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Color(0xffFF1010)),
           ),
           Text(
-            '${controller.totalAmount}',
+            '${controller.totalAmount.toStringAsFixed(2)}',
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xffFF1010)),
           ),
         ],

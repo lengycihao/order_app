@@ -111,51 +111,83 @@ class _TakeawayItemState extends State<TakeawayItem> {
   /// 构建备注组件
   Widget _buildRemarkWidget() {
     final remark = widget.order.remark!;
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: '备注$remark',
-        style: const TextStyle(
-          fontSize: 15,
-          color: Color(0xff666666),
-        ),
-      ),
-      maxLines: 1,
-      textDirection: TextDirection.ltr,
-    );
-    textPainter.layout(maxWidth: double.infinity);
-    final isMultiLine = textPainter.didExceedMaxLines;
     
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(width: 4),
-        Expanded(
-          child: Text(
-            '备注$remark',
-            style: const TextStyle(
-              fontSize: 15,
-              color: Color(0xff666666),
-            ),
-            maxLines: _isRemarkExpanded ? null : 1,
-            overflow: _isRemarkExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // 使用 TextPainter 计算文本是否超过一行
+        final textPainter = TextPainter(
+          text: TextSpan(
+            children: [
+              TextSpan(
+                text: '备注：',
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xff666666),
+                ),
+              ),
+              TextSpan(
+                text: remark,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: Color(0xff666666),
+                ),
+              ),
+            ],
           ),
-        ),
-        if (isMultiLine) ...[
-          const SizedBox(width: 8),
-          GestureDetector(
-            onTap: () {
-              setState(() {
-                _isRemarkExpanded = !_isRemarkExpanded;
-              });
-            },
-            child: Icon(
-              _isRemarkExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
-              size: 20,
-              color: const Color(0xff999999),
-            ),
+          maxLines: 1,
+          textDirection: TextDirection.ltr,
+        );
+        textPainter.layout(maxWidth: constraints.maxWidth - 32); // 减去箭头和间距的宽度
+        final isMultiLine = textPainter.didExceedMaxLines;
+        
+        return GestureDetector(
+          onTap: isMultiLine ? () {
+            setState(() {
+              _isRemarkExpanded = !_isRemarkExpanded;
+            });
+          } : null,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(width: 4),
+              Expanded(
+                child: RichText(
+                  text: TextSpan(
+                    children: [
+                      TextSpan(
+                        text: '备注：',
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Color(0xff666666),
+                        ),
+                      ),
+                      TextSpan(
+                        text: remark,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          color: Color(0xff666666),
+                        ),
+                      ),
+                    ],
+                  ),
+                  maxLines: _isRemarkExpanded ? null : 1,
+                  overflow: _isRemarkExpanded ? TextOverflow.visible : TextOverflow.ellipsis,
+                ),
+              ),
+              if (isMultiLine) ...[
+                const SizedBox(width: 8),
+                Image.asset(
+                  _isRemarkExpanded 
+                      ? 'assets/order_login_arrowD.webp'
+                      : 'assets/order_login_arrowR.webp',
+                  width: 16,
+                  height: 16,
+                ),
+              ],
+            ],
           ),
-        ],
-      ],
+        );
+      },
     );
   }
 

@@ -66,7 +66,7 @@ class CartManager {
     int invalidItemCount = 0;
     
     for (var apiCartItem in cartInfo.items!) {
-      // logDebug('🔄 转换购物车商品: ${apiCartItem.dishName} (ID: ${apiCartItem.dishId}) x${apiCartItem.quantity}', tag: _logTag);
+      logDebug('🔄 转换购物车商品: ${apiCartItem.dishName} (ID: ${apiCartItem.dishId}) x${apiCartItem.quantity}', tag: _logTag);
       
       // 从现有菜品列表中查找对应的菜品
       Dish? existingDish;
@@ -112,11 +112,13 @@ class CartManager {
       final quantity = apiCartItem.quantity ?? 1;
       newCart[localCartItem] = quantity;
       validItemCount++;
-      // logDebug('✅ 添加到新购物车: ${existingDish.name} x$quantity', tag: _logTag);
+      logDebug('✅ 添加到新购物车: ${existingDish.name} x$quantity', tag: _logTag);
     }
     
-    // logDebug('🔢 购物车数据统计 - 有效商品: $validItemCount, 无效商品: $invalidItemCount', tag: _logTag);
-    // logDebug('🔢 购物车数据转换完成: ${newCart.length} 种商品', tag: _logTag);
+    // 计算总数量用于调试
+    int totalQuantity = newCart.values.fold(0, (sum, quantity) => sum + quantity);
+    logDebug('🔢 购物车数据统计 - 有效商品种类: $validItemCount, 无效商品: $invalidItemCount', tag: _logTag);
+    logDebug('🔢 购物车数据转换完成: ${newCart.length} 种商品，总数量: $totalQuantity 个', tag: _logTag);
     
     return newCart;
   }

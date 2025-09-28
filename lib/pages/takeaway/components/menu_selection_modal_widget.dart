@@ -49,7 +49,6 @@ class _MenuSelectionModalContentState extends State<_MenuSelectionModalContent> 
   bool _isLoading = true;
   List<TableMenuListModel> _menuList = [];
   TableMenuListModel? _selectedMenu;
-  String? _errorMessage;
 
   @override
   void initState() {
@@ -64,7 +63,6 @@ class _MenuSelectionModalContentState extends State<_MenuSelectionModalContent> 
     try {
       setState(() {
         _isLoading = true;
-        _errorMessage = null;
       });
 
       final result = await BaseApi().getTableMenuList();
@@ -76,17 +74,15 @@ class _MenuSelectionModalContentState extends State<_MenuSelectionModalContent> 
         });
       } else {
         setState(() {
-          _errorMessage = result.msg ?? '加载菜单失败';
           _isLoading = false;
         });
+        GlobalToast.error('获取菜单列表失败');
       }
     } catch (e) {
       setState(() {
-        _errorMessage = '加载菜单时发生错误: $e';
         _isLoading = false;
       });
-      
-      GlobalToast.error('加载菜单失败');
+      GlobalToast.error('获取菜单列表异常：$e');
     }
   }
 
@@ -152,32 +148,6 @@ class _MenuSelectionModalContentState extends State<_MenuSelectionModalContent> 
                 ? Center(
                     child: RestaurantLoadingWidget(size: 30),
                   )
-                : _errorMessage != null
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_outline,
-                          size: 64,
-                          color: Colors.red.shade400,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          _errorMessage!,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.red.shade600,
-                          ),
-                        ),
-                        SizedBox(height: 16),
-                        ElevatedButton(
-                          onPressed: _loadMenuList,
-                          child: Text(context.l10n.more),
-                        ),
-                      ],
-                    ),
-                  )
                 : _menuList.isEmpty
                 ? Center(
                     child: Column(
@@ -190,7 +160,7 @@ class _MenuSelectionModalContentState extends State<_MenuSelectionModalContent> 
                         ),
                         SizedBox(height: 16),
                         Text(
-                          context.l10n.noData,
+                          '暂无可用菜单',
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey.shade600,

@@ -227,11 +227,15 @@ class WebSocketHandler {
         logDebug('📝 收到服务器二次确认消息: 代码$code, 消息$message, 原始ID$originalId', tag: _logTag);
         
         if (code == 0) {
-          // 操作成功
-          logDebug('✅ 操作成功，更新购物车UI', tag: _logTag);
+          // 操作成功 - 刷新购物车数据
+          logDebug('✅ 操作成功，刷新购物车数据', tag: _logTag);
+          onCartRefresh?.call();
+          // 停止loading状态
+          _stopLoadingState();
         } else if (code == 409) {
-          // 需要强制操作确认
-          logDebug('⚠️ 收到409状态码，需要用户确认强制操作', tag: _logTag);
+          // 需要强制操作确认 - 立即显示弹窗，不等待
+          logDebug('⚠️ 收到409状态码，立即显示强制操作确认弹窗', tag: _logTag);
+          // 立即触发强制更新回调，不延迟
           onForceUpdateRequired?.call(message, data);
         } else if (code == 404) {
           // 404错误 - 显示具体错误信息
@@ -315,7 +319,6 @@ class WebSocketHandler {
   Future<bool> sendUpdateQuantity({
     required CartItem cartItem,
     required int quantity,
-    bool forceOperate = false,
   }) async {
     if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
       logDebug('⚠️ cartSpecificationId或cartId为空，跳过WebSocket同步', tag: _logTag);
@@ -328,11 +331,10 @@ class WebSocketHandler {
         quantity: quantity,
         cartId: cartItem.cartId!,
         cartSpecificationId: cartItem.cartSpecificationId!,
-        forceOperate: forceOperate,
       );
 
       if (success) {
-        logDebug('📤 更新菜品数量已同步到WebSocket: ${cartItem.dish.name} x$quantity, 强制操作: $forceOperate', tag: _logTag);
+        logDebug('📤 更新菜品数量已同步到WebSocket: ${cartItem.dish.name} x$quantity', tag: _logTag);
       } else {
         logDebug('❌ 更新菜品数量同步到WebSocket失败', tag: _logTag);
       }

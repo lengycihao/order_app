@@ -494,8 +494,18 @@ class _AllergenIcons extends StatelessWidget {
           width: 12,
           height: 12,
           fit: BoxFit.contain,
-          placeholder: (context, url) => SizedBox.shrink(),
-          errorWidget: (context, url, error) => SizedBox.shrink(),
+          placeholder: (context, url) => Image.asset(
+            'assets/order_minganwu_place.webp',
+            width: 12,
+            height: 12,
+            fit: BoxFit.contain,
+          ),
+          errorWidget: (context, url, error) => Image.asset(
+            'assets/order_minganwu_place.webp',
+            width: 12,
+            height: 12,
+            fit: BoxFit.contain,
+          ),
         );
       }).toList(),
     );

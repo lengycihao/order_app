@@ -69,13 +69,17 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
               orderController.removeFromCart(targetCartItem);
             }
           },
-          child: Image(
-            image: AssetImage('assets/order_reduce_num.webp'),
-            width: 22,
-            height: 22,
+          behavior: HitTestBehavior.opaque, // 阻止事件穿透
+          child: Container(
+            padding: EdgeInsets.all(8), // 增大点击区域
+            child: Image(
+              image: AssetImage('assets/order_reduce_num.webp'),
+              width: 22,
+              height: 22,
+            ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 7),
         // 数量显示
         Text(
           '$count',
@@ -85,17 +89,21 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
             color: Colors.black87,
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 7),
         // 加号按钮
         GestureDetector(
           onTap: onAddTap ?? () {
             final orderController = Get.find<OrderController>();
             orderController.addToCart(dish);
           },
-          child: Image(
-            image: AssetImage('assets/order_add_num.webp'),
-            width: 22,
-            height: 22,
+          behavior: HitTestBehavior.opaque, // 阻止事件穿透
+          child: Container(
+            padding: EdgeInsets.all(8), // 增大点击区域
+            child: Image(
+              image: AssetImage('assets/order_add_num.webp'),
+              width: 22,
+              height: 22,
+            ),
           ),
         ),
       ],
@@ -122,51 +130,55 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
             dish,
           );
         },
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Text(
-              '选规格',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+        behavior: HitTestBehavior.opaque, // 阻止事件穿透
+        child: Container(
+          padding: EdgeInsets.all(8), // 增大点击区域
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(15),
               ),
-            ),
-          ),
-            // 角标
-            if (specCount > 0)
-              Positioned(
-                right: -4,
-                top: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: Colors.red,
-                    shape: BoxShape.circle,
-                  ),
-                  constraints: const BoxConstraints(
-                    minWidth: 16,
-                    minHeight: 16,
-                  ),
-                  child: Text(
-                    '$specCount',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
+              child: Text(
+                '选规格',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-          ],
+            ),
+              // 角标
+              if (specCount > 0)
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$specCount',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       );
     });
@@ -179,10 +191,14 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
         final orderController = Get.find<OrderController>();
         orderController.addToCart(dish);
       },
-      child: Image(
-        image: AssetImage('assets/order_add_num.webp'),
-        width: 22,
-        height: 22,
+      behavior: HitTestBehavior.opaque, // 阻止事件穿透
+      child: Container(
+        padding: EdgeInsets.all(8), // 增大点击区域
+        child: Image(
+          image: AssetImage('assets/order_add_num.webp'),
+          width: 22,
+          height: 22,
+        ),
       ),
     );
   }

@@ -185,8 +185,12 @@ class _SpecificationModalContentState
                       imageUrl: allergen.icon!,
                       width: 16,
                       height: 16,
-                      errorWidget: (context, url, error) =>
-                          Icon(Icons.warning, size: 16, color: Colors.orange),
+                      errorWidget: (context, url, error) => Image.asset(
+                        'assets/order_minganwu_place.webp',
+                        width: 16,
+                        height: 16,
+                        fit: BoxFit.contain,
+                      ),
                     ),
                   ),
                 if (allergen.icon != null) SizedBox(width: 4),

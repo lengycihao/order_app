@@ -154,8 +154,18 @@ class DishItemWidget extends StatelessWidget {
                   width: 12,
                   height: 12,
                   fit: BoxFit.contain,
-                  placeholder: (context, url) => SizedBox.shrink(),
-                  errorWidget: (context, url, error) => SizedBox.shrink(),
+                  placeholder: (context, url) => Image.asset(
+                    'assets/order_minganwu_place.webp',
+                    width: 12,
+                    height: 12,
+                    fit: BoxFit.contain,
+                  ),
+                  errorWidget: (context, url, error) => Image.asset(
+                    'assets/order_minganwu_place.webp',
+                    width: 12,
+                    height: 12,
+                    fit: BoxFit.contain,
+                  ),
                 );
             }).toList(),
           ),
@@ -252,53 +262,57 @@ class DishItemWidget extends StatelessWidget {
   Widget _buildSpecificationButton(int count) {
     return GestureDetector(
       onTap: onSpecificationTap,
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Text(
-              '选规格',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+      behavior: HitTestBehavior.opaque, // 阻止事件穿透
+      child: Container(
+        padding: EdgeInsets.all(8), // 增大点击区域
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Text(
+                '选规格',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-          if (count > 0)
-            Positioned(
-              right: -3,
-              top: -6,
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: count > 99 ? 4 : 2,
-                  vertical: 1,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                constraints: BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
-                child: Text(
-                  '$count',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+            if (count > 0)
+              Positioned(
+                right: -3,
+                top: -6,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: count > 99 ? 4 : 2,
+                    vertical: 1,
                   ),
-                  textAlign: TextAlign.center,
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  constraints: BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Text(
+                    '$count',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -311,14 +325,18 @@ class DishItemWidget extends StatelessWidget {
         // 减号按钮
         if (count > 0)
           GestureDetector(
-            child: Image(
-              image: AssetImage('assets/order_reduce_num.webp'),
-              width: 22,
-              height: 22,
-            ),
             onTap: onRemoveTap,
+            behavior: HitTestBehavior.opaque, // 阻止事件穿透
+            child: Container(
+              padding: EdgeInsets.all(8), // 增大点击区域
+              child: Image(
+                image: AssetImage('assets/order_reduce_num.webp'),
+                width: 22,
+                height: 22,
+              ),
+            ),
           ),
-        if (count > 0) SizedBox(width: 5),
+        // if (count > 0) SizedBox(width: 5),
         // 数量显示
         if (count > 0)
           Text(
@@ -329,14 +347,18 @@ class DishItemWidget extends StatelessWidget {
               color: Colors.black87,
             ),
           ),
-        if (count > 0) SizedBox(width: 5),
+        // if (count > 0) SizedBox(width: 5),
         // 加号按钮 - 直接显示，无loading状态
         GestureDetector(
           onTap: onAddTap,
-          child: Image(
-            image: AssetImage('assets/order_add_num.webp'),
-            width: 22,
-            height: 22,
+          behavior: HitTestBehavior.opaque, // 阻止事件穿透
+          child: Container(
+            padding: EdgeInsets.all(8), // 增大点击区域
+            child: Image(
+              image: AssetImage('assets/order_add_num.webp'),
+              width: 22,
+              height: 22,
+            ),
           ),
         ),
       ],

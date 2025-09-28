@@ -144,6 +144,8 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
       if (result.isSuccess) {
         // 更新controller中的菜单信息
         controller.menu.value = selectedMenu;
+        // 同步更新menuId，确保菜品数据能正确加载
+        controller.menuId.value = selectedMenu.menuId ?? 0;
         
         // 刷新点餐页面数据
         await controller.refreshOrderData();

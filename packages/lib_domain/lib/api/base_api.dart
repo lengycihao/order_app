@@ -4,6 +4,7 @@ import 'package:lib_base/lib_base.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/entrity/order/dish_list_model/dish_list_model.dart';
+import 'package:lib_domain/entrity/waiter/waiter_info_model.dart';
 
 class BaseApi {
   //大厅列表
@@ -58,6 +59,18 @@ class BaseApi {
       ApiRequest.tableMeneList,
     );
     if (result.isSuccess) {
+      // 增加空值检查，防止类型转换异常
+      if (result.dataJson == null) {
+        logDebug('⚠️ 菜单列表返回数据为空', tag: 'BaseApi');
+        return result.convert(data: <TableMenuListModel>[]);
+      }
+      
+      // 确保返回的是列表类型
+      if (result.dataJson is! List) {
+        logDebug('⚠️ 菜单列表返回数据格式错误，期望List，实际: ${result.dataJson.runtimeType}', tag: 'BaseApi');
+        return result.convert(data: <TableMenuListModel>[]);
+      }
+      
       final List<TableMenuListModel> list = (result.dataJson as List)
           .map((e) => TableMenuListModel.fromJson(e as Map<String, dynamic>))
           .toList();
@@ -266,6 +279,19 @@ class BaseApi {
     if (result.isSuccess) {
       return result.convert(
         data: TableListModel.fromJson(result.getDataJson()),
+      );
+    } else {
+      return result.convert();
+    }
+  }
+
+  // 获取服务员信息
+  Future<HttpResultN<WaiterInfoModel>> getWaiterInfo() async {
+    final result = await HttpManagerN.instance.executeGet(ApiRequest.waiterInfo);
+    
+    if (result.isSuccess) {
+      return result.convert(
+        data: WaiterInfoModel.fromJson(result.getDataJson()),
       );
     } else {
       return result.convert();

@@ -156,15 +156,17 @@ class OrderedDishItemWidget extends StatelessWidget {
             width: 16,
             height: 16,
             fit: BoxFit.contain,
-            placeholder: (context, url) => Icon(
-              Icons.warning,
-              size: 16,
-              color: Colors.orange,
+            placeholder: (context, url) => Image.asset(
+              'assets/order_minganwu_place.webp',
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
             ),
-            errorWidget: (context, url, error) => Icon(
-              Icons.warning,
-              size: 16,
-              color: Colors.orange,
+            errorWidget: (context, url, error) => Image.asset(
+              'assets/order_minganwu_place.webp',
+              width: 16,
+              height: 16,
+              fit: BoxFit.contain,
             ),
           ),
         );

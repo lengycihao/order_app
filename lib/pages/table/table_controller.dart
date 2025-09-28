@@ -53,8 +53,8 @@ class TableControllerRefactored extends GetxController {
     _pollingManager = TablePollingManager();
     _wsManager = TableWebSocketManager(wsManager: wsManager);
     
-    // 设置轮询回调
-    _pollingManager.startPolling(onPolling: _performPollingRefresh);
+    // 设置轮询回调 - 已禁用
+    // _pollingManager.startPolling(onPolling: _performPollingRefresh);
     
     // 初始化WebSocket状态监控
     _wsManager.initializeStatusMonitoring();
@@ -114,6 +114,12 @@ class TableControllerRefactored extends GetxController {
 
   /// 获取菜单列表
   Future<void> getMenuList() async {
+    // 如果已有菜单数据且不为空，避免重复请求
+    if (menuModelList.isNotEmpty) {
+      logDebug('📋 菜单数据已存在 (${menuModelList.length} 个菜单)，跳过重复请求', tag: _logTag);
+      return;
+    }
+    
     final result = await _dataService.getMenuList();
     if (result.isSuccess && result.data != null) {
       menuModelList = result.data!;
@@ -126,6 +132,8 @@ class TableControllerRefactored extends GetxController {
   /// 强制刷新菜单数据
   Future<void> refreshMenuList() async {
     logDebug('🔄 强制刷新菜单数据...', tag: _logTag);
+    // 强制刷新时清空现有数据，确保重新获取
+    menuModelList.clear();
     await getMenuList();
   }
 
@@ -350,7 +358,8 @@ class TableControllerRefactored extends GetxController {
     }
   }
 
-  /// 执行轮询刷新
+  /// 执行轮询刷新 - 已禁用
+  /*
   Future<void> _performPollingRefresh() async {
     // 如果当前正在加载，跳过本次轮询
     if (isLoading.value) return;
@@ -383,10 +392,12 @@ class TableControllerRefactored extends GetxController {
       },
     );
   }
+  */
 
-  /// 启动轮询
+  /// 启动轮询 - 已禁用
   void startPolling() {
-    _pollingManager.resumePolling(onPolling: _performPollingRefresh);
+    // _pollingManager.resumePolling(onPolling: _performPollingRefresh);
+    logDebug('⚠️ 轮询已被禁用', tag: _logTag);
   }
 
   /// 停止轮询
@@ -399,9 +410,10 @@ class TableControllerRefactored extends GetxController {
     _pollingManager.pausePolling();
   }
 
-  /// 恢复轮询（页面可见时调用）
+  /// 恢复轮询（页面可见时调用） - 已禁用
   void resumePolling() {
-    _pollingManager.resumePolling(onPolling: _performPollingRefresh);
+    // _pollingManager.resumePolling(onPolling: _performPollingRefresh);
+    logDebug('⚠️ 轮询已被禁用', tag: _logTag);
   }
 
   /// 获取WebSocket连接统计信息

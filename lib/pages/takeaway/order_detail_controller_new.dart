@@ -74,6 +74,9 @@ class OrderDetailControllerNew extends GetxController {
             logDebug('✅ 解析后的订单ID: ${orderDetail.value?.id}', tag: 'OrderDetailControllerNew');
             logDebug('✅ 解析后的订单号: ${orderDetail.value?.orderNo}', tag: 'OrderDetailControllerNew');
             logDebug('✅ 解析后的商品数量: ${orderDetail.value?.details?.length}', tag: 'OrderDetailControllerNew');
+            logDebug('✅ 解析后的总金额: ${orderDetail.value?.totalAmount}', tag: 'OrderDetailControllerNew');
+            // 强制触发UI更新
+            update();
           } else {
             logDebug('❌ dataJson为空，无法解析数据', tag: 'OrderDetailControllerNew');
             if (Get.context != null) {
@@ -143,21 +146,9 @@ class OrderDetailControllerNew extends GetxController {
     GlobalToast.message('退款申请功能暂未开放');
   }
 
-  /// 计算商品总价
+  /// 获取商品总价（直接使用接口返回的总金额）
   double get subtotal {
-    if (orderDetail.value?.details == null) return 0.0;
-    
-    double total = 0.0;
-    for (final item in orderDetail.value!.details!) {
-      try {
-        final price = double.parse(item.price ?? '0');
-        final quantity = item.quantity ?? 1;
-        total += price * quantity;
-      } catch (e) {
-        // 忽略解析错误
-      }
-    }
-    return total;
+    return totalAmount;
   }
 
   /// 获取配送费
@@ -172,16 +163,16 @@ class OrderDetailControllerNew extends GetxController {
     return 2.00;
   }
 
-  /// 获取总金额
+  /// 获取总金额（直接使用接口返回的数据）
   double get totalAmount {
     if (orderDetail.value?.totalAmount != null && orderDetail.value!.totalAmount!.isNotEmpty) {
       try {
         return double.parse(orderDetail.value!.totalAmount!);
       } catch (e) {
-        return subtotal + deliveryFee + packagingFee;
+        return 0.0;
       }
     }
-    return subtotal + deliveryFee + packagingFee;
+    return 0.0;
   }
 
   /// 获取配送信息（模拟数据，实际应该从API获取）

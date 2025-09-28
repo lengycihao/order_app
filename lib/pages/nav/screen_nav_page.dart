@@ -26,6 +26,7 @@ class _ScreenNavPageState extends State<ScreenNavPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xFFF5F5F5), // 设置主导航页面背景色
       body: _pages[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

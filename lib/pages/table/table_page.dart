@@ -56,10 +56,8 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
   Future<void> _forceRefreshData() async {
     try {
       logDebug('🔄 开始强制刷新桌台数据...', tag: 'TablePage');
-      // 调用Controller的强制重置方法
+      // 调用Controller的强制重置方法（内部已包含菜单数据重置）
       await controller.forceResetAllData();
-      // 同时刷新菜单数据
-      await controller.refreshMenuList();
       logDebug('✅ 强制刷新桌台数据完成', tag: 'TablePage');
       
       // 数据加载完成后更新骨架图状态
@@ -278,11 +276,12 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
           try {
             // 手动刷新时重置轮询计时器
             controller.stopPolling();
-            // 同时刷新桌台数据和菜单数据
-            await Future.wait([
-              controller.fetchDataForTab(tabIndex),
-              controller.refreshMenuList(),
-            ]);
+            // 只刷新桌台数据，菜单数据相对稳定，不需要频繁刷新
+            await controller.fetchDataForTab(tabIndex);
+            // 如果菜单数据为空，才尝试获取菜单数据
+            if (controller.menuModelList.isEmpty) {
+              await controller.getMenuList();
+            }
             // 通知刷新完成
             refreshController.refreshCompleted();
             // 刷新完成后重新启动轮询

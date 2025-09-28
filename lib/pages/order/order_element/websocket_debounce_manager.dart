@@ -33,7 +33,6 @@ class WebSocketDebounceManager {
   void debounceUpdateQuantity({
     required CartItem cartItem,
     required int quantity,
-    bool forceOperate = false,
   }) {
     final key = 'update_${cartItem.cartId}_${cartItem.cartSpecificationId}';
     
@@ -42,7 +41,6 @@ class WebSocketDebounceManager {
       type: OperationType.update,
       cartItem: cartItem,
       quantity: quantity,
-      forceOperate: forceOperate,
     );
     
     // 取消之前的定时器
@@ -87,12 +85,10 @@ class WebSocketDebounceManager {
   Future<bool> sendImmediate({
     required CartItem cartItem,
     required int quantity,
-    bool forceOperate = false,
   }) async {
     return await _wsHandler.sendUpdateQuantity(
       cartItem: cartItem,
       quantity: quantity,
-      forceOperate: forceOperate,
     );
   }
   
@@ -114,7 +110,6 @@ class WebSocketDebounceManager {
         _wsHandler.sendUpdateQuantity(
           cartItem: operation.cartItem!,
           quantity: operation.quantity!,
-          forceOperate: operation.forceOperate,
         ).then((success) {
           if (!success) {
             logDebug('❌ WebSocket防抖操作发送失败: 更新数量 ${operation.cartItem!.dish.name}', tag: _logTag);
@@ -210,13 +205,11 @@ class PendingOperation {
   final CartItem? cartItem;
   final int? quantity;
   final int? incrQuantity;
-  final bool forceOperate;
   
   PendingOperation({
     required this.type,
     this.cartItem,
     this.quantity,
     this.incrQuantity,
-    this.forceOperate = false,
   });
 }

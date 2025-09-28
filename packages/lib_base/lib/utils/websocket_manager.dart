@@ -247,14 +247,12 @@ class WebSocketManager {
     required int quantity,
     required int cartId,
     required String cartSpecificationId,
-    bool forceOperate = false,
   }) async {
     return sendUpdateDishQuantityWithId(
       tableId: tableId,
       quantity: quantity,
       cartId: cartId,
       cartSpecificationId: cartSpecificationId,
-      forceOperate: forceOperate,
       messageId: _generateMessageId(),
     );
   }
@@ -266,7 +264,6 @@ class WebSocketManager {
     required int cartId,
     required String cartSpecificationId,
     required String messageId,
-    bool forceOperate = false,
   }) async {
     final connection = _tableConnections[tableId];
     if (connection == null) {
@@ -283,7 +280,6 @@ class WebSocketManager {
           'quantity': quantity,
           'cart_id': cartId,
           'cart_specification_id': cartSpecificationId,
-          if (forceOperate) 'force_operate': forceOperate,
         },
         'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
       };
@@ -613,6 +609,74 @@ class WebSocketManager {
       return success;
     } catch (e) {
       logDebug('❌ 发送更换人数消息失败: $e', tag: 'WebSocketManager');
+      return false;
+    }
+  }
+
+  /// 发送更换桌子消息
+  Future<bool> sendChangeTable({
+    required String tableId,
+    required int newTableId,
+    required String newTableName,
+  }) async {
+    final connection = _tableConnections[tableId];
+    if (connection == null) {
+      logDebug('❌ 桌台 $tableId 未连接，无法发送消息', tag: 'WebSocketManager');
+      return false;
+    }
+
+    try {
+      final message = {
+        'id': _generateMessageId(),
+        'type': 'table',
+        'data': {
+          'action': 'change_table',
+          'table_id': newTableId,
+          'table_name': newTableName,
+        },
+        'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      };
+
+      final success = await connection.sendRawMessage(message);
+      if (success) {
+        logDebug('📤 发送更换桌子消息: 桌台$tableId, 新桌台$newTableId($newTableName)', tag: 'WebSocketManager');
+      }
+      return success;
+    } catch (e) {
+      logDebug('❌ 发送更换桌子消息失败: $e', tag: 'WebSocketManager');
+      return false;
+    }
+  }
+
+  /// 发送更换菜单消息
+  Future<bool> sendChangeMenu({
+    required String tableId,
+    required int menuId,
+  }) async {
+    final connection = _tableConnections[tableId];
+    if (connection == null) {
+      logDebug('❌ 桌台 $tableId 未连接，无法发送消息', tag: 'WebSocketManager');
+      return false;
+    }
+
+    try {
+      final message = {
+        'id': _generateMessageId(),
+        'type': 'table',
+        'data': {
+          'action': 'change_menu',
+          'menu_id': menuId,
+        },
+        'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      };
+
+      final success = await connection.sendRawMessage(message);
+      if (success) {
+        logDebug('📤 发送更换菜单消息: 桌台$tableId, 菜单$menuId', tag: 'WebSocketManager');
+      }
+      return success;
+    } catch (e) {
+      logDebug('❌ 发送更换菜单消息失败: $e', tag: 'WebSocketManager');
       return false;
     }
   }

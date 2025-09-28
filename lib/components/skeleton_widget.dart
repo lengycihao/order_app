@@ -203,7 +203,7 @@ class OrderPageSkeleton extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent, // 改为透明背景，避免白色闪现
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -228,7 +228,7 @@ class OrderPageSkeleton extends StatelessWidget {
   Widget _buildDishListSkeleton() {
     return Expanded(
       child: Container(
-        color: Colors.white,
+        color: Colors.transparent, // 改为透明背景，避免白色闪现
         child: ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: 8, // 显示8个菜品骨架
@@ -244,7 +244,7 @@ class OrderPageSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent, // 改为透明背景，避免白色闪现
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -366,7 +366,72 @@ class TakeawayPageSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent, // 改为透明背景，避免白色闪现
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 订单头部
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              SkeletonPlaceholder(
+                height: 16,
+                width: 100,
+              ),
+              SkeletonPlaceholder(
+                height: 16,
+                width: 80,
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // 订单信息
+          SkeletonPlaceholder(
+            height: 14,
+            width: 200,
+            margin: const EdgeInsets.only(bottom: 8),
+          ),
+          SkeletonPlaceholder(
+            height: 14,
+            width: 150,
+            margin: const EdgeInsets.only(bottom: 8),
+          ),
+          SkeletonPlaceholder(
+            height: 14,
+            width: 120,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 外卖页面列表骨架图（不包含搜索框）
+class TakeawayListSkeleton extends StatelessWidget {
+  const TakeawayListSkeleton({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        children: [
+          // 只显示订单列表骨架，不显示搜索框
+          ...List.generate(4, (index) => _buildOrderItemSkeleton()),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOrderItemSkeleton() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.transparent, // 改为透明背景，避免白色闪现
         borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
@@ -431,7 +496,7 @@ class OrderedPageSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 20),
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent, // 改为透明背景，避免白色闪现
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: Colors.grey.shade100),
       ),
@@ -520,7 +585,7 @@ class CartSkeleton extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent, // 改为透明背景，避免白色闪现
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: Colors.grey.shade200),
       ),
@@ -649,7 +714,7 @@ class TablePageSkeleton extends StatelessWidget {
   Widget _buildTableCardSkeleton() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.transparent, // 改为透明背景，避免白色闪现
         borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(

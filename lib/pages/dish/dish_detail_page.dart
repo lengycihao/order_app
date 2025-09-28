@@ -197,8 +197,12 @@ class _DishDetailPageState extends State<DishDetailPage> {
                           width: 16,
                           height: 16,
                           fit: BoxFit.cover,
-                          errorWidget: (context, url, error) =>
-                              const Icon(Icons.warning, size: 16, color: Colors.orange),
+                          errorWidget: (context, url, error) => Image.asset(
+                            'assets/order_minganwu_place.webp',
+                            width: 16,
+                            height: 16,
+                            fit: BoxFit.contain,
+                          ),
                         ),
                       if (allergen.icon != null) const SizedBox(width: 4),
                       Text(
@@ -314,15 +318,19 @@ class _DishDetailPageState extends State<DishDetailPage> {
                 orderController.removeFromCart(targetCartItem);
               }
             },
-            child: Image(
-              image: AssetImage('assets/order_reduce_num.webp'),
-              width: 22,
-              height: 22,
+            behavior: HitTestBehavior.opaque, // 阻止事件穿透
+            child: Container(
+              padding: EdgeInsets.all(8), // 增大点击区域
+              child: Image(
+                image: AssetImage('assets/order_reduce_num.webp'),
+                width: 22,
+                height: 22,
+              ),
             ),
           ),
         // 数量显示 - 只在有数量时显示
         if (count > 0) ...[
-          const SizedBox(width: 12),
+          const SizedBox(width: 5),
           Text(
             '$count',
             style: const TextStyle(
@@ -331,17 +339,21 @@ class _DishDetailPageState extends State<DishDetailPage> {
               color: Colors.black87,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 5),
         ],
         // 加号按钮
         GestureDetector(
           onTap: () {
             orderController.addToCart(dish);
           },
-          child: Image(
-            image: AssetImage('assets/order_add_num.webp'),
-            width: 22,
-            height: 22,
+          behavior: HitTestBehavior.opaque, // 阻止事件穿透
+          child: Container(
+            padding: EdgeInsets.all(8), // 增大点击区域
+            child: Image(
+              image: AssetImage('assets/order_add_num.webp'),
+              width: 22,
+              height: 22,
+            ),
           ),
         ),
       ],
@@ -358,54 +370,58 @@ class _DishDetailPageState extends State<DishDetailPage> {
           dish,
         );
       },
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Colors.orange,
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Text(
-              '选规格',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
+      behavior: HitTestBehavior.opaque, // 阻止事件穿透
+      child: Container(
+        padding: EdgeInsets.all(8), // 增大点击区域
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.orange,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Text(
+                '选规格',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
-          ),
-          // 角标 - 显示该菜品在购物车中的总数量
-          if (totalCount > 0)
-            Positioned(
-              right: -3,
-              top: -6,
-              child: Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: totalCount > 99 ? 4 : 2,
-                  vertical: 1,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                constraints: BoxConstraints(
-                  minWidth: 16,
-                  minHeight: 16,
-                ),
-                child: Text(
-                  '$totalCount',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+            // 角标 - 显示该菜品在购物车中的总数量
+            if (totalCount > 0)
+              Positioned(
+                right: -3,
+                top: -6,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: totalCount > 99 ? 4 : 2,
+                    vertical: 1,
                   ),
-                  textAlign: TextAlign.center,
+                  decoration: BoxDecoration(
+                    color: Colors.red,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  constraints: BoxConstraints(
+                    minWidth: 16,
+                    minHeight: 16,
+                  ),
+                  child: Text(
+                    '$totalCount',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
                 ),
               ),
-            ),
-        ],
+          ],
+        ),
       ),
     );
   }

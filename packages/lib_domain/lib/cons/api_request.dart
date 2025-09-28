@@ -39,4 +39,7 @@ class ApiRequest {
   
   // 修改密码接口
   static const changePassword = '/api/waiter/change/password';
+  
+  // 服务员信息接口
+  static const waiterInfo = '/api/waiter/info';
 }

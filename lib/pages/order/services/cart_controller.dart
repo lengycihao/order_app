@@ -11,6 +11,7 @@ import '../order_element/models.dart';
 
 /// 购物车控制器
 /// 负责管理购物车的所有操作
+/// 设计为可以独立使用，也可以作为其他控制器的组件
 class CartController extends GetxController {
   final String _logTag = 'CartController';
   
@@ -19,6 +20,11 @@ class CartController extends GetxController {
   var cartInfo = Rx<CartInfoModel?>(null);
   final isLoadingCart = false.obs;
   final isCartOperationLoading = false.obs;
+  
+  // 依赖数据（由外部提供）
+  List<Dish> _dishes = [];
+  List<String> _categories = [];
+  bool _isInitialized = false;
   
   // 管理器
   late final CartManager _cartManager;
@@ -34,6 +40,18 @@ class CartController extends GetxController {
   void onInit() {
     super.onInit();
     _initializeManagers();
+  }
+  
+  /// 初始化依赖数据
+  /// 当作为组件使用时，需要从父控制器获取这些数据
+  void initializeDependencies({
+    required List<Dish> dishes,
+    required List<String> categories,
+    required bool isInitialized,
+  }) {
+    _dishes = dishes;
+    _categories = categories;
+    _isInitialized = isInitialized;
   }
 
   /// 初始化管理器
@@ -81,8 +99,14 @@ class CartController extends GetxController {
       if (cartData != null) {
         cartInfo.value = cartData;
         logDebug('✅ 购物车数据加载成功', tag: _logTag);
+        
+        // 重要：将API数据转换为本地购物车格式
+        convertApiCartToLocalCart();
       } else {
         logDebug('🛒 购物车API返回空数据', tag: _logTag);
+        
+        // API返回空数据时也需要调用转换方法，以正确处理空购物车的逻辑
+        convertApiCartToLocalCart();
       }
     } catch (e) {
       logError('❌ 购物车数据加载异常: $e', tag: _logTag);
@@ -95,14 +119,10 @@ class CartController extends GetxController {
   }
 
   /// 将API购物车数据转换为本地购物车格式
-  void convertApiCartToLocalCart({
-    required List<Dish> dishes,
-    required List<String> categories,
-    required bool isInitialized,
-  }) {
+  void convertApiCartToLocalCart() {
     if (cartInfo.value?.items == null || cartInfo.value!.items!.isEmpty) {
       // 服务器购物车为空，但只在非初始化时清空本地购物车
-      if (isInitialized) {
+      if (_isInitialized) {
         logDebug('🛒 服务器购物车为空，清空本地购物车', tag: _logTag);
         // 取消所有待执行的WebSocket防抖操作
         _wsDebounceManager?.cancelAllPendingOperations();
@@ -118,15 +138,11 @@ class CartController extends GetxController {
     }
     
     // 确保菜品数据已加载
-    if (dishes.isEmpty) {
+    if (_dishes.isEmpty) {
       logDebug('⚠️ 菜品数据未加载完成，延迟转换购物车', tag: _logTag);
       Future.delayed(Duration(milliseconds: 500), () {
-        if (dishes.isNotEmpty) {
-          convertApiCartToLocalCart(
-            dishes: dishes,
-            categories: categories,
-            isInitialized: isInitialized,
-          );
+        if (_dishes.isNotEmpty) {
+          convertApiCartToLocalCart();
         }
       });
       return;
@@ -134,8 +150,8 @@ class CartController extends GetxController {
     
     final newCart = _cartManager.convertApiCartToLocalCart(
       cartInfo: cartInfo.value,
-      dishes: dishes,
-      categories: categories,
+      dishes: _dishes,
+      categories: _categories,
     );
     
     // 更新购物车
@@ -180,17 +196,16 @@ class CartController extends GetxController {
     
     if (existingCartItem != null) {
       // 如果已存在，使用本地购物车管理器增加数量
-      final currentQuantity = cart[existingCartItem]!;
-      final newQuantity = currentQuantity + 1;
-      
       // 保存操作上下文，用于可能的409强制更新
+      // 注意：保存的是增加的数量(1)，而不是总数量
       _lastOperationCartItem = existingCartItem;
-      _lastOperationQuantity = newQuantity;
+      _lastOperationQuantity = 1; // 每次点击只增加1个
       
-      _localCartManager.addDishQuantity(existingCartItem, currentQuantity);
-      logDebug('➕ 增加已存在菜品数量: ${dish.name}', tag: _logTag);
+      // 先发送WebSocket消息，等待服务器响应后再更新本地状态
+      _sendAddDishWebSocket(dish, selectedOptions);
+      // 注意：_sendAddDishWebSocket是异步的，实际的状态更新会在WebSocket响应后处理
     } else {
-      // 如果不存在，创建新的购物车项并添加到本地购物车
+      // 如果不存在，创建新的购物车项
       final newCartItem = CartItem(
         dish: dish,
         selectedOptions: selectedOptions ?? {},
@@ -203,15 +218,9 @@ class CartController extends GetxController {
       _lastOperationCartItem = newCartItem;
       _lastOperationQuantity = 1;
       
-      // 立即添加到本地购物车
-      cart[newCartItem] = 1;
-      cart.refresh();
-      update();
-      
-      // 发送WebSocket添加消息
+      // 先发送WebSocket消息，等待服务器响应后再更新本地状态
       _sendAddDishWebSocket(dish, selectedOptions);
-      
-      logDebug('➕ 添加新菜品: ${dish.name}', tag: _logTag);
+      // 注意：_sendAddDishWebSocket是异步的，实际的状态更新会在WebSocket响应后处理
     }
   }
 
@@ -238,8 +247,9 @@ class CartController extends GetxController {
       final newQuantity = currentQuantity + quantity;
       
       // 保存操作上下文，用于可能的409强制更新
+      // 注意：保存的是增加的数量，而不是总数量
       _lastOperationCartItem = existingCartItem;
-      _lastOperationQuantity = newQuantity;
+      _lastOperationQuantity = quantity; // 保存增加的数量
       
       // 立即更新本地购物车状态
       cart[existingCartItem] = newQuantity;
@@ -343,12 +353,13 @@ class CartController extends GetxController {
     // 开始loading状态
     isCartOperationLoading.value = true;
     
+    // 保存操作上下文，用于可能的409强制更新
+    // 注意：保存的是增加的数量(1)，而不是总数量
+    _lastOperationCartItem = cartItem;
+    _lastOperationQuantity = 1; // 每次点击只增加1个
+    
     final currentQuantity = cart[cartItem]!;
     final newQuantity = currentQuantity + 1;
-    
-    // 保存操作上下文，用于可能的409强制更新
-    _lastOperationCartItem = cartItem;
-    _lastOperationQuantity = newQuantity;
     
     // 使用本地购物车管理器进行本地优先的增减操作
     _localCartManager.addDishQuantity(cartItem, currentQuantity);
@@ -362,8 +373,21 @@ class CartController extends GetxController {
       return;
     }
     
-    // 同步到WebSocket
-    if (_wsHandler != null) {
+    // 使用WebSocket防抖管理器进行防抖发送
+    if (_wsDebounceManager != null) {
+      _wsDebounceManager!.debounceUpdateQuantity(
+        cartItem: cartItem,
+        quantity: newQuantity,
+      );
+      
+      // 延迟结束loading状态，给防抖一些时间
+      Future.delayed(Duration(milliseconds: 100), () {
+        isCartOperationLoading.value = false;
+      });
+      
+      logDebug('🔄 使用防抖管理器增加菜品数量: ${cartItem.dish.name}', tag: _logTag);
+    } else if (_wsHandler != null) {
+      // 回退到直接发送
       _wsHandler!.sendUpdateQuantity(cartItem: cartItem, quantity: newQuantity).then((success) {
         if (success) {
           logDebug('✅ 增加菜品数量同步到WebSocket成功: ${cartItem.dish.name}', tag: _logTag);
@@ -407,8 +431,21 @@ class CartController extends GetxController {
       return;
     }
     
-    // 同步到WebSocket
-    if (_wsHandler != null) {
+    // 使用WebSocket防抖管理器进行防抖发送
+    if (_wsDebounceManager != null) {
+      _wsDebounceManager!.debounceDecreaseQuantity(
+        cartItem: cartItem,
+        incrQuantity: -1, // 减少1个，所以是-1
+      );
+      
+      // 延迟结束loading状态，给防抖一些时间
+      Future.delayed(Duration(milliseconds: 100), () {
+        isCartOperationLoading.value = false;
+      });
+      
+      logDebug('🔄 使用防抖管理器减少菜品数量: ${cartItem.dish.name}', tag: _logTag);
+    } else if (_wsHandler != null) {
+      // 回退到直接发送
       _wsHandler!.sendUpdateQuantity(cartItem: cartItem, quantity: newQuantity).then((success) {
         if (success) {
           logDebug('✅ 减少菜品数量同步到WebSocket成功: ${cartItem.dish.name}', tag: _logTag);
@@ -576,59 +613,10 @@ class CartController extends GetxController {
   void handleForceUpdateRequired(String message, Map<String, dynamic>? data) {
     logDebug('⚠️ 处理409状态码，显示强制更新确认弹窗: $message', tag: _logTag);
     
-    // 这里可以显示确认弹窗，用户确认后调用_performForceUpdate
-    _performForceUpdate();
+    // 409状态码由OrderController统一处理，这里不需要额外处理
+    // 避免重复处理导致的问题
   }
 
-  /// 执行强制更新操作
-  void _performForceUpdate() {
-    logDebug('🔄 执行强制更新操作', tag: _logTag);
-    
-    try {
-      if (_lastOperationCartItem != null && _lastOperationQuantity != null) {
-        final cartItem = _lastOperationCartItem!;
-        final quantity = _lastOperationQuantity!;
-        
-        logDebug('✅ 使用保存的操作上下文执行强制更新: ${cartItem.dish.name}, quantity=$quantity', tag: _logTag);
-        
-        // 检查WebSocket处理器是否已初始化
-        if (_wsHandler != null) {
-          // 检查是否有cartId和cartSpecificationId
-          if (cartItem.cartId != null && cartItem.cartSpecificationId != null) {
-            // 有完整的购物车项信息，使用sendUpdateQuantity
-            _wsHandler!.sendUpdateQuantity(
-              cartItem: cartItem,
-              quantity: quantity,
-              forceOperate: true,
-            );
-          } else {
-            // 没有购物车项信息，可能是添加操作，使用sendAddDish
-            _wsHandler!.sendAddDish(
-              dish: cartItem.dish,
-              quantity: quantity,
-              selectedOptions: cartItem.selectedOptions,
-              forceOperate: true,
-            );
-          }
-        } else {
-          logDebug('⚠️ WebSocket处理器未初始化，跳过强制更新操作', tag: _logTag);
-        }
-        
-        // 强制更新成功后清理数据
-        _lastOperationCartItem = null;
-        _lastOperationQuantity = null;
-        logDebug('✅ 强制更新操作完成，已清理操作上下文', tag: _logTag);
-      } else {
-        logDebug('❌ 没有保存的操作上下文，无法执行强制更新', tag: _logTag);
-      }
-    } catch (e) {
-      logError('❌ 执行强制更新操作异常: $e', tag: _logTag);
-      
-      // 异常时也要清理数据
-      _lastOperationCartItem = null;
-      _lastOperationQuantity = null;
-    }
-  }
 
   /// 强制刷新购物车UI
   void forceRefreshCartUI() {
@@ -656,8 +644,22 @@ class CartController extends GetxController {
   /// 计算总数量
   int get totalCount => cart.values.fold(0, (sum, e) => sum + e);
   
-  /// 计算总价格
-  double get totalPrice => cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
+  /// 获取总价格（优先使用接口返回的数据）
+  double get totalPrice {
+    // 优先使用接口返回的总价
+    if (cartInfo.value?.totalPrice != null) {
+      return cartInfo.value!.totalPrice!;
+    }
+    
+    // 如果接口没有返回总价，则计算本地购物车总价（兜底逻辑）
+    double total = cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
+    // 修复浮点数精度问题，保留2位小数
+    return double.parse(total.toStringAsFixed(2));
+  }
+  
+  /// 暴露私有字段用于委托模式（只读访问）
+  CartItem? get lastOperationCartItem => _lastOperationCartItem;
+  int? get lastOperationQuantity => _lastOperationQuantity;
 
   /// 获取指定类目的数量
   int getCategoryCount(int categoryIndex) {

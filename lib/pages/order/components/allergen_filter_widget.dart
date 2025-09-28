@@ -206,10 +206,11 @@ class _AllergenItem extends StatelessWidget {
                 imageUrl: allergen.icon!,
                 width: 30,
                 height: 30,
-                errorWidget: (context, url, error) => Icon(
-                  Icons.warning,
-                  size: 24,
-                  color: Colors.orange,
+                errorWidget: (context, url, error) => Image.asset(
+                  'assets/order_minganwu_place.webp',
+                  width: 30,
+                  height: 30,
+                  fit: BoxFit.contain,
                 ),
               )
             else

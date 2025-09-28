@@ -11,6 +11,7 @@ import 'package:lib_domain/entrity/home/table_menu_list_model/menu_fixed_cost.da
 import 'package:lib_domain/api/base_api.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:lib_base/utils/websocket_manager.dart';
 
 /// 更多功能弹窗组件
 class MoreOptionsModalWidget {
@@ -111,6 +112,11 @@ class _MoreOptionsModalContent extends StatelessWidget {
 
   /// 显示更换菜单弹窗
   void _showChangeMenuModal(BuildContext context) {
+    // 获取当前菜单信息
+    final controller = Get.find<OrderController>();
+    final currentMenu = controller.menu.value;
+    final currentMenuId = controller.menuId.value;
+    
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -121,7 +127,10 @@ class _MoreOptionsModalContent extends StatelessWidget {
             maxHeight: MediaQuery.of(context).size.height * 0.8,
             maxWidth: MediaQuery.of(context).size.width * 0.9,
           ),
-          child: _ChangeMenuModalContent(),
+          child: _ChangeMenuModalContent(
+            currentMenu: currentMenu,
+            currentMenuId: currentMenuId,
+          ),
         ),
       ),
     );
@@ -194,6 +203,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
   List<TableListModel> _availableTables = [];
   int? _selectedTableId;
   bool _isLoading = true;
+  bool _isProcessing = false; // 添加处理状态防止重复点击
   final _api = BaseApi();
 
   @override
@@ -232,6 +242,11 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
 
   /// 执行换桌操作
   Future<void> _performChangeTable() async {
+    // 防止重复点击
+    if (_isProcessing) {
+      return;
+    }
+
     if (_selectedTableId == null) {
       GlobalToast.error('请选择需要更换的桌台');
       return;
@@ -244,6 +259,11 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
       GlobalToast.error('当前桌台信息错误');
       return;
     }
+
+    // 设置处理状态
+    setState(() {
+      _isProcessing = true;
+    });
 
     try {
       final result = await _api.changeTable(
@@ -263,6 +283,14 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         );
         controller.table.value = newTable;
 
+        // 发送WebSocket消息通知其他客户端
+        final websocketManager = WebSocketManager();
+        await websocketManager.sendChangeTable(
+          tableId: currentTableId.toString(),
+          newTableId: _selectedTableId!,
+          newTableName: newTable.tableName ?? '',
+        );
+
         GlobalToast.success('已成功更换桌台');
       } else {
         GlobalToast.error(result.msg ?? '换桌失败');
@@ -273,6 +301,13 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         Navigator.of(context).pop();
       }
       GlobalToast.error('换桌操作异常：$e');
+    } finally {
+      // 重置处理状态
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
@@ -514,6 +549,15 @@ class _TableItem extends StatelessWidget {
 
 /// 更换菜单弹窗内容
 class _ChangeMenuModalContent extends StatefulWidget {
+  final TableMenuListModel? currentMenu;
+  final int currentMenuId;
+  
+  const _ChangeMenuModalContent({
+    Key? key,
+    this.currentMenu,
+    required this.currentMenuId,
+  }) : super(key: key);
+
   @override
   State<_ChangeMenuModalContent> createState() =>
       _ChangeMenuModalContentState();
@@ -523,6 +567,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
   List<TableMenuListModel> _menuList = [];
   int? _selectedMenuId;
   bool _isLoading = true;
+  bool _isProcessing = false; // 添加处理状态防止重复点击
   final _api = BaseApi();
 
   @override
@@ -565,24 +610,45 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
   /// 设置默认选中当前使用的菜单
   void _setDefaultSelectedMenu() {
     try {
-      final controller = Get.find<OrderController>();
-      final currentMenu = controller.menu.value;
-
-      if (currentMenu != null && currentMenu.menuId != null) {
+      // 优先使用 currentMenuId 进行匹配
+      if (widget.currentMenuId > 0) {
         // 在菜单列表中查找当前菜单
         final currentMenuIndex = _menuList.indexWhere(
-          (menu) => menu.menuId == currentMenu.menuId,
+          (menu) => menu.menuId == widget.currentMenuId,
         );
 
         if (currentMenuIndex != -1) {
-          _selectedMenuId = currentMenu.menuId;
+          setState(() {
+            _selectedMenuId = widget.currentMenuId;
+          });
+          final selectedMenu = _menuList[currentMenuIndex];
           logDebug(
-            '默认选中当前菜单: ${currentMenu.menuName} (ID: ${currentMenu.menuId})',
+            '默认选中当前菜单: ${selectedMenu.menuName} (ID: ${widget.currentMenuId})',
             tag: 'MoreOptionsModalWidget',
           );
         } else {
           logWarning(
-            '当前菜单在列表中未找到: ${currentMenu.menuName} (ID: ${currentMenu.menuId})',
+            '当前菜单在列表中未找到: ID=${widget.currentMenuId}',
+            tag: 'MoreOptionsModalWidget',
+          );
+        }
+      } else if (widget.currentMenu != null && widget.currentMenu!.menuId != null) {
+        // 备用方案：使用 currentMenu 对象进行匹配
+        final currentMenuIndex = _menuList.indexWhere(
+          (menu) => menu.menuId == widget.currentMenu!.menuId,
+        );
+
+        if (currentMenuIndex != -1) {
+          setState(() {
+            _selectedMenuId = widget.currentMenu!.menuId!;
+          });
+          logDebug(
+            '默认选中当前菜单: ${widget.currentMenu!.menuName} (ID: ${widget.currentMenu!.menuId})',
+            tag: 'MoreOptionsModalWidget',
+          );
+        } else {
+          logWarning(
+            '当前菜单在列表中未找到: ${widget.currentMenu!.menuName} (ID: ${widget.currentMenu!.menuId})',
             tag: 'MoreOptionsModalWidget',
           );
         }
@@ -648,6 +714,11 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
 
   /// 执行更换菜单操作
   Future<void> _performChangeMenu() async {
+    // 防止重复点击
+    if (_isProcessing) {
+      return;
+    }
+
     if (_selectedMenuId == null) {
       if (mounted) {
         GlobalToast.error('请选择需要更换的菜单');
@@ -664,6 +735,11 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
       }
       return;
     }
+
+    // 设置处理状态
+    setState(() {
+      _isProcessing = true;
+    });
 
     try {
       final result = await _api.changeMenu(
@@ -682,6 +758,15 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
           (menu) => menu.menuId == _selectedMenuId,
         );
         controller.menu.value = newMenu;
+        // 同步更新menuId，确保菜品数据能正确加载
+        controller.menuId.value = newMenu.menuId ?? 0;
+
+        // 发送WebSocket消息通知其他客户端
+        final websocketManager = WebSocketManager();
+        await websocketManager.sendChangeMenu(
+          tableId: currentTableId.toString(),
+          menuId: _selectedMenuId!,
+        );
 
         // 刷新点餐页面数据
         await controller.refreshOrderData();
@@ -699,6 +784,13 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
       if (mounted) {
         Navigator.of(context).pop();
         GlobalToast.error('操作异常：$e');
+      }
+    } finally {
+      // 重置处理状态
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
       }
     }
   }
@@ -977,6 +1069,7 @@ class _ChangePeopleModalContent extends StatefulWidget {
 class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
   late int adultCount;
   late int childCount;
+  bool _isProcessing = false; // 添加处理状态防止重复点击
   final _api = BaseApi();
 
   @override
@@ -989,6 +1082,11 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
 
   /// 执行更换人数操作
   Future<void> _performChangePeopleCount() async {
+    // 防止重复点击
+    if (_isProcessing) {
+      return;
+    }
+
     final controller = Get.find<OrderController>();
     final currentTableId = controller.table.value?.tableId.toInt();
 
@@ -1000,7 +1098,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
       return;
     }
 
-    // 检查是否有人数变化，只有当任何一个大于1的时候才发WS消息
+    // 检查是否有人数变化，只有当任何一个大于0的时候才发WS消息
     if (adultCount <= 0 && childCount <= 0) {
       if (mounted) {
         Navigator.of(context).pop(); // 关闭弹窗
@@ -1009,27 +1107,46 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
       return;
     }
 
+    // 设置处理状态
+    setState(() {
+      _isProcessing = true;
+    });
+
     // 先关闭弹窗
     if (mounted) {
       Navigator.of(context).pop();
     }
 
     try {
-      // 计算新的人数（现有人数 + 新增人数）
-      final controller = Get.find<OrderController>();
-      final newAdultCount = controller.adultCount.value + adultCount;
-      final newChildCount = controller.childCount.value + childCount;
-      
-      // 直接调用桌台详情API更新数据
-      await _updateTableDetailAndRefresh(currentTableId, newAdultCount, newChildCount);
+      // 直接传递增量给接口和WebSocket
+      await _updateTableDetailAndRefresh(currentTableId, adultCount, childCount);
     } catch (e) {
       GlobalToast.error('更换人数操作异常：$e');
+    } finally {
+      // 重置处理状态
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
   /// 更新桌台详情并刷新数据
-  Future<void> _updateTableDetailAndRefresh(int tableId, int newAdultCount, int newChildCount) async {
+  Future<void> _updateTableDetailAndRefresh(int tableId, int adultCountIncrement, int childCountIncrement) async {
     try {
+      // 先调用changePeopleCount接口更新服务器数据（传递增量）
+      final changeResult = await _api.changePeopleCount(
+        tableId: tableId,
+        adultCount: adultCountIncrement,
+        childCount: childCountIncrement,
+      );
+      
+      if (!changeResult.isSuccess) {
+        GlobalToast.error('更新人数失败：${changeResult.msg ?? '未知错误'}');
+        return;
+      }
+      
       // 调用桌台详情API获取最新数据
       final result = await _api.getTableDetail(tableId: tableId);
       
@@ -1040,9 +1157,16 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
         // 更新桌台信息
         controller.table.value = latestTable;
         
-        // 更新人数信息（现有人数 + 新增人数）
-        controller.adultCount.value = newAdultCount;
-        controller.childCount.value = newChildCount;
+        // 更新人数信息（直接使用服务器返回的最新数据）
+        controller.adultCount.value = latestTable.currentAdult.toInt();
+        controller.childCount.value = latestTable.currentChild.toInt();
+
+        // 发送WebSocket消息通知其他客户端（传递增量）
+        await wsManager.sendChangePeopleCount(
+          tableId: tableId.toString(),
+          adultCount: adultCountIncrement,
+          childCount: childCountIncrement,
+        );
 
         // 刷新点餐页面数据
         await controller.refreshOrderData();
