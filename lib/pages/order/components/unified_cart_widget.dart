@@ -171,7 +171,7 @@ class _CartModalContent extends StatelessWidget {
                           ),
                         ),
                         Text(
-                          '${controller.totalPrice}',
+                          '${controller.apiTotalPrice}',
                           style: TextStyle(
                             fontSize: 24,
                             height: 1,
@@ -312,14 +312,29 @@ class _CartItem extends StatelessWidget {
                   // 2. 敏感物图标（只显示图标，不显示文字，去除背景）
                   if (cartItem.dish.allergens != null && cartItem.dish.allergens?.isNotEmpty == true)
                     _AllergenIcons(allergens: cartItem.dish.allergens!),
-                  // 3. 标签（tags）
+                  // 3. 规格信息（options_str）显示在敏感物下方
+                  if (cartItem.optionsStr != null && cartItem.optionsStr!.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Text(
+                        cartItem.optionsStr!,
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey[600],
+                          height: 1.2,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  // 4. 标签（tags）
                   if (cartItem.dish.tags != null && cartItem.dish.tags?.isNotEmpty == true)
                     Padding(
                       padding: EdgeInsets.only(top: 6),
                       child: _DishTags(tags: cartItem.dish.tags!),
                     ),
                   SizedBox(height: 8),
-                  // 4. 价格显示（单价）：￥（8pt 000000）价格（16pt 000000）/份（6pt #999999）
+                  // 5. 价格显示（单价）：￥（8pt 000000）价格（16pt 000000）/份（6pt #999999）
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.baseline,
                     textBaseline: TextBaseline.alphabetic,
@@ -333,7 +348,7 @@ class _CartItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        "${cartItem.dish.price}",
+                        "${cartItem.actualPrice}",
                         style: TextStyle(
                           fontSize: 16,
                           color: Color(0xFF000000),

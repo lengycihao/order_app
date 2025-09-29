@@ -74,6 +74,9 @@ class OrderController extends GetxController {
   CartItem? _lastOperationCartItem;
   int? _lastOperationQuantity;
   
+  // 当前正在处理的消息ID（用于强制更新）
+  String? _currentProcessingMessageId;
+  
   // WebSocket相关
   final WebSocketManager _wsManager = wsManager;
   final isWebSocketConnected = false.obs;
@@ -493,6 +496,10 @@ class OrderController extends GetxController {
   
   /// 从CartController同步购物车状态到OrderController
   void _syncCartFromController() {
+    // 保存当前的操作上下文（用于409强制更新）
+    final savedOperationCartItem = _lastOperationCartItem;
+    final savedOperationQuantity = _lastOperationQuantity;
+    
     cart.clear();
     cart.addAll(_cartController.cart);
     cart.refresh();
@@ -504,6 +511,14 @@ class OrderController extends GetxController {
     
     // 同步cartInfo状态
     cartInfo.value = _cartController.cartInfo.value;
+    
+    // 恢复操作上下文（如果之前有保存的话）
+    // 这样可以确保在409强制更新期间，操作上下文不会被清除
+    if (savedOperationCartItem != null && savedOperationQuantity != null) {
+      _lastOperationCartItem = savedOperationCartItem;
+      _lastOperationQuantity = savedOperationQuantity;
+      logDebug('✅ 在同步过程中保留了操作上下文: ${savedOperationCartItem.dish.name}, quantity=$savedOperationQuantity', tag: OrderConstants.logTag);
+    }
   }
 
   void clearCart() {
@@ -515,6 +530,7 @@ class OrderController extends GetxController {
   }
 
   void addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) {
+    print('🛒 OrderController.addToCart 被调用: ${dish.name}');
     logDebug('📤 委托添加菜品到购物车: ${dish.name}', tag: OrderConstants.logTag);
     
     // 委托给CartController处理
@@ -526,6 +542,10 @@ class OrderController extends GetxController {
     // 同步操作上下文（用于409强制更新）
     _lastOperationCartItem = _cartController.lastOperationCartItem;
     _lastOperationQuantity = _cartController.lastOperationQuantity;
+    
+    // 注意：WebSocket消息发送由CartController负责，这里不需要重复发送
+    
+    logDebug('🔄 同步操作上下文 (addToCart): ${_lastOperationCartItem?.dish.name}, quantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
   }
 
   /// 添加指定数量的菜品到购物车（用于选规格弹窗）
@@ -541,6 +561,10 @@ class OrderController extends GetxController {
     // 同步操作上下文（用于409强制更新）
     _lastOperationCartItem = _cartController.lastOperationCartItem;
     _lastOperationQuantity = _cartController.lastOperationQuantity;
+    
+    // 注意：WebSocket消息发送由CartController负责，这里不需要重复发送
+    
+    logDebug('🔄 同步操作上下文 (addToCartWithQuantity): ${_lastOperationCartItem?.dish.name}, quantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
   }
   
 
@@ -580,6 +604,7 @@ class OrderController extends GetxController {
     // 同步操作上下文（用于409强制更新）
     _lastOperationCartItem = _cartController.lastOperationCartItem;
     _lastOperationQuantity = _cartController.lastOperationQuantity;
+    logDebug('🔄 同步操作上下文 (addCartItemQuantity): ${_lastOperationCartItem?.dish.name}, quantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
   }
 
   /// 手动更新购物车项数量
@@ -671,6 +696,10 @@ class OrderController extends GetxController {
   // 保持现有的getter方法以确保UI兼容性
   int get totalCount => _cartController.totalCount;
   double get totalPrice => _cartController.totalPrice;
+  double get baseTotalPrice => _cartController.baseTotalPrice;
+  
+  // API返回的总价格
+  double get apiTotalPrice => cartInfo.value?.totalPrice ?? 0.0;
 
   int getCategoryCount(int categoryIndex) {
     return _cartController.getCategoryCount(categoryIndex);
@@ -968,16 +997,48 @@ class OrderController extends GetxController {
         openDuration: currentTable.openDuration,
         checkoutTime: currentTable.checkoutTime,
         orderAmount: currentTable.orderAmount,
+        orderId: currentTable.orderId,
         mainTable: currentTable.mainTable,
+        mergedTables: currentTable.mergedTables,
       );
       table.value = updatedTable;
     }
   }
 
+
   /// 处理强制更新需求（409状态码）
   void _handleForceUpdateRequired(String message, Map<String, dynamic>? data) {
     logDebug('⚠️ 处理409状态码，立即显示强制更新确认弹窗: $message', tag: OrderConstants.logTag);
     logDebug('📋 收到的完整409数据: $data', tag: OrderConstants.logTag);
+    
+    // 从409响应数据中提取消息ID
+    String? messageId;
+    if (data != null) {
+      final nestedData = data['data'] as Map<String, dynamic>?;
+      if (nestedData != null) {
+        messageId = nestedData['message_id'] as String?;
+      }
+    }
+    
+    logDebug('🔍 提取到的消息ID: $messageId', tag: OrderConstants.logTag);
+    
+    // 根据消息ID从CartController查找对应的操作上下文
+    dynamic operationContext;
+    if (messageId != null) {
+      operationContext = _cartController.getOperationContextByMessageId(messageId);
+      if (operationContext != null) {
+        logDebug('✅ 找到操作上下文: dish=${operationContext.cartItem.dish.name}, quantity=${operationContext.quantity}', tag: OrderConstants.logTag);
+        
+        // 更新全局的操作上下文（兼容旧的强制更新逻辑）
+        _lastOperationCartItem = operationContext.cartItem;
+        _lastOperationQuantity = operationContext.quantity;
+        
+        // 存储当前处理的消息ID（用于强制更新时传递）
+        _currentProcessingMessageId = messageId;
+      } else {
+        logDebug('❌ 未找到消息ID对应的操作上下文: $messageId', tag: OrderConstants.logTag);
+      }
+    }
     
     // 获取当前上下文
     final context = Get.context;
@@ -1007,6 +1068,7 @@ class OrderController extends GetxController {
   /// 执行强制更新操作
   void _performForceUpdate() {
     logDebug('🔄 执行强制更新操作', tag: OrderConstants.logTag);
+    logDebug('🔍 当前操作上下文状态: _lastOperationCartItem=${_lastOperationCartItem?.dish.name}, _lastOperationQuantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
     
     try {
       // 使用保存的操作上下文
@@ -1017,19 +1079,36 @@ class OrderController extends GetxController {
         logDebug('✅ 使用保存的操作上下文执行强制更新: ${cartItem.dish.name}, quantity=$quantity', tag: OrderConstants.logTag);
         logDebug('📋 购物车项详情: cartId=${cartItem.cartId}, cartSpecificationId=${cartItem.cartSpecificationId}', tag: OrderConstants.logTag);
         
+        // 获取操作上下文以获取完整的选项信息
+        dynamic operationContext;
+        if (_currentProcessingMessageId != null) {
+          operationContext = _cartController.getOperationContextByMessageId(_currentProcessingMessageId!);
+        }
+        
+        final selectedOptions = operationContext?.selectedOptions ?? cartItem.selectedOptions;
+        
         // 二次确认时，应该重新发送原始的add操作，而不是update操作
         // 因为409状态码表示的是add操作的冲突，需要强制执行add操作
         logDebug('🔄 执行强制添加操作（重新发送add请求）', tag: OrderConstants.logTag);
+        
+        // 使用原始消息ID进行强制操作
         _wsHandler.sendAddDish(
           dish: cartItem.dish,
           quantity: quantity,
-          selectedOptions: cartItem.selectedOptions,
+          selectedOptions: selectedOptions,
           forceOperate: true,
+          customMessageId: _currentProcessingMessageId,
         );
         
         // 强制更新成功后清理数据
         _lastOperationCartItem = null;
         _lastOperationQuantity = null;
+        
+        // 清理映射关系
+        if (_currentProcessingMessageId != null) {
+          _cartController.clearOperationContext(_currentProcessingMessageId!);
+          _currentProcessingMessageId = null;
+        }
         logDebug('✅ 强制更新操作完成，已清理操作上下文', tag: OrderConstants.logTag);
       } else {
         logDebug('❌ 没有保存的操作上下文，无法执行强制更新', tag: OrderConstants.logTag);
@@ -1349,3 +1428,4 @@ class OrderController extends GetxController {
     super.onClose();
   }
 }
+

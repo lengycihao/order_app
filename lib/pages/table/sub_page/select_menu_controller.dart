@@ -29,9 +29,12 @@ class SelectMenuController extends GetxController {
     openTime: '',
     orderTime: '',
     orderDuration: 0,
+    openDuration: 0,
     checkoutTime: '',
     orderAmount: 0,
-    mainTable: null, openDuration: 0,
+    orderId: 0,
+    mainTable: null,
+    mergedTables: null,
   ).obs;
   
   var menu = <TableMenuListModel>[].obs;

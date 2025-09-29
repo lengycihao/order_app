@@ -8,6 +8,7 @@ import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/components/unified_cart_widget.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
+import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
 import 'package:order_app/utils/image_cache_config.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
@@ -33,6 +34,9 @@ class DishDetailPage extends StatefulWidget {
 }
 
 class _DishDetailPageState extends State<DishDetailPage> {
+  // 购物车按钮的GlobalKey，用于动画定位
+  final GlobalKey _cartButtonKey = GlobalKey();
+  
   @override
   Widget build(BuildContext context) {
     return GetBuilder<DishDetailController>(
@@ -297,8 +301,11 @@ class _DishDetailPageState extends State<DishDetailPage> {
     });
   }
 
-  /// 构建数量控制按钮 - 与列表页面完全一致
+  /// 构建数量控制按钮 - 与列表页面完全一致，添加动画效果
   Widget _buildQuantityControls(int count, Dish dish, OrderController orderController) {
+    // 为加号按钮创建独立的GlobalKey
+    final GlobalKey addButtonKey = GlobalKey();
+    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -341,9 +348,23 @@ class _DishDetailPageState extends State<DishDetailPage> {
           ),
           const SizedBox(width: 5),
         ],
-        // 加号按钮
+        // 加号按钮 - 添加动画效果
         GestureDetector(
+          key: addButtonKey,
           onTap: () {
+            // 触发抛物线动画
+            try {
+              ParabolicAnimationManager.triggerAddToCartAnimation(
+                context: context,
+                addButtonKey: addButtonKey,
+                cartButtonKey: _cartButtonKey,
+              );
+            } catch (e) {
+              print('❌ 抛物线动画错误: $e');
+              // 动画失败不影响添加功能
+            }
+            
+            // 添加到购物车
             orderController.addToCart(dish);
           },
           behavior: HitTestBehavior.opaque, // 阻止事件穿透
@@ -360,14 +381,15 @@ class _DishDetailPageState extends State<DishDetailPage> {
     );
   }
 
-  /// 构建选规格按钮 - 与列表页面完全一致
+  /// 构建选规格按钮 - 与列表页面完全一致，添加动画效果
   Widget _buildSpecificationButton(Dish dish, OrderController orderController, int totalCount) {
     return GestureDetector(
       onTap: () {
-        // 导入选规格弹窗组件
+        // 导入选规格弹窗组件，传递购物车按钮key用于动画
         SpecificationModalWidget.showSpecificationModal(
           context,
           dish,
+          cartButtonKey: _cartButtonKey,
         );
       },
       behavior: HitTestBehavior.opaque, // 阻止事件穿透
@@ -451,6 +473,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
             children: [
               // 购物车图标和数量角标
               GestureDetector(
+                key: _cartButtonKey, // 添加GlobalKey用于动画定位
                 onTap: () => UnifiedCartWidget.showCartModal(
                   context,
                   onSubmitOrder: _handleSubmitOrder,

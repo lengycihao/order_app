@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
 
 /// 菜品列表项组件
 class DishItemWidget extends StatelessWidget {
@@ -11,14 +12,19 @@ class DishItemWidget extends StatelessWidget {
   final VoidCallback? onAddTap;
   final VoidCallback? onRemoveTap;
   final VoidCallback? onDishTap;
+  final GlobalKey? cartButtonKey;
+  
+  // 为每个菜品组件创建独立的加号按钮Key
+  late final GlobalKey _addButtonKey = GlobalKey();
 
-  const DishItemWidget({
+  DishItemWidget({
     Key? key,
     required this.dish,
     this.onSpecificationTap,
     this.onAddTap,
     this.onRemoveTap,
     this.onDishTap,
+    this.cartButtonKey,
   }) : super(key: key);
 
   /// 优化：获取该菜品在购物车中的数量
@@ -30,6 +36,30 @@ class DishItemWidget extends StatelessWidget {
       }
     }
     return count;
+  }
+
+  // 处理添加到购物车的动画
+  void _handleAddToCart(BuildContext context) {
+    print('🔘 DishItemWidget: 加号按钮被点击 - ${dish.name}');
+    print('➕ DishItemWidget: 调用 onAddTap');
+    
+    // 先调用添加回调
+    onAddTap?.call();
+    
+    // 触发抛物线动画（如果有购物车按钮key）
+    if (cartButtonKey != null) {
+      print('🎬 DishItemWidget: 触发抛物线动画');
+      try {
+        ParabolicAnimationManager.triggerAddToCartAnimation(
+          context: context,
+          addButtonKey: _addButtonKey,
+          cartButtonKey: cartButtonKey!,
+        );
+      } catch (e) {
+        print('❌ 抛物线动画错误: $e');
+        // 动画失败不影响添加功能
+      }
+    }
   }
 
   @override
@@ -354,21 +384,28 @@ class DishItemWidget extends StatelessWidget {
           ),
         // if (count > 0) SizedBox(width: 5),
         // 加号按钮 - 添加loading状态检查
-        Obx(() => GestureDetector(
-          onTap: controller.isCartOperationLoading.value ? null : onAddTap,
-          behavior: HitTestBehavior.opaque, // 阻止事件穿透
-          child: Container(
-            padding: EdgeInsets.all(8), // 增大点击区域
-            child: Opacity(
-              opacity: controller.isCartOperationLoading.value ? 0.5 : 1.0,
-              child: Image(
-                image: AssetImage('assets/order_add_num.webp'),
-                width: 22,
-                height: 22,
-              ),
-            ),
-          ),
-        )),
+        Builder(
+          builder: (BuildContext buttonContext) {
+            return Obx(() {
+              return GestureDetector(
+                key: _addButtonKey,
+                onTap: controller.isCartOperationLoading.value ? null : () => _handleAddToCart(buttonContext),
+                behavior: HitTestBehavior.opaque, // 阻止事件穿透
+                child: Container(
+                  padding: EdgeInsets.all(8), // 增大点击区域
+                  child: Opacity(
+                    opacity: controller.isCartOperationLoading.value ? 0.5 : 1.0,
+                    child: Image(
+                      image: AssetImage('assets/order_add_num.webp'),
+                      width: 22,
+                      height: 22,
+                    ),
+                  ),
+                ),
+              );
+            });
+          },
+        ),
       ],
     );
   }

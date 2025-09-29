@@ -4,6 +4,7 @@ import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
+import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
 
 /// 统一的数量控制组件
 /// 用于菜品详情页面和菜品列表页面，保持UI和逻辑完全一致
@@ -12,13 +13,18 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
   final VoidCallback? onSpecificationTap;
   final VoidCallback? onAddTap;
   final VoidCallback? onRemoveTap;
+  final GlobalKey? cartButtonKey;
 
-  const UnifiedQuantityControlWidget({
+  // 加号按钮的固定Key
+  late final GlobalKey _addButtonKey = GlobalKey();
+
+  UnifiedQuantityControlWidget({
     Key? key,
     required this.dish,
     this.onSpecificationTap,
     this.onAddTap,
     this.onRemoveTap,
+    this.cartButtonKey,
   }) : super(key: key);
 
   @override
@@ -96,7 +102,17 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
         const SizedBox(width: 7),
         // 加号按钮
         Obx(() => GestureDetector(
+          key: _addButtonKey,
           onTap: orderController.isCartOperationLoading.value ? null : (onAddTap ?? () {
+            // 触发抛物线动画（如果有购物车按钮key）
+            if (cartButtonKey != null) {
+              ParabolicAnimationManager.triggerAddToCartAnimation(
+                context: Get.context!,
+                addButtonKey: _addButtonKey,
+                cartButtonKey: cartButtonKey!,
+              );
+            }
+            
             orderController.addToCart(dish);
           }),
           behavior: HitTestBehavior.opaque, // 阻止事件穿透
@@ -193,8 +209,19 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
   /// 构建添加按钮
   Widget _buildAddButton() {
     return GestureDetector(
+      key: _addButtonKey,
       onTap: onAddTap ?? () {
         final orderController = Get.find<OrderController>();
+        
+        // 触发抛物线动画（如果有购物车按钮key）
+        if (cartButtonKey != null) {
+          ParabolicAnimationManager.triggerAddToCartAnimation(
+            context: Get.context!,
+            addButtonKey: _addButtonKey,
+            cartButtonKey: cartButtonKey!,
+          );
+        }
+        
         orderController.addToCart(dish);
       },
       behavior: HitTestBehavior.opaque, // 阻止事件穿透

@@ -85,7 +85,7 @@ class CartManager {
         existingDish = Dish(
           id: (apiCartItem.dishId ?? 0).toString(),
           name: apiCartItem.dishName ?? '',
-          price: apiCartItem.price ?? 0.0,
+          price: apiCartItem.price ?? 0.0, // price字段已经映射到unit_price
           image: apiCartItem.image ?? OrderConstants.defaultDishImage,
           categoryId: correctCategoryId,
           allergens: [],
@@ -106,6 +106,8 @@ class CartManager {
         cartSpecificationId: apiCartItem.specificationId,
         cartItemId: apiCartItem.cartId, // 购物车项的ID
         cartId: cartInfo.cartId, // 购物车的外层ID
+        optionsStr: apiCartItem.optionsStr, // 从API获取规格选项字符串
+        apiPrice: apiCartItem.price, // 保存API返回的价格
       );
       
       // 添加到新购物车

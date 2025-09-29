@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:lib_base/lib_base.dart';
 import 'package:lib_base/utils/websocket_manager.dart';
 import 'package:get/get.dart';
@@ -221,7 +222,13 @@ class WebSocketHandler {
       
       final code = data['code'] as int?;
       final message = data['message'] as String?;
-      final originalId = data['original_id'] as String?;
+      
+      // 从嵌套的data结构中提取message_id作为originalId
+      String? originalId;
+      final nestedData = data['data'] as Map<String, dynamic>?;
+      if (nestedData != null) {
+        originalId = nestedData['message_id'] as String?;
+      }
       
       if (code != null && message != null) {
         logDebug('📝 收到服务器二次确认消息: 代码$code, 消息$message, 原始ID$originalId', tag: _logTag);
@@ -282,36 +289,41 @@ class WebSocketHandler {
   }
 
   /// 发送添加菜品到购物车
-  Future<bool> sendAddDish({
+  Future<String?> sendAddDish({
     required Dish dish,
     required int quantity,
     Map<String, List<String>>? selectedOptions,
     bool forceOperate = false,
+    String? customMessageId,
   }) async {
     try {
       final dishId = int.tryParse(dish.id) ?? 0;
       final options = _convertOptionsToServerFormat(selectedOptions);
       
-      logDebug('📤 添加菜品参数: 桌台ID=$_tableId, 菜品ID=$dishId, 数量=$quantity', tag: _logTag);
+      // 生成或使用自定义消息ID
+      final messageId = customMessageId ?? _generateMessageId();
       
-      final success = await _wsManager.sendAddDishToCart(
+      logDebug('📤 添加菜品参数: 桌台ID=$_tableId, 菜品ID=$dishId, 数量=$quantity, 消息ID=$messageId', tag: _logTag);
+      
+      final success = await _wsManager.sendAddDishToCartWithId(
         tableId: _tableId,
         dishId: dishId,
         quantity: quantity,
         options: options,
         forceOperate: forceOperate,
+        messageId: messageId,
       );
       
       if (success) {
-        logDebug('📤 添加菜品到WebSocket: ${dish.name} x$quantity', tag: _logTag);
+        logDebug('📤 添加菜品到WebSocket: ${dish.name} x$quantity, 消息ID=$messageId', tag: _logTag);
+        return messageId; // 返回消息ID
       } else {
         logDebug('❌ 添加菜品同步到WebSocket失败', tag: _logTag);
+        return null;
       }
-      
-      return success;
     } catch (e) {
       logDebug('❌ 同步添加菜品到WebSocket异常: $e', tag: _logTag);
-      return false;
+      return null;
     }
   }
 
@@ -420,6 +432,13 @@ class WebSocketHandler {
       logDebug('❌ 同步清空购物车到WebSocket异常: $e', tag: _logTag);
       return false;
     }
+  }
+
+  /// 生成消息ID
+  String _generateMessageId() {
+    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+    final random = Random();
+    return List.generate(20, (index) => chars[random.nextInt(chars.length)]).join();
   }
 
   /// 转换规格选项为服务器格式

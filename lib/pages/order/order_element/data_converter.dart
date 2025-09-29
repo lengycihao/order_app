@@ -29,7 +29,7 @@ class DataConverter {
               id: item.id?.toString() ?? '',
               name: item.name ?? '',
               image: item.image ?? '', // 空字段不显示假数据
-              price: double.tryParse(item.price ?? '0') ?? 0.0,
+              price: double.tryParse(item.unitPrice ?? item.price ?? '0') ?? 0.0, // 优先使用unit_price，如果没有则使用price
               categoryId: categoryIndex,
               hasOptions: item.hasOptions ?? false,
               options: item.options,

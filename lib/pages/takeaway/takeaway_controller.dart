@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/takeaway/model/takeaway_order_model.dart';
 import 'package:lib_domain/api/takeout_api.dart';
+import 'package:lib_domain/api/base_api.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:order_app/utils/websocket_lifecycle_manager.dart';
@@ -40,6 +41,9 @@ class TakeawayController extends GetxController {
   
   // 是否正在加载更多
   var isLoadingMore = false.obs;
+  
+  // 虚拟开桌loading状态
+  var isVirtualTableOpening = false.obs;
 
   @override
   void onInit() {
@@ -325,6 +329,50 @@ class TakeawayController extends GetxController {
       // 重新加载数据
       refreshData(0);
       refreshData(1);
+    }
+  }
+
+  /// 虚拟开桌
+  Future<Map<String, dynamic>?> performVirtualTableOpen() async {
+    if (isVirtualTableOpening.value) {
+      logDebug('⚠️ 虚拟开桌正在进行中，忽略重复请求', tag: 'TakeawayController');
+      return null;
+    }
+    
+    isVirtualTableOpening.value = true;
+    
+    try {
+      logDebug('🍽️ 开始虚拟开桌', tag: 'TakeawayController');
+      
+      final result = await BaseApi().openVirtualTable();
+      
+      if (result.isSuccess && result.data != null) {
+        logDebug('✅ 虚拟开桌成功', tag: 'TakeawayController');
+        return {
+          'success': true,
+          'data': result.data,
+        };
+      } else {
+        logDebug('❌ 虚拟开桌失败: ${result.msg}', tag: 'TakeawayController');
+        GlobalToast.error(result.msg ?? '虚拟开桌失败');
+        // 失败时明确返回不包含data的结果
+        return {
+          'success': false,
+          'message': result.msg ?? '虚拟开桌失败',
+          'data': null, // 明确设置为null
+        };
+      }
+    } catch (e) {
+      logDebug('❌ 虚拟开桌异常: $e', tag: 'TakeawayController');
+      GlobalToast.error('网络异常，请检查网络连接');
+      // 网络异常时明确返回不包含data的结果
+      return {
+        'success': false,
+        'message': '网络异常: $e',
+        'data': null, // 明确设置为null
+      };
+    } finally {
+      isVirtualTableOpening.value = false;
     }
   }
 }

@@ -27,7 +27,9 @@ TableListModel _$TableListModelFromJson(Map<String, dynamic> json) =>
       openDuration: _toNum(json['open_duration']),
       checkoutTime: json['checkout_time'] as String?,
       orderAmount: _toNum(json['order_amount']),
+      orderId: _toNum(json['order_id']),
       mainTable: json['main_table'],
+      mergedTables: json['merged_tables'],
     );
 
 Map<String, dynamic> _$TableListModelToJson(TableListModel instance) =>
@@ -51,5 +53,7 @@ Map<String, dynamic> _$TableListModelToJson(TableListModel instance) =>
       'open_duration': instance.openDuration,
       'checkout_time': instance.checkoutTime,
       'order_amount': instance.orderAmount,
+      'order_id': instance.orderId,
       'main_table': instance.mainTable,
+      'merged_tables': instance.mergedTables,
     };

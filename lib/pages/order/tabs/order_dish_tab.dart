@@ -32,6 +32,9 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   final FocusNode _searchFocusNode = FocusNode();
   final TextEditingController _searchController = TextEditingController();
   
+  // 购物车按钮的GlobalKey，用于动画定位
+  final GlobalKey _cartButtonKey = GlobalKey();
+  
   // 每个类目在列表中的位置信息
   List<double> _categoryPositions = [];
   bool _isClickCategory = false;
@@ -458,21 +461,19 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
 
   /// 构建主体内容
   Widget _buildMainDishContent() {
-    return Expanded(
-      child: Obx(() {
-        // 如果没有菜单ID，显示整个页面的空状态
-        if (controller.menuId.value == 0) {
-          return _buildEmptyState();
-        }
-        
-        return Row(
-          children: [
-            _buildCategoryList(),
-            _buildDishList(),
-          ],
-        );
-      }),
-    );
+    return Obx(() {
+      // 如果没有菜单ID，显示整个页面的空状态
+      if (controller.menuId.value == 0) {
+        return _buildEmptyState();
+      }
+      
+      return Row(
+        children: [
+          _buildCategoryList(),
+          _buildDishList(),
+        ],
+      );
+    });
   }
 
   /// 构建分类列表
@@ -781,8 +782,9 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
     
     return DishItemWidget(
       dish: dish,
+      cartButtonKey: _cartButtonKey, // 传递购物车按钮key用于动画
       onSpecificationTap: () {
-        SpecificationModalWidget.showSpecificationModal(context, dish);
+        SpecificationModalWidget.showSpecificationModal(context, dish, cartButtonKey: _cartButtonKey);
       },
       onAddTap: () {
         controller.addToCart(dish);
@@ -945,6 +947,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
             children: [
               // 购物车图标和数量角标
               GestureDetector(
+                key: _cartButtonKey, // 添加GlobalKey用于动画定位
                 onTap: () => UnifiedCartWidget.showCartModal(
                   context,
                   onSubmitOrder: _handleSubmitOrder,

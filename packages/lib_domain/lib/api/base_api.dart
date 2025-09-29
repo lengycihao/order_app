@@ -265,15 +265,9 @@ class BaseApi {
   }
 
   /// 虚拟开桌
-  Future<HttpResultN<TableListModel>> openVirtualTable({
-    required int menuId,
-  }) async {
-    final params = {
-      "menu_id": menuId,
-    };
+  Future<HttpResultN<TableListModel>> openVirtualTable() async {
     final result = await HttpManagerN.instance.executePost(
       ApiRequest.openVirtualTable,
-      jsonParam: params,
     );
     
     if (result.isSuccess) {

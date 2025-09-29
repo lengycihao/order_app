@@ -28,6 +28,8 @@ class CartItem {
   final String? cartSpecificationId; // WebSocket操作需要的规格ID
   final int? cartItemId; // 购物车项的ID
   final int? cartId; // 购物车的外层ID（用于update和delete操作）
+  final String? optionsStr; // 规格选项字符串，从API获取
+  final double? apiPrice; // API返回的价格（优先使用此价格）
 
   CartItem({
     required this.dish,
@@ -35,6 +37,8 @@ class CartItem {
     this.cartSpecificationId,
     this.cartItemId,
     this.cartId,
+    this.optionsStr,
+    this.apiPrice,
   });
 
   // 用于区分不同规格的相同菜品
@@ -45,10 +49,11 @@ class CartItem {
     runtimeType == other.runtimeType &&
     dish.id == other.dish.id &&
     _mapEquals(selectedOptions, other.selectedOptions) &&
-    cartSpecificationId == other.cartSpecificationId;
+    cartSpecificationId == other.cartSpecificationId &&
+    optionsStr == other.optionsStr;
 
   @override
-  int get hashCode => dish.id.hashCode ^ selectedOptions.hashCode ^ (cartSpecificationId?.hashCode ?? 0);
+  int get hashCode => dish.id.hashCode ^ selectedOptions.hashCode ^ (cartSpecificationId?.hashCode ?? 0) ^ (optionsStr?.hashCode ?? 0);
 
   bool _mapEquals(Map<String, List<String>> map1, Map<String, List<String>> map2) {
     if (map1.length != map2.length) return false;
@@ -64,6 +69,9 @@ class CartItem {
     return true;
   }
 
+  /// 获取实际使用的价格（优先使用API返回的价格）
+  double get actualPrice => apiPrice ?? dish.price;
+  
   /// 获取规格描述文本
   String get specificationText {
     if (selectedOptions.isEmpty) return '';

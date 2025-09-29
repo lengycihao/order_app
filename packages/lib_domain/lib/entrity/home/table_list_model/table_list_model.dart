@@ -69,8 +69,14 @@ class TableListModel {
   @JsonKey(name: 'order_amount', fromJson: _toNum)
   final num orderAmount;
 
+  @JsonKey(name: 'order_id', fromJson: _toNum)
+  final num orderId;
+
   @JsonKey(name: 'main_table')
   final dynamic mainTable;
+
+  @JsonKey(name: 'merged_tables')
+  final dynamic mergedTables;
 
   TableListModel({
     required this.hallId,
@@ -92,7 +98,9 @@ class TableListModel {
     required this.openDuration,
     this.checkoutTime,
     required this.orderAmount,
+    required this.orderId,
     this.mainTable,
+    this.mergedTables,
   });
 
   factory TableListModel.fromJson(Map<String, dynamic> json) =>

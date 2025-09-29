@@ -6,11 +6,12 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/utils/screen_adaptation.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
 
 /// 规格选择弹窗组件
 class SpecificationModalWidget {
   /// 显示规格选择弹窗
-  static void showSpecificationModal(BuildContext context, Dish dish) {
+  static void showSpecificationModal(BuildContext context, Dish dish, {GlobalKey? cartButtonKey}) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -18,7 +19,7 @@ class SpecificationModalWidget {
         insetPadding: EdgeInsets.symmetric(horizontal: 20),
         child: Container(
           height: ScreenAdaptation.adaptHeight(context, 420), // 使用420的屏幕适配高度
-          child: _SpecificationModalContent(dish: dish),
+          child: _SpecificationModalContent(dish: dish, cartButtonKey: cartButtonKey),
         ),
       ),
     );
@@ -28,8 +29,9 @@ class SpecificationModalWidget {
 /// 规格选择弹窗内容
 class _SpecificationModalContent extends StatefulWidget {
   final Dish dish;
+  final GlobalKey? cartButtonKey;
 
-  const _SpecificationModalContent({Key? key, required this.dish})
+  const _SpecificationModalContent({Key? key, required this.dish, this.cartButtonKey})
     : super(key: key);
 
   @override
@@ -44,6 +46,7 @@ class _SpecificationModalContentState
   double totalPrice = 0;
   late TextEditingController _quantityController;
   late FocusNode _quantityFocusNode;
+  final GlobalKey _addToCartButtonKey = GlobalKey(); // 加购按钮key用于动画
 
   @override
   void initState() {
@@ -541,6 +544,7 @@ class _SpecificationModalContentState
               Spacer(),
 
               GestureDetector(
+                key: _addToCartButtonKey,
                 onTap: _addToCart,
                 child: Container(
                   padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -581,6 +585,15 @@ class _SpecificationModalContentState
     if (missingOptionName == null) {
       // 添加到购物车
       final controller = Get.find<OrderController>();
+      
+      // 触发抛物线动画（如果有购物车按钮key）
+      if (widget.cartButtonKey != null) {
+        ParabolicAnimationManager.triggerSpecificationAddAnimation(
+          context: context,
+          addButtonKey: _addToCartButtonKey,
+          cartButtonKey: widget.cartButtonKey!,
+        );
+      }
       
       // 构建选择的规格选项 - 直接传递optionId和itemIds
       Map<String, List<String>> selectedOptionsMap = {};

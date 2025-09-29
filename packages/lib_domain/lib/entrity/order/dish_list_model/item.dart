@@ -13,6 +13,8 @@ class Item {
   int? categoryId;
   String? description;
   String? price;
+  @JsonKey(name: 'unit_price')
+  String? unitPrice;
   String? image;
   List<String>? tags;
   int? type;
@@ -27,6 +29,7 @@ class Item {
     this.categoryId,
     this.description,
     this.price,
+    this.unitPrice,
     this.image,
     this.tags,
     this.type,

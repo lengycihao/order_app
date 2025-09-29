@@ -10,6 +10,14 @@ import '../order_element/websocket_handler.dart';
 import '../order_element/websocket_debounce_manager.dart';
 import '../order_element/models.dart';
 
+/// 待处理操作模型
+class PendingOperation {
+  final CartItem cartItem;
+  final int quantityChange;
+  
+  PendingOperation({required this.cartItem, required this.quantityChange});
+}
+
 /// 购物车控制器
 /// 负责管理购物车的所有操作
 /// 设计为可以独立使用，也可以作为其他控制器的组件
@@ -35,12 +43,15 @@ class CartController extends GetxController {
   
   // UI防抖相关
   Timer? _uiDebounceTimer;
-  final Map<String, int> _pendingOperations = {}; // dishId -> pendingQuantityChange
+  final Map<String, PendingOperation> _pendingOperations = {}; // dishKey -> PendingOperation
   static const Duration _uiDebounceDuration = Duration(milliseconds: 700);
   
   // 409强制更新相关
   CartItem? _lastOperationCartItem;
   int? _lastOperationQuantity;
+  
+  // 消息ID与操作上下文的映射关系（用于409强制更新）
+  final Map<String, _OperationContext> _operationContextMap = {};
 
   @override
   void onInit() {
@@ -205,6 +216,7 @@ class CartController extends GetxController {
 
   /// 添加菜品到购物车（带防抖）
   void addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) {
+    print('🛒 CartController.addToCart 被调用: ${dish.name}');
     _addToCartWithDebounce(dish, selectedOptions: selectedOptions);
   }
 
@@ -219,10 +231,23 @@ class CartController extends GetxController {
 
   /// 防抖添加菜品到购物车
   void _addToCartWithDebounce(Dish dish, {Map<String, List<String>>? selectedOptions}) {
+    print('🔄 CartController._addToCartWithDebounce 被调用: ${dish.name}');
     final dishKey = _getDishKey(dish, selectedOptions);
+    final cartItem = CartItem(dish: dish, selectedOptions: selectedOptions ?? {}, optionsStr: null, apiPrice: null);
     
-    // 增加待处理操作计数
-    _pendingOperations[dishKey] = (_pendingOperations[dishKey] ?? 0) + 1;
+    // 更新待处理操作
+    final existingOperation = _pendingOperations[dishKey];
+    if (existingOperation != null) {
+      _pendingOperations[dishKey] = PendingOperation(
+        cartItem: cartItem, 
+        quantityChange: existingOperation.quantityChange + 1
+      );
+    } else {
+      _pendingOperations[dishKey] = PendingOperation(
+        cartItem: cartItem, 
+        quantityChange: 1
+      );
+    }
     
     // 立即更新UI
     _updateLocalCartImmediately(dish, 1, selectedOptions);
@@ -233,7 +258,7 @@ class CartController extends GetxController {
       _flushPendingOperations();
     });
     
-    logDebug('📤 防抖添加菜品: ${dish.name}, 待处理: ${_pendingOperations[dishKey]}', tag: _logTag);
+    logDebug('📤 防抖添加菜品: ${dish.name}, 待处理: ${_pendingOperations[dishKey]?.quantityChange}', tag: _logTag);
   }
 
   /// 防抖移除购物车项
@@ -258,8 +283,19 @@ class CartController extends GetxController {
       return;
     }
     
-    // 减少待处理操作计数
-    _pendingOperations[dishKey] = (_pendingOperations[dishKey] ?? 0) - 1;
+    // 更新待处理操作
+    final existingOperation = _pendingOperations[dishKey];
+    if (existingOperation != null) {
+      _pendingOperations[dishKey] = PendingOperation(
+        cartItem: cartItem, 
+        quantityChange: existingOperation.quantityChange - 1
+      );
+    } else {
+      _pendingOperations[dishKey] = PendingOperation(
+        cartItem: cartItem, 
+        quantityChange: -1
+      );
+    }
     
     // 立即更新UI
     _updateLocalCartImmediately(cartItem.dish, -1, cartItem.selectedOptions);
@@ -270,7 +306,7 @@ class CartController extends GetxController {
       _flushPendingOperations();
     });
     
-    logDebug('📤 防抖移除菜品: ${cartItem.dish.name}, 待处理: ${_pendingOperations[dishKey]}', tag: _logTag);
+    logDebug('📤 防抖移除菜品: ${cartItem.dish.name}, 待处理: ${_pendingOperations[dishKey]?.quantityChange}', tag: _logTag);
   }
 
   /// 立即更新本地购物车UI
@@ -300,8 +336,10 @@ class CartController extends GetxController {
         dish: dish,
         selectedOptions: selectedOptions ?? {},
         cartSpecificationId: null,
+        optionsStr: null,
         cartItemId: null,
         cartId: null,
+        apiPrice: null,
       );
       cart[newCartItem] = quantityChange;
     }
@@ -317,28 +355,17 @@ class CartController extends GetxController {
     logDebug('🚀 刷新待处理操作到WebSocket: ${_pendingOperations.length} 个', tag: _logTag);
     
     for (var entry in _pendingOperations.entries) {
-      final dishKey = entry.key;
-      final quantityChange = entry.value;
+      final pendingOperation = entry.value;
+      final quantityChange = pendingOperation.quantityChange;
       
       if (quantityChange == 0) continue;
       
-      // 解析dishKey获取dish和options
-      final parts = dishKey.split('|');
-      final dishId = parts[0];
-      final dish = _dishes.firstWhereOrNull((d) => d.id.toString() == dishId);
-      
-      if (dish != null) {
-        if (quantityChange > 0) {
-          _sendAddDishWebSocketWithQuantity(dish, quantityChange, null);
-        } else {
-          // 对于减少操作，需要找到对应的CartItem
-          for (var cartEntry in cart.entries) {
-            if (cartEntry.key.dish.id.toString() == dishId) {
-              _sendRemoveDishWebSocketWithQuantity(cartEntry.key, -quantityChange);
-              break;
-            }
-          }
-        }
+      if (quantityChange > 0) {
+        // 添加操作
+        _sendAddDishWebSocketWithQuantity(pendingOperation.cartItem.dish, quantityChange, null);
+      } else {
+        // 减少操作，直接使用保存的CartItem信息
+        _sendRemoveDishWebSocketWithQuantity(pendingOperation.cartItem, -quantityChange);
       }
     }
     
@@ -395,8 +422,10 @@ class CartController extends GetxController {
         dish: dish,
         selectedOptions: selectedOptions ?? {},
         cartSpecificationId: null,
+        optionsStr: null,
         cartItemId: null,
         cartId: null,
+        apiPrice: null,
       );
       
       // 保存操作上下文，用于可能的409强制更新
@@ -535,14 +564,26 @@ class CartController extends GetxController {
     try {
       logDebug('🆕 发送WebSocket添加指定数量菜品: ${dish.name} x$quantity', tag: _logTag);
       
-      final success = await _wsHandler!.sendAddDish(
+      final messageId = await _wsHandler!.sendAddDish(
         dish: dish,
         quantity: quantity,
         selectedOptions: selectedOptions,
       );
       
-      if (success) {
-        logDebug('✅ WebSocket添加指定数量菜品成功: ${dish.name} x$quantity', tag: _logTag);
+      if (messageId != null) {
+        // 保存消息ID与操作上下文的映射（用于409强制更新）
+        final cartItem = _findOrCreateCartItem(dish, selectedOptions);
+        _operationContextMap[messageId] = _OperationContext(
+          cartItem: cartItem,
+          quantity: quantity,
+          selectedOptions: selectedOptions,
+        );
+        
+        logDebug('✅ WebSocket添加指定数量菜品成功: ${dish.name} x$quantity, 消息ID=$messageId', tag: _logTag);
+        logDebug('💾 保存操作上下文映射: messageId=$messageId, dish=${dish.name}, quantity=$quantity', tag: _logTag);
+        
+        // 清理过期的映射（保留最近10分钟的）
+        _cleanupExpiredContextMappings();
       } else {
         logDebug('❌ WebSocket添加指定数量菜品失败: ${dish.name} x$quantity', tag: _logTag);
       }
@@ -710,6 +751,16 @@ class CartController extends GetxController {
     }
     
     // 如果接口没有返回总价，则计算本地购物车总价（兜底逻辑）
+    // 注意：这里只计算基础价格，不包含价格增量、税费等
+    // 因为API返回的totalPrice可能包含了这些额外费用
+    double total = cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
+    // 修复浮点数精度问题，保留2位小数
+    return double.parse(total.toStringAsFixed(2));
+  }
+  
+  /// 获取基础总价格（不包含价格增量、税费等额外费用）
+  double get baseTotalPrice {
+    // 计算本地购物车的基础总价
     double total = cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
     // 修复浮点数精度问题，保留2位小数
     return double.parse(total.toStringAsFixed(2));
@@ -729,4 +780,88 @@ class CartController extends GetxController {
     });
     return count;
   }
+  
+  /// 查找或创建购物车项（用于操作上下文）
+  CartItem _findOrCreateCartItem(Dish dish, Map<String, List<String>>? selectedOptions) {
+    // 首先尝试在现有购物车中找到匹配的项
+    for (final cartItem in cart.keys) {
+      if (cartItem.dish.id == dish.id) {
+        // 检查选项是否匹配
+        if (_areOptionsEqualForContext(cartItem.selectedOptions, selectedOptions)) {
+          return cartItem;
+        }
+      }
+    }
+    
+    // 如果没找到，创建一个新的CartItem用于上下文保存
+    return CartItem(
+      dish: dish,
+      selectedOptions: selectedOptions ?? {},
+      cartSpecificationId: "0", // 临时ID，不会用于实际操作
+      cartId: 0,
+      apiPrice: null,
+    );
+  }
+  
+  /// 比较两个选项映射是否相等（用于上下文匹配）
+  bool _areOptionsEqualForContext(Map<String, List<String>>? options1, Map<String, List<String>>? options2) {
+    if (options1 == null && options2 == null) return true;
+    if (options1 == null || options2 == null) return false;
+    if (options1.length != options2.length) return false;
+    
+    for (final key in options1.keys) {
+      if (!options2.containsKey(key)) return false;
+      final list1 = options1[key]!;
+      final list2 = options2[key]!;
+      if (list1.length != list2.length) return false;
+      for (int i = 0; i < list1.length; i++) {
+        if (list1[i] != list2[i]) return false;
+      }
+    }
+    return true;
+  }
+  
+  /// 清理过期的操作上下文映射
+  void _cleanupExpiredContextMappings() {
+    final now = DateTime.now();
+    final expiredIds = <String>[];
+    
+    for (final entry in _operationContextMap.entries) {
+      if (now.difference(entry.value.createdAt).inMinutes > 10) {
+        expiredIds.add(entry.key);
+      }
+    }
+    
+    for (final id in expiredIds) {
+      _operationContextMap.remove(id);
+    }
+    
+    if (expiredIds.isNotEmpty) {
+      logDebug('🧹 清理了${expiredIds.length}个过期的操作上下文映射', tag: _logTag);
+    }
+  }
+  
+  /// 根据消息ID查找操作上下文（供OrderController调用）
+  _OperationContext? getOperationContextByMessageId(String messageId) {
+    return _operationContextMap[messageId];
+  }
+  
+  /// 清理指定消息ID的操作上下文（供OrderController调用）
+  void clearOperationContext(String messageId) {
+    _operationContextMap.remove(messageId);
+  }
+}
+
+/// 操作上下文类，用于存储409强制更新所需的信息
+class _OperationContext {
+  final CartItem cartItem;
+  final int quantity;
+  final Map<String, List<String>>? selectedOptions;
+  final DateTime createdAt;
+  
+  _OperationContext({
+    required this.cartItem,
+    required this.quantity,
+    this.selectedOptions,
+  }) : createdAt = DateTime.now();
 }

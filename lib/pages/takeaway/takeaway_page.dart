@@ -3,9 +3,6 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/takeaway/items/takeaway_item.dart';
 import 'package:order_app/utils/center_tabbar.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
-import 'package:order_app/pages/takeaway/components/menu_selection_modal_widget.dart';
-import 'package:lib_domain/api/base_api.dart';
-import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'takeaway_controller.dart';
 import 'package:order_app/utils/toast_utils.dart';
@@ -296,8 +293,9 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
     return Positioned(
       left: _fabX!,
       top: _fabY!,
-      child: _DraggableFab(
-        onTap: _showMenuSelectionModal,
+      child: Obx(() => _DraggableFab(
+        onTap: _performVirtualTableOpen,
+        isLoading: controller.isVirtualTableOpening.value,
         onDragUpdate: (details) {
           // 拖动过程中实时更新位置
           final screenSize = MediaQuery.of(context).size;
@@ -323,45 +321,52 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
             _fabY = _fabY!.clamp(0.0, maxY);
           });
         },
-      ),
+      )),
     );
   }
 
-  /// 显示菜单选择弹窗
-  void _showMenuSelectionModal() async {
-    final selectedMenu = await MenuSelectionModalWidget.showMenuSelectionModal(
-      Get.context!,
-    );
-    
-    if (selectedMenu != null) {
-      // 执行开桌操作，传递完整的菜单信息
-      _performOpenTable(selectedMenu);
-    }
+  /// 直接执行开桌操作（无需选择菜单）
+  void _performVirtualTableOpen() async {
+    _performOpenTable();
   }
   
   /// 执行开桌操作
-  Future<void> _performOpenTable(TableMenuListModel selectedMenu) async {
+  Future<void> _performOpenTable() async {
     try {
-      // 调用开桌接口
-      final result = await BaseApi().openVirtualTable(menuId: selectedMenu.menuId!);
-
-      if (result.isSuccess && result.data != null) {
-        // 开桌成功，跳转到点餐页面，传递完整的菜单信息
-        Get.to(
-          () => OrderMainPage(),
-          arguments: {
-            'fromTakeaway': true,
-            'table': result.data,
-            'menu': selectedMenu,  // 传递完整的菜单信息
-            'menu_id': selectedMenu.menuId,  // 保留menu_id用于兼容性
-            'adult_count': (result.data?.currentAdult ?? 0) > 0 ? result.data!.currentAdult : result.data?.standardAdult ?? 1,
-            'child_count': result.data?.currentChild ?? 0,
-          },
-        );
+      // 使用controller的虚拟开桌方法（loading状态已在controller中管理）
+      final result = await controller.performVirtualTableOpen();
+      
+      // 严格检查：必须有返回值且成功标记为true且有有效的桌台数据
+      if (result != null && 
+          result['success'] == true && 
+          result['data'] != null) {
+        // 开桌成功，跳转到点餐页面
+        final tableData = result['data'];
+        
+        // 额外验证桌台数据的有效性
+        if (tableData.tableId != null && tableData.tableId > 0) {
+          logDebug('✅ 虚拟开桌成功，跳转到点餐页面', tag: 'TakeawayPage');
+          Get.to(
+            () => OrderMainPage(),
+            arguments: {
+              'fromTakeaway': true,
+              'table': tableData,
+              'menu_id': tableData.menuId,  // 使用接口返回的菜单ID
+              'adult_count': (tableData?.currentAdult ?? 0) > 0 ? tableData.currentAdult : tableData?.standardAdult ?? 1,
+              'child_count': tableData?.currentChild ?? 0,
+            },
+          );
+        } else {
+          logDebug('❌ 桌台数据无效，tableId: ${tableData?.tableId}', tag: 'TakeawayPage');
+          GlobalToast.error('开桌失败：桌台数据无效');
+        }
       } else {
-        GlobalToast.error(result.msg ?? '未知错误');
+        // 开桌失败，不跳转页面
+        logDebug('❌ 虚拟开桌失败，不跳转页面。result: $result', tag: 'TakeawayPage');
+        // 错误信息已在controller中处理，这里不需要重复显示
       }
     } catch (e) {
+      logDebug('❌ 开桌操作异常: $e', tag: 'TakeawayPage');
       GlobalToast.error('网络错误: $e');
     }
   }
@@ -628,11 +633,13 @@ class _DraggableFab extends StatefulWidget {
   final VoidCallback onTap;
   final Function(DraggableDetails) onDragEnd;
   final DragUpdateCallback? onDragUpdate;
+  final bool isLoading;
 
   const _DraggableFab({
     required this.onTap,
     required this.onDragEnd,
     this.onDragUpdate,
+    this.isLoading = false,
   });
 
   @override
@@ -667,6 +674,11 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
 
   @override
   Widget build(BuildContext context) {
+    // 如果正在loading，禁用拖拽功能
+    if (widget.isLoading) {
+      return _buildFabButton();
+    }
+    
     return Draggable(
       feedback: Material(
         elevation: 12.0,
@@ -680,7 +692,7 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
             shape: BoxShape.circle,
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(0.3),
+                color: Colors.black.withValues(alpha: 0.3),
                 blurRadius: 12,
                 offset: Offset(0, 6),
               ),
@@ -703,10 +715,10 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
         widget.onDragEnd(details);
       },
       child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => _animationController.forward(),
-        onTapUp: (_) => _animationController.reverse(),
-        onTapCancel: () => _animationController.reverse(),
+        onTap: widget.isLoading ? null : widget.onTap,
+        onTapDown: widget.isLoading ? null : (_) => _animationController.forward(),
+        onTapUp: widget.isLoading ? null : (_) => _animationController.reverse(),
+        onTapCancel: widget.isLoading ? null : () => _animationController.reverse(),
         child: AnimatedBuilder(
           animation: _scaleAnimation,
           builder: (context, child) {
@@ -752,11 +764,16 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
             ),
           ],
         ),
-        child: Icon(
-          Icons.add,
-          color: Colors.white.withValues(alpha: opacity),
-          size: 36,
-        ),
+        child: widget.isLoading 
+          ? RestaurantLoadingWidget(
+              size: 32,
+              color: Colors.white,
+            )
+          : Icon(
+              Icons.add,
+              color: Colors.white.withValues(alpha: opacity),
+              size: 36,
+            ),
       ),
     );
   }
