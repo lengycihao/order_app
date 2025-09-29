@@ -182,7 +182,6 @@ class OrderDetailControllerNew extends GetxController {
       'name': '张三',
       'phone': '138****8888', 
       'address': '北京市朝阳区三里屯街道工体北路8号院',
-      'time': orderDetail.value?.formattedEstimatePickupTime ?? '',
     };
   }
 }

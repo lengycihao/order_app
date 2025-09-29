@@ -9,6 +9,7 @@ import 'package:order_app/pages/table/table_controller.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/takeaway/takeaway_controller.dart';
+import 'package:order_app/pages/table/sub_page/select_menu_controller.dart';
 import 'package:lib_base/logging/logging.dart';
 import 'package:lib_domain/api/base_api.dart';
 // import '../../service/cart_cache_service.dart'; // 已泣释：不再需要缓存功能
@@ -159,9 +160,15 @@ class MineController extends GetxController {
       }
       
       // 清理TakeawayController（如果存在）
-      if (Get.isRegistered<TakeawayController>()) {
-        Get.delete<TakeawayController>();
+      if (Get.isRegistered<TakeawayController>(tag: 'takeaway_page')) {
+        Get.delete<TakeawayController>(tag: 'takeaway_page');
         logDebug('TakeawayController已清理', tag: 'MineController');
+      }
+      
+      // 清理SelectMenuController（如果存在）
+      if (Get.isRegistered<SelectMenuController>(tag: 'select_menu_page')) {
+        Get.delete<SelectMenuController>(tag: 'select_menu_page');
+        logDebug('SelectMenuController已清理', tag: 'MineController');
       }
       
       logDebug('所有缓存数据清理完成', tag: 'MineController');

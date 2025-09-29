@@ -90,10 +90,6 @@ class _TakeawayItemState extends State<TakeawayItem> {
             ],
           ),
           
-          // // 预计取餐时间（如果有?
-          // if (widget.order.formattedEstimatePickupTime.isNotEmpty) ...[
-          //     ),
-          //   ),
           
           // 备注信息（如果存在则显示?
           if (widget.order.remark != null && widget.order.remark!.isNotEmpty) ...[

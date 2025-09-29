@@ -607,7 +607,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
 
   /// 构建加载更多指示器
   Widget _buildLoadMoreIndicator(int tabIndex) {
-    final controller = Get.find<TakeawayController>();
+    // 直接使用实例变量controller，无需重新Get.find
     return Obx(() {
       final isLoadingMore = controller.isLoadingMore.value;
       

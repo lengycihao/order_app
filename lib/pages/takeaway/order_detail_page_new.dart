@@ -121,11 +121,6 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
           // 订单信息内容
           _buildInfoRow('取餐码:', order.pickupCode ?? '1324'),
           const SizedBox(height: 8),
-          _buildInfoRow(
-            '取餐时间:',
-            order.formattedEstimatePickupTime ?? '9999-99-99 00:00:00',
-          ),
-          const SizedBox(height: 8),
           _buildInfoRow('备注：', order.remark ?? ''),
           const SizedBox(height: 8),
           _buildInfoRow('订单编号:', order.orderNo ?? ''),

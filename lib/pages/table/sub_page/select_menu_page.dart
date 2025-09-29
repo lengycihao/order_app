@@ -4,13 +4,19 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'select_menu_controller.dart';
 import 'package:order_app/utils/keyboard_utils.dart';
 
-class SelectMenuPage extends GetView<SelectMenuController> {
+class SelectMenuPage extends StatelessWidget {
   const SelectMenuPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // 确保控制器已初始化
-    Get.put(SelectMenuController());
+    // 清理可能存在的旧实例
+    if (Get.isRegistered<SelectMenuController>(tag: 'select_menu_page')) {
+      Get.delete<SelectMenuController>(tag: 'select_menu_page');
+    }
+    
+    // 创建新的控制器实例
+    final controller = Get.put(SelectMenuController(), tag: 'select_menu_page');
+    
     return Scaffold(
       backgroundColor: Color(0xffF9F9F9),
       appBar: AppBar(
@@ -22,11 +28,11 @@ class SelectMenuPage extends GetView<SelectMenuController> {
           ),
           onPressed: controller.goBack,
         ),
-        title: Text(
+        title: Obx(() => Text(
           controller.table.value.tableName ?? '桌台名称',
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
-        ),
+        )),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -100,17 +106,17 @@ class SelectMenuPage extends GetView<SelectMenuController> {
             // 成人数量选择
             _buildCountRow(
               '大人',
-              controller.adultCount,
-              controller.increaseAdultCount,
-              controller.decreaseAdultCount,
+              Get.find<SelectMenuController>(tag: 'select_menu_page').adultCount,
+              Get.find<SelectMenuController>(tag: 'select_menu_page').increaseAdultCount,
+              Get.find<SelectMenuController>(tag: 'select_menu_page').decreaseAdultCount,
             ),
 SizedBox(height: 12,),
             // 儿童数量选择
             _buildCountRow(
               '小孩',
-              controller.childCount,
-              controller.increaseChildCount,
-              controller.decreaseChildCount,
+              Get.find<SelectMenuController>(tag: 'select_menu_page').childCount,
+              Get.find<SelectMenuController>(tag: 'select_menu_page').increaseChildCount,
+              Get.find<SelectMenuController>(tag: 'select_menu_page').decreaseChildCount,
             ),SizedBox(height: 10,),
           ],
         ),
@@ -303,6 +309,8 @@ SizedBox(height: 12,),
 
   /// 构建菜单网格
   Widget _buildMenuGrid() {
+    final controller = Get.find<SelectMenuController>(tag: 'select_menu_page');
+    
     return Obx(() {
       if (controller.isLoadingDishes.value) {
         return const SizedBox(
@@ -474,7 +482,7 @@ SizedBox(height: 12,),
             ),
             padding: EdgeInsets.zero, // 移除内边距，使用固定尺寸
           ),
-          onPressed: () => controller.startOrdering(),
+          onPressed: () => Get.find<SelectMenuController>(tag: 'select_menu_page').startOrdering(),
           child: const Text(
             '开始点餐',
             style: TextStyle(

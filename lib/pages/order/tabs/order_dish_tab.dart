@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/components/order_submit_dialog.dart';
@@ -15,8 +16,8 @@ import 'package:order_app/components/skeleton_widget.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:get_it/get_it.dart';
 import 'package:order_app/utils/toast_utils.dart';
-import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
-import 'package:lib_base/logging/logging.dart';
+import 'package:lib_base/lib_base.dart';
+import 'package:order_app/pages/nav/screen_nav_page.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
 
 class OrderDishTab extends BaseListPageWidget {
@@ -38,6 +39,10 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   // 每个类目在列表中的位置信息
   List<double> _categoryPositions = [];
   bool _isClickCategory = false;
+  // 每个类目的锚点Key，用于动态测量位置
+  final List<GlobalKey> _categoryKeys = [];
+  static const double _stickyHeaderHeight = 40.0;
+  static const double _inListHeaderHeight = 80.0;
   
   // 吸顶相关状态已移除，现在由统一的吸顶头部处理
   
@@ -77,6 +82,19 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   @override
   Widget buildDataContent() {
     return _buildMainDishContent();
+  }
+
+  /// 确保每个类目都有对应的GlobalKey
+  void _ensureCategoryKeys() {
+    final int needed = controller.categories.length;
+    // 尽量复用已存在的key，避免频繁重建
+    if (_categoryKeys.length < needed) {
+      for (int i = _categoryKeys.length; i < needed; i++) {
+        _categoryKeys.add(GlobalKey(debugLabel: 'category_anchor_$i'));
+      }
+    } else if (_categoryKeys.length > needed) {
+      _categoryKeys.removeRange(needed, _categoryKeys.length);
+    }
   }
 
   @override
@@ -242,28 +260,37 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   
   /// 执行滚动更新逻辑
   void _performScrollUpdate() {
-    if (!_scrollController.hasClients) return;
-    
-    final scrollOffset = _scrollController.offset;
-    int newSelectedCategory = 0;
+    if (!_scrollController.hasClients || controller.categories.isEmpty) return;
 
-    // 根据滚动位置确定当前选中的分类
-    // 添加一个小的偏移量来确保更准确的匹配
-    const double offsetThreshold = 20.0;
-    
-    for (int i = _categoryPositions.length - 1; i >= 0; i--) {
-      if (scrollOffset >= (_categoryPositions[i] - offsetThreshold)) {
-        newSelectedCategory = i;
-        break;
+    // 使用动态锚点和Viewport来判断当前分类
+    int calculatedIndex = 0;
+    try {
+      _ensureCategoryKeys();
+      final double current = _scrollController.offset;
+      final double line = current + _stickyHeaderHeight + 1; // 顶部吸顶线下方一点点
+
+      for (int i = 0; i < _categoryKeys.length; i++) {
+        final context = _categoryKeys[i].currentContext;
+        if (context == null) continue;
+        final renderObject = context.findRenderObject();
+        if (renderObject == null || !renderObject.attached) continue;
+        final viewport = RenderAbstractViewport.of(renderObject);
+        // viewport不会为null（在滚动视图中），无需冗余判断
+
+        final double revealOffset = viewport.getOffsetToReveal(renderObject, 0.0).offset;
+        if (revealOffset <= line) {
+          calculatedIndex = i;
+        } else {
+          break;
+        }
       }
+    } catch (_) {
+      // 安静失败，保持原逻辑不崩溃
     }
 
-    // 只有分类真正改变时才更新
-    if (controller.selectedCategory.value != newSelectedCategory) {
-      controller.selectedCategory.value = newSelectedCategory;
+    if (controller.selectedCategory.value != calculatedIndex) {
+      controller.selectedCategory.value = calculatedIndex;
     }
-    
-    // 吸顶分类状态现在由统一的吸顶头部处理
   }
 
   /// 滚动到指定类目
@@ -273,30 +300,33 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
     if (categoryIndex < 0 || 
         categoryIndex >= controller.categories.length) return;
 
-    // 如果位置信息为空，先计算位置
-    if (_categoryPositions.isEmpty) {
-      _calculateCategoryPositions();
-    }
-
     _isClickCategory = true;
     // 立即更新选中的分类，确保吸顶头部文字立即更新
     controller.selectedCategory.value = categoryIndex;
     
     try {
-      if (categoryIndex < _categoryPositions.length) {
-        // 计算目标滚动位置：向上滚动100像素，让分类标题更接近吸顶头部
-        double targetPosition = _categoryPositions[categoryIndex] + 100;
-        
-        // 确保滚动位置不为负数
-        if (targetPosition < 0) {
-          targetPosition = 0;
+      _ensureCategoryKeys();
+      final ctx = _categoryKeys[categoryIndex].currentContext;
+      if (ctx != null) {
+        final ro = ctx.findRenderObject();
+        if (ro != null && ro.attached) {
+          // 第一个分类：直接置顶，无需滚动补偿
+          if (categoryIndex == 0) {
+            if (_scrollController.hasClients) {
+              _scrollController.jumpTo(0);
+            }
+          } else {
+            final viewport = RenderAbstractViewport.of(ro);
+            // 目标 = 锚点显露offset - 吸顶头 + 列表内标题高度（避免重复标题重叠）
+            double target = viewport.getOffsetToReveal(ro, 0.0).offset - _stickyHeaderHeight + _inListHeaderHeight;
+            if (target < 0) target = 0;
+            await _scrollController.animateTo(
+              target,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
+          }
         }
-        
-        await _scrollController.animateTo(
-          targetPosition,
-          duration: Duration(milliseconds: 300),
-          curve: Curves.easeInOut,
-        );
       }
     } catch (e) {
       logError('❌ 滚动到类目失败: $e', tag: 'OrderDishTab');
@@ -676,6 +706,9 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
       return slivers;
     }
     
+    // 确保锚点keys齐全
+    _ensureCategoryKeys();
+
     // 确保位置信息已计算
     if (_categoryPositions.isEmpty || !_categoryPositionsCalculated) {
       _calculateCategoryPositions();
@@ -686,7 +719,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
       Obx(() => SliverPersistentHeader(
         pinned: true,
         delegate: _UnifiedStickyHeaderDelegate(
-          height: 40,
+          height: _stickyHeaderHeight,
           categoryPositions: _categoryPositions,
           scrollOffset: _getScrollOffset(),
           categories: controller.categories,
@@ -699,6 +732,14 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
           },
         ),
       )),
+    );
+
+    // 为第一个分类添加一个零高度的锚点，确保可被定位
+    slivers.add(
+      SliverToBoxAdapter(
+        key: _categoryKeys.isNotEmpty ? _categoryKeys[0] : null,
+        child: const SizedBox.shrink(),
+      ),
     );
     
     for (int categoryIndex = 0; categoryIndex < controller.categories.length; categoryIndex++) {
@@ -715,6 +756,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
         if (categoryIndex > 0) {
           slivers.add(
             SliverToBoxAdapter(
+              key: _categoryKeys[categoryIndex],
               child: _buildCategoryHeader(categoryIndex),
             ),
           );
@@ -849,31 +891,14 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
     
     // 根据订单来源判断处理方式
     if (controller.source.value == 'takeaway') {
-      // 外卖订单：跳转到预约时间页面
-      _navigateToAppointmentPage();
+      // 外卖订单：直接提交订单（不跳转到备注页面）
+      _submitTakeawayOrder();
     } else {
       // 桌台订单：直接提交订单
       _submitTableOrder();
     }
   }
 
-  /// 跳转到预约时间页面
-  void _navigateToAppointmentPage() {
-    if (!mounted) return;
-    
-    try {
-      // 跳转到预约时间页面，传递桌台ID
-      Get.to(
-        () => TakeawayOrderSuccessPage(),
-        arguments: {
-          'tableId': controller.table.value?.tableId,
-        },
-      );
-    } catch (e) {
-      logError('❌ 跳转预约时间页面失败: $e', tag: 'OrderDishTab');
-      GlobalToast.error('跳转失败，请重试');
-    }
-  }
 
   /// 提交桌台订单
   Future<void> _submitTableOrder() async {
@@ -907,6 +932,62 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
         Navigator.of(context).pop();
         // 显示错误提示
         GlobalToast.error('提交订单时发生错误，请重试');
+      }
+    }
+  }
+
+  /// 提交外卖订单（直接提交，不跳转到备注页面）
+  Future<void> _submitTakeawayOrder() async {
+    if (!mounted) return;
+    
+    try {
+      // 显示纯动画加载弹窗（无文字）
+      OrderSubmitDialog.showLoadingOnly(context);
+      
+      // 获取桌台ID
+      final tableId = controller.table.value?.tableId;
+      if (tableId == null || tableId <= 0) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          ToastUtils.showError(context, '桌台ID不能为空');
+        }
+        return;
+      }
+      
+      // 准备提交参数（不包含备注，直接提交空备注）
+      final params = {
+        'table_id': tableId,
+        'remark': '', // 直接提交空备注
+      };
+      
+      // 调用外卖订单提交API
+      final result = await HttpManagerN.instance.executePost(
+        '/api/waiter/cart/submit_takeout_order',
+        jsonParam: params,
+      );
+      
+      if (!mounted) return;
+      
+      // 关闭加载弹窗
+      Navigator.of(context).pop();
+      
+      if (result.isSuccess) {
+        // 下单成功，显示成功提示
+        ToastUtils.showSuccess(context, '订单提交成功');
+        // 跳转到主页面并切换到外卖标签页
+        Get.offAll(() => ScreenNavPage(initialIndex: 1));
+      } else {
+        // 下单失败，显示错误提示
+        final errorMessage = result.msg ?? '订单提交失败';
+        ToastUtils.showError(context, errorMessage);
+      }
+    } catch (e) {
+      logError('❌ 提交外卖订单异常: $e', tag: 'OrderDishTab');
+      if (mounted) {
+        // 关闭加载弹窗
+        Navigator.of(context).pop();
+        // 显示错误提示
+        ToastUtils.showError(context, '网络错误: ${e.toString()}');
       }
     }
   }
@@ -1081,139 +1162,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
     );
   }
 }
-
-/// 用户头像组件（带loading动画）
-class _UserAvatarWithLoading extends StatefulWidget {
-  final bool isLoading;
-  
-  const _UserAvatarWithLoading({
-    Key? key,
-    required this.isLoading,
-  }) : super(key: key);
-
-  @override
-  State<_UserAvatarWithLoading> createState() => _UserAvatarWithLoadingState();
-}
-
-class _UserAvatarWithLoadingState extends State<_UserAvatarWithLoading>
-    with TickerProviderStateMixin {
-  late AnimationController _loadingController;
-  Timer? _timeoutTimer;
-
-  @override
-  void initState() {
-    super.initState();
-    _loadingController = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    );
-  }
-
-  @override
-  void didUpdateWidget(_UserAvatarWithLoading oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    
-    if (widget.isLoading && !oldWidget.isLoading) {
-      // 开始loading
-      _startLoading();
-    } else if (!widget.isLoading && oldWidget.isLoading) {
-      // 停止loading
-      _stopLoading();
-    }
-  }
-
-  void _startLoading() {
-    _loadingController.repeat();
-    // 设置超时逻辑 - 10秒后自动停止loading
-    _timeoutTimer?.cancel();
-    _timeoutTimer = Timer(const Duration(seconds: 10), () {
-      if (mounted && widget.isLoading) {
-        _stopLoading();
-      }
-    });
-  }
-
-  void _stopLoading() {
-    _loadingController.stop();
-    _timeoutTimer?.cancel();
-  }
-
-  @override
-  void dispose() {
-    _loadingController.dispose();
-    _timeoutTimer?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final authService = GetIt.instance<AuthService>();
-    final user = authService.currentUser;
-    return Stack(
-          children: [
-            // 用户头像 - 使用真实头像或占位图
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                // 移除边框
-              ),
-              child: ClipOval(
-                child: user?.avatar != null && user?.avatar?.isNotEmpty == true
-                    ? Image.network(
-                        user?.avatar ?? '',
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Image.asset(
-                            'assets/order_mine_placeholder.webp',
-                            width: 40,
-                            height: 40,
-                            fit: BoxFit.cover,
-                          );
-                        },
-                      )
-                    : Image.asset(
-                        'assets/order_mine_placeholder.webp',
-                        width: 40,
-                        height: 40,
-                        fit: BoxFit.cover,
-                      ),
-              ),
-            ),
-            // Loading动画 - 在头像内部显示转圈动画
-            if (widget.isLoading)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.black.withOpacity(0.3),
-                  ),
-                  child: Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: AnimatedBuilder(
-                        animation: _loadingController,
-                        builder: (context, child) {
-                          return CircularProgressIndicator(
-                            value: _loadingController.value,
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-          ],
-        );
-  }
-}
-
+ 
 /// 统一的吸顶头部委托类
 class _UnifiedStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   final double height;
