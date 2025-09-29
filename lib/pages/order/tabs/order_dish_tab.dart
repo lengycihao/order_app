@@ -17,15 +17,16 @@ import 'package:get_it/get_it.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:order_app/widgets/base_list_page_widget.dart';
 
-class OrderDishTab extends StatefulWidget {
+class OrderDishTab extends BaseListPageWidget {
   const OrderDishTab({super.key});
 
   @override
   State<OrderDishTab> createState() => _OrderDishTabState();
 }
 
-class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClientMixin {
+class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticKeepAliveClientMixin {
   late final OrderController controller;
   final ScrollController _scrollController = ScrollController();
   final FocusNode _searchFocusNode = FocusNode();
@@ -51,6 +52,47 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
 
   @override
   bool get wantKeepAlive => true; // 保持页面状态
+
+  // 基类要求的抽象方法实现
+  @override
+  bool get isLoading => controller.isLoading.value;
+
+  @override
+  bool get hasNetworkError => controller.hasNetworkError.value;
+
+  @override
+  bool get hasData => controller.filteredDishes.isNotEmpty;
+
+  @override
+  bool get shouldShowSkeleton => true;
+
+  @override
+  Future<void> onRefresh() async {
+    await controller.refreshData();
+  }
+
+  @override
+  Widget buildDataContent() {
+    return _buildMainDishContent();
+  }
+
+  @override
+  String getEmptyStateText() => '暂无菜品数据';
+
+  @override
+  String getNetworkErrorText() => '网络连接失败，请检查网络后重试';
+
+  @override
+  Widget? getNetworkErrorAction() {
+    return ElevatedButton(
+      onPressed: onRefresh,
+      style: ElevatedButton.styleFrom(
+        backgroundColor: Color(0xFFFF9027),
+        foregroundColor: Colors.white,
+      ),
+      child: Text('重试'),
+    );
+  }
 
   @override
   void initState() {
@@ -415,7 +457,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
   }
 
   /// 构建主体内容
-  Widget _buildMainContent() {
+  Widget _buildMainDishContent() {
     return Expanded(
       child: Obx(() {
         // 如果没有菜单ID，显示整个页面的空状态
@@ -973,7 +1015,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
               GestureDetector(
                 onTap: _handleSubmitOrder,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9027),
                     borderRadius: BorderRadius.circular(15),
@@ -1019,7 +1061,7 @@ class _OrderDishTabState extends State<OrderDishTab> with AutomaticKeepAliveClie
               // 搜索 + 排序
               _buildSearchAndFilter(),
               // 主体内容区域
-              _buildMainContent(),
+              buildMainContent(),
               // 底部占位空间，为固定按钮留出空间
               SizedBox(height: 60),
             ],

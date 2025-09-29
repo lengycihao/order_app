@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../pages/order/components/restaurant_loading_widget.dart';
+import '../components/skeleton_widget.dart';
 
 /// 基础列表页面抽象类
 /// 统一处理空状态和网络异常展示
@@ -43,12 +44,7 @@ abstract class BaseListPageState<T extends BaseListPageWidget> extends State<T> 
   
   /// 构建骨架图Widget（子类可重写）
   Widget buildSkeletonWidget() {
-    return const Center(
-      child: Text(
-        '骨架图',
-        style: TextStyle(fontSize: 16, color: Colors.grey),
-      ),
-    );
+    return const OrderPageSkeleton();
   }
   
   /// 构建空状态Widget

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:get/get.dart';
 import 'package:lib_domain/entrity/cart/cart_info_model.dart';
 import 'package:lib_base/logging/logging.dart';
@@ -32,6 +33,11 @@ class CartController extends GetxController {
   WebSocketHandler? _wsHandler;
   WebSocketDebounceManager? _wsDebounceManager;
   
+  // UI防抖相关
+  Timer? _uiDebounceTimer;
+  final Map<String, int> _pendingOperations = {}; // dishId -> pendingQuantityChange
+  static const Duration _uiDebounceDuration = Duration(milliseconds: 700);
+  
   // 409强制更新相关
   CartItem? _lastOperationCartItem;
   int? _lastOperationQuantity;
@@ -40,6 +46,15 @@ class CartController extends GetxController {
   void onInit() {
     super.onInit();
     _initializeManagers();
+  }
+  
+  @override
+  void onClose() {
+    _uiDebounceTimer?.cancel();
+    _cartManager.dispose();
+    _localCartManager.clearAllPendingOperations();
+    _wsDebounceManager?.dispose();
+    super.onClose();
   }
   
   /// 初始化依赖数据
@@ -70,10 +85,18 @@ class CartController extends GetxController {
   /// 设置WebSocket处理器
   void setWebSocketHandler(WebSocketHandler wsHandler) {
     _wsHandler = wsHandler;
-    _wsDebounceManager = WebSocketDebounceManager(
-      wsHandler: wsHandler,
-      logTag: _logTag,
-    );
+    // 不在这里创建防抖管理器，由外部设置
+    // _wsDebounceManager = WebSocketDebounceManager(
+    //   wsHandler: wsHandler,
+    //   logTag: _logTag,
+    // );
+    // _wsDebounceManager?.setFailureCallback(_onWebSocketDebounceFailed);
+  }
+
+  /// 设置WebSocket防抖管理器
+  void setWebSocketDebounceManager(WebSocketDebounceManager wsDebounceManager) {
+    _wsDebounceManager = wsDebounceManager;
+    // 设置失败回调
     _wsDebounceManager?.setFailureCallback(_onWebSocketDebounceFailed);
   }
 
@@ -180,10 +203,78 @@ class CartController extends GetxController {
     }, milliseconds: 300);
   }
 
-  /// 添加菜品到购物车
+  /// 添加菜品到购物车（带防抖）
   void addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) {
-    logDebug('📤 添加菜品到购物车: ${dish.name}', tag: _logTag);
+    _addToCartWithDebounce(dish, selectedOptions: selectedOptions);
+  }
+
+  /// 移除购物车项（带防抖）
+  void removeFromCart(dynamic item) {
+    if (item is CartItem) {
+      _removeFromCartWithDebounce(item);
+    } else if (item is Dish) {
+      _removeFromCartWithDebounce(item);
+    }
+  }
+
+  /// 防抖添加菜品到购物车
+  void _addToCartWithDebounce(Dish dish, {Map<String, List<String>>? selectedOptions}) {
+    final dishKey = _getDishKey(dish, selectedOptions);
     
+    // 增加待处理操作计数
+    _pendingOperations[dishKey] = (_pendingOperations[dishKey] ?? 0) + 1;
+    
+    // 立即更新UI
+    _updateLocalCartImmediately(dish, 1, selectedOptions);
+    
+    // 重置防抖计时器
+    _uiDebounceTimer?.cancel();
+    _uiDebounceTimer = Timer(_uiDebounceDuration, () {
+      _flushPendingOperations();
+    });
+    
+    logDebug('📤 防抖添加菜品: ${dish.name}, 待处理: ${_pendingOperations[dishKey]}', tag: _logTag);
+  }
+
+  /// 防抖移除购物车项
+  void _removeFromCartWithDebounce(dynamic item) {
+    CartItem? cartItem;
+    String? dishKey;
+    
+    if (item is CartItem) {
+      cartItem = item;
+      dishKey = _getDishKey(cartItem.dish, cartItem.selectedOptions);
+    } else if (item is Dish) {
+      // 查找对应的CartItem
+      for (var entry in cart.entries) {
+        if (entry.key.dish.id == item.id) {
+          cartItem = entry.key;
+          dishKey = _getDishKey(item, cartItem.selectedOptions);
+          break;
+        }
+      }
+      if (cartItem == null || dishKey == null) return;
+    } else {
+      return;
+    }
+    
+    // 减少待处理操作计数
+    _pendingOperations[dishKey] = (_pendingOperations[dishKey] ?? 0) - 1;
+    
+    // 立即更新UI
+    _updateLocalCartImmediately(cartItem.dish, -1, cartItem.selectedOptions);
+    
+    // 重置防抖计时器
+    _uiDebounceTimer?.cancel();
+    _uiDebounceTimer = Timer(_uiDebounceDuration, () {
+      _flushPendingOperations();
+    });
+    
+    logDebug('📤 防抖移除菜品: ${cartItem.dish.name}, 待处理: ${_pendingOperations[dishKey]}', tag: _logTag);
+  }
+
+  /// 立即更新本地购物车UI
+  void _updateLocalCartImmediately(Dish dish, int quantityChange, Map<String, List<String>>? selectedOptions) {
     // 查找是否已存在相同的购物车项
     CartItem? existingCartItem;
     for (var entry in cart.entries) {
@@ -195,17 +286,16 @@ class CartController extends GetxController {
     }
     
     if (existingCartItem != null) {
-      // 如果已存在，使用本地购物车管理器增加数量
-      // 保存操作上下文，用于可能的409强制更新
-      // 注意：保存的是增加的数量(1)，而不是总数量
-      _lastOperationCartItem = existingCartItem;
-      _lastOperationQuantity = 1; // 每次点击只增加1个
+      final currentQuantity = cart[existingCartItem] ?? 0;
+      final newQuantity = (currentQuantity + quantityChange).clamp(0, 999);
       
-      // 先发送WebSocket消息，等待服务器响应后再更新本地状态
-      _sendAddDishWebSocket(dish, selectedOptions);
-      // 注意：_sendAddDishWebSocket是异步的，实际的状态更新会在WebSocket响应后处理
-    } else {
-      // 如果不存在，创建新的购物车项
+      if (newQuantity <= 0) {
+        cart.remove(existingCartItem);
+      } else {
+        cart[existingCartItem] = newQuantity;
+      }
+    } else if (quantityChange > 0) {
+      // 创建新的购物车项
       final newCartItem = CartItem(
         dish: dish,
         selectedOptions: selectedOptions ?? {},
@@ -213,15 +303,54 @@ class CartController extends GetxController {
         cartItemId: null,
         cartId: null,
       );
-      
-      // 保存操作上下文，用于可能的409强制更新
-      _lastOperationCartItem = newCartItem;
-      _lastOperationQuantity = 1;
-      
-      // 先发送WebSocket消息，等待服务器响应后再更新本地状态
-      _sendAddDishWebSocket(dish, selectedOptions);
-      // 注意：_sendAddDishWebSocket是异步的，实际的状态更新会在WebSocket响应后处理
+      cart[newCartItem] = quantityChange;
     }
+    
+    cart.refresh();
+    update();
+  }
+
+  /// 刷新待处理的操作到WebSocket
+  void _flushPendingOperations() {
+    if (_pendingOperations.isEmpty) return;
+    
+    logDebug('🚀 刷新待处理操作到WebSocket: ${_pendingOperations.length} 个', tag: _logTag);
+    
+    for (var entry in _pendingOperations.entries) {
+      final dishKey = entry.key;
+      final quantityChange = entry.value;
+      
+      if (quantityChange == 0) continue;
+      
+      // 解析dishKey获取dish和options
+      final parts = dishKey.split('|');
+      final dishId = parts[0];
+      final dish = _dishes.firstWhereOrNull((d) => d.id.toString() == dishId);
+      
+      if (dish != null) {
+        if (quantityChange > 0) {
+          _sendAddDishWebSocketWithQuantity(dish, quantityChange, null);
+        } else {
+          // 对于减少操作，需要找到对应的CartItem
+          for (var cartEntry in cart.entries) {
+            if (cartEntry.key.dish.id.toString() == dishId) {
+              _sendRemoveDishWebSocketWithQuantity(cartEntry.key, -quantityChange);
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    _pendingOperations.clear();
+  }
+
+  /// 生成菜品的唯一键
+  String _getDishKey(Dish dish, Map<String, List<String>>? selectedOptions) {
+    final optionsStr = selectedOptions?.entries
+        .map((e) => '${e.key}:${e.value.join(',')}')
+        .join('|') ?? '';
+    return '${dish.id}|$optionsStr';
   }
 
   /// 添加指定数量的菜品到购物车
@@ -283,15 +412,6 @@ class CartController extends GetxController {
       _sendAddDishWebSocketWithQuantity(dish, quantity, selectedOptions);
       
       logDebug('➕ 添加新菜品: ${dish.name} x$quantity', tag: _logTag);
-    }
-  }
-
-  /// 移除购物车项
-  void removeFromCart(dynamic item) {
-    if (item is CartItem) {
-      _removeCartItem(item);
-    } else if (item is Dish) {
-      _removeDishFromCart(item);
     }
   }
 
@@ -405,117 +525,6 @@ class CartController extends GetxController {
     }
   }
 
-  /// 减少购物车项数量
-  void _removeCartItem(CartItem cartItem) {
-    if (!cart.containsKey(cartItem)) return;
-    
-    // 开始loading状态
-    isCartOperationLoading.value = true;
-    
-    final currentQuantity = cart[cartItem]!;
-    final newQuantity = currentQuantity - 1;
-    
-    // 保存操作上下文，用于可能的409强制更新
-    _lastOperationCartItem = cartItem;
-    _lastOperationQuantity = newQuantity;
-    
-    // 使用本地购物车管理器进行本地优先的增减操作
-    _localCartManager.removeDishQuantity(cartItem, currentQuantity);
-    
-    logDebug('➖ 本地减少购物车项数量: ${cartItem.dish.name}', tag: _logTag);
-    
-    // 检查是否有必要的ID
-    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
-      logDebug('⚠️ 减少的菜品缺少ID，无法同步到WebSocket: ${cartItem.dish.name}', tag: _logTag);
-      isCartOperationLoading.value = false;
-      return;
-    }
-    
-    // 使用WebSocket防抖管理器进行防抖发送
-    if (_wsDebounceManager != null) {
-      _wsDebounceManager!.debounceDecreaseQuantity(
-        cartItem: cartItem,
-        incrQuantity: -1, // 减少1个，所以是-1
-      );
-      
-      // 延迟结束loading状态，给防抖一些时间
-      Future.delayed(Duration(milliseconds: 100), () {
-        isCartOperationLoading.value = false;
-      });
-      
-      logDebug('🔄 使用防抖管理器减少菜品数量: ${cartItem.dish.name}', tag: _logTag);
-    } else if (_wsHandler != null) {
-      // 回退到直接发送
-      _wsHandler!.sendUpdateQuantity(cartItem: cartItem, quantity: newQuantity).then((success) {
-        if (success) {
-          logDebug('✅ 减少菜品数量同步到WebSocket成功: ${cartItem.dish.name}', tag: _logTag);
-        } else {
-          logDebug('❌ 减少菜品数量同步到WebSocket失败', tag: _logTag);
-        }
-        isCartOperationLoading.value = false;
-      }).catchError((error) {
-        logDebug('❌ 减少菜品数量同步到WebSocket异常: $error', tag: _logTag);
-        isCartOperationLoading.value = false;
-      });
-    } else {
-      logDebug('⚠️ WebSocket处理器未初始化，跳过减少菜品数量同步', tag: _logTag);
-      isCartOperationLoading.value = false;
-    }
-  }
-
-  /// 从购物车中移除菜品
-  void _removeDishFromCart(Dish dish) {
-    CartItem? targetCartItem;
-    
-    // 首先查找无规格的版本
-    for (var entry in cart.entries) {
-      if (entry.key.dish.id == dish.id && entry.key.selectedOptions.isEmpty) {
-        targetCartItem = entry.key;
-        break;
-      }
-    }
-    
-    // 如果没有找到无规格的，就选择第一个匹配的
-    if (targetCartItem == null) {
-      for (var entry in cart.entries) {
-        if (entry.key.dish.id == dish.id) {
-          targetCartItem = entry.key;
-          break;
-        }
-      }
-    }
-    
-    if (targetCartItem != null) {
-      _removeCartItem(targetCartItem);
-    }
-  }
-
-  /// 发送添加菜品的WebSocket消息
-  Future<void> _sendAddDishWebSocket(Dish dish, Map<String, List<String>>? selectedOptions) async {
-    if (_wsHandler == null) {
-      logDebug('⚠️ WebSocket处理器未初始化，跳过发送添加菜品消息: ${dish.name}', tag: _logTag);
-      return;
-    }
-    
-    try {
-      logDebug('🆕 发送WebSocket添加菜品: ${dish.name}', tag: _logTag);
-      
-      final success = await _wsHandler!.sendAddDish(
-        dish: dish,
-        quantity: 1,
-        selectedOptions: selectedOptions,
-      );
-      
-      if (success) {
-        logDebug('✅ WebSocket添加菜品成功: ${dish.name}', tag: _logTag);
-      } else {
-        logDebug('❌ WebSocket添加菜品失败: ${dish.name}', tag: _logTag);
-      }
-    } catch (e) {
-      logError('❌ 发送WebSocket添加菜品异常: $e', tag: _logTag);
-    }
-  }
-
   /// 发送添加指定数量菜品的WebSocket消息
   Future<void> _sendAddDishWebSocketWithQuantity(Dish dish, int quantity, Map<String, List<String>>? selectedOptions) async {
     if (_wsHandler == null) {
@@ -539,6 +548,39 @@ class CartController extends GetxController {
       }
     } catch (e) {
       logError('❌ 发送WebSocket添加指定数量菜品异常: $e', tag: _logTag);
+    }
+  }
+
+  /// 发送移除指定数量菜品的WebSocket消息
+  Future<void> _sendRemoveDishWebSocketWithQuantity(CartItem cartItem, int quantity) async {
+    if (_wsHandler == null) {
+      logDebug('⚠️ WebSocket处理器未初始化，跳过发送移除指定数量菜品消息: ${cartItem.dish.name} x$quantity', tag: _logTag);
+      return;
+    }
+    
+    // 检查是否有必要的ID
+    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+      logDebug('⚠️ 移除的菜品缺少ID，无法同步到WebSocket: ${cartItem.dish.name}', tag: _logTag);
+      return;
+    }
+    
+    try {
+      logDebug('🗑️ 发送WebSocket移除指定数量菜品: ${cartItem.dish.name} x$quantity', tag: _logTag);
+      
+      // 调用减少菜品数量来减少指定数量
+      // 注意：sendDecreaseQuantity期望负数表示减少，所以传入-quantity
+      final success = await _wsHandler!.sendDecreaseQuantity(
+        cartItem: cartItem,
+        incrQuantity: -quantity,
+      );
+      
+      if (success) {
+        logDebug('✅ WebSocket移除指定数量菜品成功: ${cartItem.dish.name} x$quantity', tag: _logTag);
+      } else {
+        logDebug('❌ WebSocket移除指定数量菜品失败: ${cartItem.dish.name} x$quantity', tag: _logTag);
+      }
+    } catch (e) {
+      logError('❌ 发送WebSocket移除指定数量菜品异常: $e', tag: _logTag);
     }
   }
 
@@ -618,6 +660,22 @@ class CartController extends GetxController {
   }
 
 
+  /// 设置购物车项的数量（用于OrderController调用）
+  void setCartItemQuantity(CartItem cartItem, int newQuantity) {
+    if (!cart.containsKey(cartItem)) return;
+    
+    // 直接使用本地购物车管理器设置数量
+    _localCartManager.setDishQuantity(cartItem, newQuantity);
+    
+    logDebug('🔄 设置购物车项数量: ${cartItem.dish.name} -> $newQuantity', tag: _logTag);
+  }
+
+  /// 处理WebSocket失败（用于OrderController调用）
+  void handleWebSocketFailure(CartItem cartItem) {
+    _localCartManager.handleWebSocketFailure(cartItem);
+    logDebug('❌ 处理WebSocket失败，已回滚: ${cartItem.dish.name}', tag: _logTag);
+  }
+
   /// 强制刷新购物车UI
   void forceRefreshCartUI() {
     logDebug('🔄 强制刷新购物车UI', tag: _logTag);
@@ -670,13 +728,5 @@ class CartController extends GetxController {
       }
     });
     return count;
-  }
-
-  @override
-  void onClose() {
-    _cartManager.dispose();
-    _localCartManager.clearAllPendingOperations();
-    _wsDebounceManager?.dispose();
-    super.onClose();
   }
 }

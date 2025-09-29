@@ -319,23 +319,28 @@ class DishItemWidget extends StatelessWidget {
 
   /// 构建数量控制按钮
   Widget _buildQuantityControls(int count) {
+    final controller = Get.find<OrderController>();
+    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         // 减号按钮
         if (count > 0)
-          GestureDetector(
-            onTap: onRemoveTap,
+          Obx(() => GestureDetector(
+            onTap: controller.isCartOperationLoading.value ? null : onRemoveTap,
             behavior: HitTestBehavior.opaque, // 阻止事件穿透
             child: Container(
               padding: EdgeInsets.all(8), // 增大点击区域
-              child: Image(
-                image: AssetImage('assets/order_reduce_num.webp'),
-                width: 22,
-                height: 22,
+              child: Opacity(
+                opacity: controller.isCartOperationLoading.value ? 0.5 : 1.0,
+                child: Image(
+                  image: AssetImage('assets/order_reduce_num.webp'),
+                  width: 22,
+                  height: 22,
+                ),
               ),
             ),
-          ),
+          )),
         // if (count > 0) SizedBox(width: 5),
         // 数量显示
         if (count > 0)
@@ -348,19 +353,22 @@ class DishItemWidget extends StatelessWidget {
             ),
           ),
         // if (count > 0) SizedBox(width: 5),
-        // 加号按钮 - 直接显示，无loading状态
-        GestureDetector(
-          onTap: onAddTap,
+        // 加号按钮 - 添加loading状态检查
+        Obx(() => GestureDetector(
+          onTap: controller.isCartOperationLoading.value ? null : onAddTap,
           behavior: HitTestBehavior.opaque, // 阻止事件穿透
           child: Container(
             padding: EdgeInsets.all(8), // 增大点击区域
-            child: Image(
-              image: AssetImage('assets/order_add_num.webp'),
-              width: 22,
-              height: 22,
+            child: Opacity(
+              opacity: controller.isCartOperationLoading.value ? 0.5 : 1.0,
+              child: Image(
+                image: AssetImage('assets/order_add_num.webp'),
+                width: 22,
+                height: 22,
+              ),
             ),
           ),
-        ),
+        )),
       ],
     );
   }

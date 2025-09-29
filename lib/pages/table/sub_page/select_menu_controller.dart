@@ -240,11 +240,11 @@ class SelectMenuController extends GetxController {
       return;
     }
 
-    // 检查菜品数据是否有效
-    if (selectedMenuIndex.value >= dishListModelList.length) {
-      ToastUtils.showError(Get.context!, '菜品数据还未加载完成');
-      return;
-    }
+    // // 检查菜品数据是否有效
+    // if (selectedMenuIndex.value >= dishListModelList.length) {
+    //   ToastUtils.showError(Get.context!, '菜品数据还未加载完成');
+    //   return;
+    // }
 
     try {
       // 调用开桌接口

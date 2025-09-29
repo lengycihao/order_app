@@ -50,13 +50,14 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
 
   /// 构建数量控制按钮
   Widget _buildQuantityControls(int count) {
+    final orderController = Get.find<OrderController>();
+    
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         // 减号按钮
-        GestureDetector(
-          onTap: onRemoveTap ?? () {
-            final orderController = Get.find<OrderController>();
+        Obx(() => GestureDetector(
+          onTap: orderController.isCartOperationLoading.value ? null : (onRemoveTap ?? () {
             // 找到对应的购物车项进行删除
             CartItem? targetCartItem;
             for (var entry in orderController.cart.entries) {
@@ -68,17 +69,20 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
             if (targetCartItem != null) {
               orderController.removeFromCart(targetCartItem);
             }
-          },
+          }),
           behavior: HitTestBehavior.opaque, // 阻止事件穿透
           child: Container(
             padding: EdgeInsets.all(8), // 增大点击区域
-            child: Image(
-              image: AssetImage('assets/order_reduce_num.webp'),
-              width: 22,
-              height: 22,
+            child: Opacity(
+              opacity: orderController.isCartOperationLoading.value ? 0.5 : 1.0,
+              child: Image(
+                image: AssetImage('assets/order_reduce_num.webp'),
+                width: 22,
+                height: 22,
+              ),
             ),
           ),
-        ),
+        )),
         const SizedBox(width: 7),
         // 数量显示
         Text(
@@ -91,21 +95,23 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
         ),
         const SizedBox(width: 7),
         // 加号按钮
-        GestureDetector(
-          onTap: onAddTap ?? () {
-            final orderController = Get.find<OrderController>();
+        Obx(() => GestureDetector(
+          onTap: orderController.isCartOperationLoading.value ? null : (onAddTap ?? () {
             orderController.addToCart(dish);
-          },
+          }),
           behavior: HitTestBehavior.opaque, // 阻止事件穿透
           child: Container(
             padding: EdgeInsets.all(8), // 增大点击区域
-            child: Image(
-              image: AssetImage('assets/order_add_num.webp'),
-              width: 22,
-              height: 22,
+            child: Opacity(
+              opacity: orderController.isCartOperationLoading.value ? 0.5 : 1.0,
+              child: Image(
+                image: AssetImage('assets/order_add_num.webp'),
+                width: 22,
+                height: 22,
+              ),
             ),
           ),
-        ),
+        )),
       ],
     );
   }

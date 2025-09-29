@@ -23,7 +23,7 @@ import 'order_constants.dart';
 import 'websocket_handler.dart';
 import 'websocket_debounce_manager.dart';
 import 'cart_manager.dart';
-import 'local_cart_manager.dart';
+// import 'local_cart_manager.dart'; // 现在由CartController统一管理
 import 'error_handler.dart';
 import 'data_converter.dart';
 import 'models.dart';
@@ -66,6 +66,10 @@ class OrderController extends GetxController {
   final isLoadingOrdered = false.obs;
   final hasNetworkErrorOrdered = false.obs; // 已点订单网络错误状态
   
+  // 通用loading和错误状态 - 为BaseListPageWidget提供接口
+  RxBool get isLoading => isLoadingDishes;
+  RxBool get hasNetworkError => hasNetworkErrorOrdered;
+  
   // 409强制更新相关
   CartItem? _lastOperationCartItem;
   int? _lastOperationQuantity;
@@ -79,7 +83,8 @@ class OrderController extends GetxController {
   late final WebSocketHandler _wsHandler;
   late final WebSocketDebounceManager _wsDebounceManager;
   late final CartManager _cartManager;
-  late final LocalCartManager _localCartManager;
+  // LocalCartManager现在由CartController统一管理
+  // late final LocalCartManager _localCartManager;
   late final ErrorHandler _errorHandler;
   
   // 购物车控制器组件
@@ -110,19 +115,30 @@ class OrderController extends GetxController {
   /// 初始化管理器
   void _initializeManagers() {
     _cartManager = CartManager(logTag: OrderConstants.logTag);
-    _localCartManager = LocalCartManager(logTag: OrderConstants.logTag);
+    // 移除OrderController中的LocalCartManager，统一由CartController管理
+    // _localCartManager = LocalCartManager(logTag: OrderConstants.logTag);
     _errorHandler = ErrorHandler(logTag: OrderConstants.logTag);
     
     // 初始化购物车控制器组件（不注册到Get）
     _cartController = CartController();
     _cartController.onInit(); // 手动调用初始化
     
-    // 设置本地购物车管理器的回调
-    _localCartManager.setCallbacks(
-      onQuantityChanged: _onLocalQuantityChanged,
-      onWebSocketSend: _onLocalWebSocketSend,
-      onWebSocketFailed: _onLocalWebSocketFailed,
-    );
+    // 监听CartController的购物车状态变化，保持OrderController的cart同步
+    ever(_cartController.cart, (Map<CartItem, int> newCart) {
+      // 同步购物车状态到OrderController
+      cart.clear();
+      cart.addAll(newCart);
+      cart.refresh();
+      update();
+      logDebug('🔄 同步CartController购物车状态到OrderController: ${newCart.length}项', tag: OrderConstants.logTag);
+    });
+    
+    // 本地购物车管理器的回调现在由CartController统一处理
+    // _localCartManager.setCallbacks(
+    //   onQuantityChanged: _onLocalQuantityChanged,
+    //   onWebSocketSend: _onLocalWebSocketSend,
+    //   onWebSocketFailed: _onLocalWebSocketFailed,
+    // );
     
     // WebSocket处理器将在有tableId后初始化
   }
@@ -278,8 +294,9 @@ class OrderController extends GetxController {
         // 设置失败回调
         _wsDebounceManager.setFailureCallback(_onWebSocketDebounceFailed);
         
-        // 为CartController设置WebSocket处理器
+        // 为CartController设置WebSocket处理器和防抖管理器
         _cartController.setWebSocketHandler(_wsHandler);
+        _cartController.setWebSocketDebounceManager(_wsDebounceManager);
         
         logDebug('📋 桌台ID: $tableId ✅ 桌台 $tableName WebSocket连接初始化成功', tag: OrderConstants.logTag);
         
@@ -600,8 +617,8 @@ class OrderController extends GetxController {
     _lastOperationCartItem = cartItem;
     _lastOperationQuantity = newQuantity - oldQuantity; // 保存变化量
     
-    // 使用本地购物车管理器进行本地优先的数量设置
-    _localCartManager.setDishQuantity(cartItem, newQuantity);
+    // 使用CartController进行本地优先的数量设置
+    _cartController.setCartItemQuantity(cartItem, newQuantity);
     
     onSuccess();
     logDebug('🔄 本地设置购物车项数量: ${cartItem.dish.name} -> $newQuantity', tag: OrderConstants.logTag);
@@ -765,58 +782,59 @@ class OrderController extends GetxController {
   }
 
 
-  // ========== 本地购物车管理器回调 ==========
+  // ========== 本地购物车管理器回调（现在由CartController统一处理）==========
+  // 这些回调方法现在不再需要，因为LocalCartManager由CartController统一管理
 
-  /// 本地数量变化回调
-  void _onLocalQuantityChanged(CartItem cartItem, int quantity) {
-    logDebug('🔍 _onLocalQuantityChanged 调试信息:', tag: OrderConstants.logTag);
-    logDebug('  菜品: ${cartItem.dish.name}', tag: OrderConstants.logTag);
-    logDebug('  新数量: $quantity', tag: OrderConstants.logTag);
-    logDebug('  规格选项: ${cartItem.selectedOptions}', tag: OrderConstants.logTag);
-    logDebug('  更新前购物车项数: ${cart.length}', tag: OrderConstants.logTag);
-    
-    // 立即更新本地购物车状态
-    if (quantity > 0) {
-      cart[cartItem] = quantity;
-    } else {
-      cart.remove(cartItem);
-    }
-    cart.refresh();
-    update();
-    
-    logDebug('  更新后购物车项数: ${cart.length}', tag: OrderConstants.logTag);
-    logDebug('🔄 本地数量变化: ${cartItem.dish.name} -> $quantity', tag: OrderConstants.logTag);
-  }
+  // /// 本地数量变化回调
+  // void _onLocalQuantityChanged(CartItem cartItem, int quantity) {
+  //   logDebug('🔍 _onLocalQuantityChanged 调试信息:', tag: OrderConstants.logTag);
+  //   logDebug('  菜品: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+  //   logDebug('  新数量: $quantity', tag: OrderConstants.logTag);
+  //   logDebug('  规格选项: ${cartItem.selectedOptions}', tag: OrderConstants.logTag);
+  //   logDebug('  更新前购物车项数: ${cart.length}', tag: OrderConstants.logTag);
+  //   
+  //   // 立即更新本地购物车状态
+  //   if (quantity > 0) {
+  //     cart[cartItem] = quantity;
+  //   } else {
+  //     cart.remove(cartItem);
+  //   }
+  //   cart.refresh();
+  //   update();
+  //   
+  //   logDebug('  更新后购物车项数: ${cart.length}', tag: OrderConstants.logTag);
+  //   logDebug('🔄 本地数量变化: ${cartItem.dish.name} -> $quantity', tag: OrderConstants.logTag);
+  // }
 
-  /// 本地WebSocket发送回调
-  void _onLocalWebSocketSend(CartItem cartItem, int quantity) {
-    // 检查是否有必要的ID
-    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
-      logDebug('⚠️ 新菜品缺少ID，跳过WebSocket同步: ${cartItem.dish.name}', tag: OrderConstants.logTag);
-      // 对于新菜品，应该通过addToCart方法处理，这里不应该被调用
-      return;
-    }
-    
-    // 统一使用WebSocket防抖管理器发送更新消息，包括数量为0的情况
-    // 服务器应该能够处理数量为0的更新操作，而不需要单独的删除操作
-    _wsDebounceManager.debounceUpdateQuantity(
-      cartItem: cartItem,
-      quantity: quantity,
-    );
-    
-    logDebug('📤 本地WebSocket发送: ${cartItem.dish.name} -> $quantity', tag: OrderConstants.logTag);
-  }
+  // /// 本地WebSocket发送回调
+  // void _onLocalWebSocketSend(CartItem cartItem, int quantity) {
+  //   // 检查是否有必要的ID
+  //   if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+  //     logDebug('⚠️ 新菜品缺少ID，跳过WebSocket同步: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+  //     // 对于新菜品，应该通过addToCart方法处理，这里不应该被调用
+  //     return;
+  //   }
+  //   
+  //   // 统一使用WebSocket防抖管理器发送更新消息，包括数量为0的情况
+  //   // 服务器应该能够处理数量为0的更新操作，而不需要单独的删除操作
+  //   _wsDebounceManager.debounceUpdateQuantity(
+  //     cartItem: cartItem,
+  //     quantity: quantity,
+  //   );
+  //   
+  //   logDebug('📤 本地WebSocket发送: ${cartItem.dish.name} -> $quantity', tag: OrderConstants.logTag);
+  // }
 
-  /// 本地WebSocket失败回调
-  void _onLocalWebSocketFailed(CartItem cartItem, int originalQuantity) {
-    // 本地购物车管理器已经处理了数量回滚，这里只需要记录日志
-    logDebug('❌ 本地WebSocket失败，已回滚: ${cartItem.dish.name} -> $originalQuantity', tag: OrderConstants.logTag);
-  }
+  // /// 本地WebSocket失败回调
+  // void _onLocalWebSocketFailed(CartItem cartItem, int originalQuantity) {
+  //   // 本地购物车管理器已经处理了数量回滚，这里只需要记录日志
+  //   logDebug('❌ 本地WebSocket失败，已回滚: ${cartItem.dish.name} -> $originalQuantity', tag: OrderConstants.logTag);
+  // }
 
   /// WebSocket防抖失败回调
   void _onWebSocketDebounceFailed(CartItem cartItem, int quantity) {
-    // 通知本地购物车管理器处理失败
-    _localCartManager.handleWebSocketFailure(cartItem);
+    // 通知CartController处理失败
+    _cartController.handleWebSocketFailure(cartItem);
     logDebug('❌ WebSocket防抖失败，已回滚: ${cartItem.dish.name}', tag: OrderConstants.logTag);
   }
 
@@ -1051,6 +1069,11 @@ class OrderController extends GetxController {
     logDebug('🔄 开始刷新点餐页面数据...', tag: OrderConstants.logTag);
     await _loadDishesFromApi();
     logDebug('✅ 点餐页面数据刷新完成', tag: OrderConstants.logTag);
+  }
+  
+  // 通用刷新方法 - 为BaseListPageWidget提供接口
+  Future<void> refreshData() async {
+    await refreshOrderData();
   }
 
   Future<void> forceRefreshCart({bool silent = false}) async {
