@@ -18,11 +18,7 @@ class LanguageSelector extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     
-    if (showAsDialog) {
-      return _buildDialog(context, l10n);
-    } else {
-      return _buildDropdown(context, l10n);
-    }
+    return _buildDropdown(context, l10n);
   }
   
   /// 构建下拉选择器
@@ -50,33 +46,7 @@ class LanguageSelector extends StatelessWidget {
     );
   }
   
-  /// 构建对话框选择器
-  Widget _buildDialog(BuildContext context, AppLocalizations l10n) {
-    return AlertDialog(
-      title: Text(l10n.selectLanguage),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: LanguageService.supportedLocales.map((Locale locale) {
-          final isSelected = languageService.currentLocale == locale;
-          return ListTile(
-            leading: _getLanguageFlag(locale.languageCode),
-            title: Text(LanguageService.languageNames[locale.languageCode] ?? ''),
-            trailing: isSelected ? const Icon(Icons.check, color: Colors.blue) : null,
-            onTap: () {
-              languageService.changeLanguage(locale);
-              Navigator.of(context).pop();
-            },
-          );
-        }).toList(),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: Text(l10n.cancel),
-        ),
-      ],
-    );
-  }
+   
   
   /// 获取语言对应的国旗图标
   Widget _getLanguageFlag(String languageCode) {
@@ -152,7 +122,7 @@ class LanguageBottomSheet extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                l10n.selectLanguage,
+                l10n.language,
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

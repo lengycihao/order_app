@@ -101,11 +101,11 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get standardAdultsForThisTable =>
-      'Numero standard di adulti per questo tavolo: [4]';
+      'Numero standard di adulti per questo tavolo: ';
 
   @override
   String get standardChildrenForThisTable =>
-      'Numero standard di bambini per questo tavolo:[5]';
+      'Numero standard di bambini per questo tavolo:';
 
   @override
   String get pleaseSelectMenu => 'Seleziona un menù';
@@ -146,7 +146,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get pleaseEnterLast4DigitsOfReservedPhone =>
-      'Inserisci gli ultimi 4 cifri del numero di cellulare prenotato?/Annulla/Conferma';
+      'Inserisci gli ultimi 4 cifri del numero di cellulare prenotato?';
 
   @override
   String get numberIncorrectPleaseReenter =>
@@ -157,19 +157,13 @@ class AppLocalizationsIt extends AppLocalizations {
       'Il numero è corretto. Buon appetito!';
 
   @override
-  String get menu => 'Menù';
+  String get menu => 'Menù ';
 
   @override
   String get ordered => 'Ordinato';
 
   @override
   String get enterDishCodeOrName => 'Inserisci codice o nome del piatto';
-
-  @override
-  String get max1PerPerson => 'Max 1/pers.';
-
-  @override
-  String get twoLeft => '2 rimasti';
 
   @override
   String get selectSpecification => 'Variante';
@@ -203,29 +197,15 @@ class AppLocalizationsIt extends AppLocalizations {
   String get increaseNumberOfPeople => 'Aumenta il Numero di Persone';
 
   @override
-  String get roundQuantity => 'Turno: 1/2; Quantità: 4/6';
-
-  @override
   String get noRelevantDishesFound => 'Non sono stati trovati piatti correlati';
 
   @override
   String get dishSoldOutPleaseChooseAnother =>
-      '[某菜名] è esaurito. Si prega di scegliere un altro piatto.';
-
-  @override
-  String get dishQuantityExceedsLimit =>
-      '[某菜名]Quantità oltre il limite, Max 1/persona';
-
-  @override
-  String get dishInsufficientStock =>
-      '[某菜名]Inventario insufficiente, 2 rimasti';
+      'è esaurito. Si prega di scegliere un altro piatto.';
 
   @override
   String get nextRoundTimeNotReached =>
       'Tempo del prossimo turno non raggiunto';
-
-  @override
-  String get dishPlusOne => '[某菜品]+1';
 
   @override
   String get cartHasNewChanges => 'Carrello ha nuovi cambiamenti';
@@ -238,12 +218,11 @@ class AppLocalizationsIt extends AppLocalizations {
       'Ordine non inviato, contatta il cameriere';
 
   @override
-  String get clearShoppingCart =>
-      'Vuoi cancellare il carrello?/Annulla/Conferma';
+  String get clearShoppingCart => 'Vuoi cancellare il';
 
   @override
-  String get dishQuantityExceedsLimitPlaceAtOriginalPrice =>
-      '[某菜名]La quantità supera il limite. Vuoi ordinare al prezzo originale?';
+  String get quantityExceedsLimitPlaceAtOriginalPrice =>
+      'La quantità supera il limite. Vuoi ordinare al prezzo originale?';
 
   @override
   String get takeaway => 'Da Asporto';
@@ -302,7 +281,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get account => 'Account';
 
   @override
-  String get expirationDate => 'Data di Scadenza';
+  String get expirationDate => 'Scadenza';
 
   @override
   String get remainingDays => 'Giorni Rimanenti';
@@ -326,8 +305,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get newPassword => 'Nuova Password';
 
   @override
-  String get anyCharactersOf8OrMoreDigits =>
-      'Qualsiasi carattere di 8 o più cifre';
+  String get anyCharactersOf8OrMore => 'Qualsiasi carattere di 8 o più cifre';
 
   @override
   String get pleaseEnterNewPassword => 'Inserisci la nuova password';
@@ -363,50 +341,32 @@ class AppLocalizationsIt extends AppLocalizations {
       'L\'operazione è troppo frequente, riprova più tardi.';
 
   @override
-  String get selectLanguage => 'Seleziona Lingua';
+  String get noData => 'Nessun dato disponibile';
 
   @override
-  String get chinese => 'Cinese';
+  String get loadAgain => 'Riprova';
 
   @override
-  String get english => 'Inglese';
+  String get allData => 'Tutti';
 
   @override
-  String get italian => 'Italiano';
+  String get loadingData => 'Caricamento...';
 
   @override
-  String get systemTitle => 'Sistema Ristorante OUHUA';
+  String get success => 'Successo';
 
   @override
-  String get noData => 'Nessun Dato';
+  String get failed => 'Non riuscito';
 
   @override
-  String get pending => 'In Attesa';
+  String get selectPeople => 'Seleziona persone';
 
   @override
-  String get quantity => 'Quantità';
+  String get loadMenuFailed => 'Caricamento menu fallito';
 
   @override
-  String get specifications => 'Specifiche';
+  String get twoPasswordsDoNotMatch => 'Le password non corrispondono';
 
   @override
-  String get info => 'Info';
-
-  @override
-  String get home => 'Home';
-
-  @override
-  String get order => 'Ordine';
-
-  @override
-  String get moreDishesComingSoon => 'Altri piatti in arrivo';
-
-  @override
-  String get switchLanguage => 'Cambia Lingua';
-
-  @override
-  String get authDebug => 'Debug Autenticazione';
-
-  @override
-  String get welcomeToUse => 'Benvenuto';
+  String get passwordLengthCannotBeLessThan8 => 'Minimo 8 caratteri';
 }

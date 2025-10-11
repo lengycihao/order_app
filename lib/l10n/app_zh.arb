@@ -1,5 +1,4 @@
 {
-  "@@locale": "zh",
   "appTitle": "欧华餐饮系统(服务员)",
   "@appTitle": {
     "description": "应用程序标题"
@@ -116,13 +115,13 @@
   "@pleaseSelectNumberOfDiners": {
     "description": "请选择就餐人数"
   },
-  "standardAdultsForThisTable": "本桌标准大人人数:[4]",
+  "standardAdultsForThisTable": "本桌标准大人人数:",
   "@standardAdultsForThisTable": {
-    "description": "本桌标准大人人数:[4]"
+    "description": "本桌标准大人人数"
   },
-  "standardChildrenForThisTable": "本桌标准小孩人数:[5]",
+  "standardChildrenForThisTable": "本桌标准小孩人数:",
   "@standardChildrenForThisTable": {
-    "description": "本桌标准小孩人数:[5]"
+    "description": "本桌标准小孩人数"
   },
   "pleaseSelectMenu": "请选择菜单",
   "@pleaseSelectMenu": {
@@ -164,9 +163,9 @@
   "@tableOpeningFailedPleaseRetry": {
     "description": "开桌失败，请重试"
   },
-  "pleaseEnterLast4DigitsOfReservedPhone": "请输入预留手机号码后 4 位？/取消/确认",
+  "pleaseEnterLast4DigitsOfReservedPhone": "请输入预留手机号码后 4 位？",
   "@pleaseEnterLast4DigitsOfReservedPhone": {
-    "description": "请输入预留手机号码后 4 位？/取消/确认"
+    "description": "请输入预留手机号码后 4 位"
   },
   "numberIncorrectPleaseReenter": "号码不正确，请重新输入",
   "@numberIncorrectPleaseReenter": {
@@ -187,14 +186,6 @@
   "enterDishCodeOrName": "输入菜品编码或名称",
   "@enterDishCodeOrName": {
     "description": "输入菜品编码或名称"
-  },
-  "max1PerPerson": "限1份/人",
-  "@max1PerPerson": {
-    "description": "限1份/人"
-  },
-  "twoLeft": "剩2份",
-  "@twoLeft": {
-    "description": "剩2份"
   },
   "selectSpecification": "选规格",
   "@selectSpecification": {
@@ -218,7 +209,7 @@
   },
   "selected": "已选：",
   "@selected": {
-    "description": "已选："
+    "description": "已选"
   },
   "cart": "购物车",
   "@cart": {
@@ -236,33 +227,17 @@
   "@increaseNumberOfPeople": {
     "description": "增加人数"
   },
-  "roundQuantity": "轮次：",
-  "@roundQuantity": {
-    "description": "轮次："
-  },
   "noRelevantDishesFound": "未找到相关菜品",
   "@noRelevantDishesFound": {
     "description": "未找到相关菜品"
   },
-  "dishSoldOutPleaseChooseAnother": "[某菜名]已售罄，请选择其他菜品",
+  "dishSoldOutPleaseChooseAnother": "已售罄，请选择其他菜品",
   "@dishSoldOutPleaseChooseAnother": {
-    "description": "[某菜名]已售罄，请选择其他菜品"
-  },
-  "dishQuantityExceedsLimit": "[某菜名]数量超出限制,限1份/人",
-  "@dishQuantityExceedsLimit": {
-    "description": "[某菜名]数量超出限制,限1份/人"
-  },
-  "dishInsufficientStock": "[某菜名]库存不足，剩2份",
-  "@dishInsufficientStock": {
-    "description": "[某菜名]库存不足，剩2份"
+    "description": "已售罄，请选择其他菜品"
   },
   "nextRoundTimeNotReached": "下一轮次时间未到",
   "@nextRoundTimeNotReached": {
     "description": "下一轮次时间未到"
-  },
-  "dishPlusOne": "[某菜品]+1",
-  "@dishPlusOne": {
-    "description": "[某菜品]+1"
   },
   "cartHasNewChanges": "购物车有新的变动",
   "@cartHasNewChanges": {
@@ -276,13 +251,13 @@
   "@orderPlacementFailedContactWaiter": {
     "description": "下单失败，请联系服务员"
   },
-  "clearShoppingCart": "是否清空购物车？/取消/确认",
+  "clearShoppingCart": "是否清空购物车？",
   "@clearShoppingCart": {
-    "description": "是否清空购物车？/取消/确认"
+    "description": "是否清空购物车"
   },
-  "dishQuantityExceedsLimitPlaceAtOriginalPrice": "[某菜名]数量超出限制，是否以原价下单",
-  "@dishQuantityExceedsLimitPlaceAtOriginalPrice": {
-    "description": "[某菜名]数量超出限制，是否以原价下单"
+  "quantityExceedsLimitPlaceAtOriginalPrice": "数量超出限制，是否以原价下单？",
+  "@quantityExceedsLimitPlaceAtOriginalPrice": {
+    "description": "数量超出限制，是否以原价下单"
   },
   "takeaway": "外卖",
   "@takeaway": {
@@ -388,8 +363,8 @@
   "@newPassword": {
     "description": "新密码"
   },
-  "anyCharactersOf8OrMoreDigits": "任意8位以上字符",
-  "@anyCharactersOf8OrMoreDigits": {
+  "anyCharactersOf8OrMore": "任意8位以上字符",
+  "@anyCharactersOf8OrMore": {
     "description": "任意8位以上字符"
   },
   "pleaseEnterNewPassword": "请输入新密码",
@@ -432,68 +407,44 @@
   "@operationTooFrequentPleaseTryAgainLater": {
     "description": "操作频繁 请稍后再试"
   },
-  "selectLanguage": "选择语言",
-  "@selectLanguage": {
-    "description": "选择语言"
-  },
-  "chinese": "中文",
-  "@chinese": {
-    "description": "中文"
-  },
-  "english": "英语",
-  "@english": {
-    "description": "英语"
-  },
-  "italian": "意大利语",
-  "@italian": {
-    "description": "意大利语"
-  },
-  "systemTitle": "欧华餐饮系统",
-  "@systemTitle": {
-    "description": "系统标题"
-  },
   "noData": "暂无数据",
   "@noData": {
     "description": "暂无数据"
   },
-  "pending": "待处理",
-  "@pending": {
-    "description": "待处理"
+  "loadAgain": "重新加载",
+  "@loadAgain": {
+    "description": "重新加载"
   },
-  "quantity": "数量",
-  "@quantity": {
-    "description": "数量"
+  "allData": "全部",
+  "@allData": {
+    "description": "全部"
   },
-  "specifications": "规格",
-  "@specifications": {
-    "description": "规格"
+  "loadingData": "加载中...",
+  "@loadingData": {
+    "description": "加载中..."
   },
-  "info": "信息",
-  "@info": {
-    "description": "信息"
+  "success": "成功",
+  "@success": {
+    "description": "成功"
   },
-  "home": "首页",
-  "@home": {
-    "description": "首页"
+  "failed": "失败",
+  "@failed": {
+    "description": "失败"
   },
-  "order": "订单",
-  "@order": {
-    "description": "订单"
+  "selectPeople": "选择人数",
+  "@selectPeople": {
+    "description": "选择人数"
   },
-  "moreDishesComingSoon": "更多菜品即将推出",
-  "@moreDishesComingSoon": {
-    "description": "更多菜品即将推出"
+  "loadMenuFailed": "获取菜单失败",
+  "@loadMenuFailed": {
+    "description": "获取菜单失败"
   },
-  "switchLanguage": "切换语言",
-  "@switchLanguage": {
-    "description": "切换语言"
+  "twoPasswordsDoNotMatch": "两次输入的密码不一致",
+  "@twoPasswordsDoNotMatch": {
+    "description": "两次输入的密码不一致"
   },
-  "authDebug": "认证调试",
-  "@authDebug": {
-    "description": "认证调试"
-  },
-  "welcomeToUse": "欢迎使用",
-  "@welcomeToUse": {
-    "description": "欢迎使用"
+  "passwordLengthCannotBeLessThan8": "密码最少8位字符",
+  "@passwordLengthCannotBeLessThan8": {
+    "description": "密码最少8位字符"
   }
 }

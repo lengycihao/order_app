@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'select_menu_controller.dart';
 import 'package:order_app/utils/keyboard_utils.dart';
 
@@ -29,7 +30,7 @@ class SelectMenuPage extends StatelessWidget {
           onPressed: controller.goBack,
         ),
         title: Obx(() => Text(
-          controller.table.value.tableName ?? '桌台名称',
+          controller.table.value.tableName ?? context.l10n.table,
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
         )),
@@ -47,10 +48,10 @@ class SelectMenuPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // 选择人数卡片
-                  _buildPersonCountCard(),
+                  _buildPersonCountCard(context),
 
                   // 选择菜单卡片
-                  _buildMenuSelectionCard(),
+                  _buildMenuSelectionCard(context),
 
                   const SizedBox(height: 80), // 给底部按钮留空间
                 ],
@@ -62,7 +63,7 @@ class SelectMenuPage extends StatelessWidget {
               left: 0,
               right: 0,
               bottom: 30, // 距离底部30px
-              child: _buildBottomButton(),
+              child: _buildBottomButton(context),
             ),
           ],
         ),
@@ -71,7 +72,7 @@ class SelectMenuPage extends StatelessWidget {
   }
 
   /// 构建选择人数卡片
-  Widget _buildPersonCountCard() {
+  Widget _buildPersonCountCard(BuildContext context) {
     return Card(
       elevation: 0,
       margin: const EdgeInsets.only(bottom: 16),
@@ -91,11 +92,11 @@ class SelectMenuPage extends StatelessWidget {
                   bottom: BorderSide(color: Colors.grey.shade300, width: 1),
                 ),
               ),
-              child: const Text(
-                '选择人数',
+              child:   Text(
+                context.l10n.selectPeople,
                 style: TextStyle(
                   fontSize: 20,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w500,
                   color: Color(0xFF000000),
                 ),
                 textAlign: TextAlign.center,
@@ -105,7 +106,7 @@ class SelectMenuPage extends StatelessWidget {
 
             // 成人数量选择
             _buildCountRow(
-              '大人',
+              context.l10n.adults,
               Get.find<SelectMenuController>(tag: 'select_menu_page').adultCount,
               Get.find<SelectMenuController>(tag: 'select_menu_page').increaseAdultCount,
               Get.find<SelectMenuController>(tag: 'select_menu_page').decreaseAdultCount,
@@ -113,7 +114,7 @@ class SelectMenuPage extends StatelessWidget {
 SizedBox(height: 12,),
             // 儿童数量选择
             _buildCountRow(
-              '小孩',
+              context.l10n.children,
               Get.find<SelectMenuController>(tag: 'select_menu_page').childCount,
               Get.find<SelectMenuController>(tag: 'select_menu_page').increaseChildCount,
               Get.find<SelectMenuController>(tag: 'select_menu_page').decreaseChildCount,
@@ -261,7 +262,7 @@ SizedBox(height: 12,),
 
 
   /// 构建菜单选择卡片
-  Widget _buildMenuSelectionCard() {
+  Widget _buildMenuSelectionCard(BuildContext context) {
     return Container(
       width: 343,
       decoration: BoxDecoration(
@@ -280,13 +281,13 @@ SizedBox(height: 12,),
               padding: const EdgeInsets.only(top: 10),
               child: Container(
                 width: double.infinity,
-                child: Text(
-                  '选择菜单',
+                  child: Text(
+                    context.l10n.selectMenu,
                   style: TextStyle(
                     fontSize: 20,
                     height: 1,
                     color: Color(0xFF000000),
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -300,7 +301,7 @@ SizedBox(height: 12,),
             ),
             SizedBox(height: 10), // 分割线与更换菜单间距10
             // 菜单网格
-            _buildMenuGrid(),
+            _buildMenuGrid(context),
           ],
         ),
       ),
@@ -308,12 +309,12 @@ SizedBox(height: 12,),
   }
 
   /// 构建菜单网格
-  Widget _buildMenuGrid() {
+  Widget _buildMenuGrid(BuildContext context) {
     final controller = Get.find<SelectMenuController>(tag: 'select_menu_page');
     
     return Obx(() {
       if (controller.isLoadingDishes.value) {
-        return const SizedBox(
+        return  SizedBox(
           height: 200,
           child: Center(
             child: Column(
@@ -321,7 +322,7 @@ SizedBox(height: 12,),
               children: [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('正在加载菜单数据...'),
+                Text(context.l10n.loadingData),
               ],
             ),
           ),
@@ -329,33 +330,18 @@ SizedBox(height: 12,),
       }
       
       if (controller.menu.isEmpty) {
-        return const SizedBox(
+        return   SizedBox(
           height: 200,
-          child: Center(child: Text('暂无菜单数据')),
+          child: Center(child: Text(context.l10n.noData)),
         );
       }
 
       final selectedIndex = controller.selectedMenuIndex.value; // 在Obx作用域内获取值
       
-      // 检查是否有menuType为2的菜单（只显示图片）
-      final hasImageOnlyMenus = controller.menu.any((menu) => menu.menuType == 2);
-      final hasRegularMenus = controller.menu.any((menu) => menu.menuType != 2);
-      
-      // 根据菜单类型和数量动态设置高度
-      double itemHeight;
+      // 固定菜品卡片高度
+      const double itemHeight = 160;
       int crossAxisCount = (343 / 200).ceil(); // 根据容器宽度计算每行数量
       int rowCount = (controller.menu.length / crossAxisCount).ceil(); // 计算行数
-      
-      if (hasImageOnlyMenus && hasRegularMenus) {
-        // 混合类型，使用较大高度适配两种类型
-        itemHeight = 200;
-      } else if (hasImageOnlyMenus && !hasRegularMenus) {
-        // 全部是图片类型，使用较小高度
-        itemHeight = 140; // 88px图片 + 16px padding + 36px余量（增加高度）
-      } else {
-        // 全部是带价格信息的类型，使用标准高度
-        itemHeight = 200;
-      }
 
       return Container(
         height: rowCount * itemHeight + (rowCount - 1) * 12, // 动态计算总高度
@@ -374,13 +360,14 @@ SizedBox(height: 12,),
           final item = controller.menu[index];
           final isSelected = selectedIndex == index; // 使用在Obx作用域内获取的值
 
-          return GestureDetector(
+              return GestureDetector(
             onTap: () => controller.selectMenu(index),
             child: Stack(
               children: [
                 Container(
                   margin: const EdgeInsets.only(top: 15),
                   width: 157, // 固定宽度157，自适应屏幕
+                  height: 160, // 固定高度160
                   decoration: BoxDecoration(
                     color: Colors.white,
                   
@@ -399,9 +386,9 @@ SizedBox(height: 12,),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(4),
                   child: Column(
-                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       // 菜单图片 - 固定尺寸容器
                       Container(
@@ -431,7 +418,7 @@ SizedBox(height: 12,),
                       ),
                       // 根据菜单类型决定是否显示价格信息
                       if (item.menuType != 2) ...[
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 3),
                         // 价格信息 - 文字可换行，使用 Flexible 避免溢出
                         Flexible(
                           child: _buildPriceInfo(item),
@@ -469,7 +456,7 @@ SizedBox(height: 12,),
   }
 
   /// 构建底部按钮
-  Widget _buildBottomButton() {
+  Widget _buildBottomButton(BuildContext context) {
     return Center(
       child: SizedBox(
         width: 253, // 固定宽度253px
@@ -483,8 +470,8 @@ SizedBox(height: 12,),
             padding: EdgeInsets.zero, // 移除内边距，使用固定尺寸
           ),
           onPressed: () => Get.find<SelectMenuController>(tag: 'select_menu_page').startOrdering(),
-          child: const Text(
-            '开始点餐',
+          child:   Text(
+             context.l10n.startOrdering,
             style: TextStyle(
               fontSize: 16, // 调整字体大小以适应新尺寸
               color: Colors.white,
@@ -511,8 +498,8 @@ SizedBox(height: 12,),
               child: Text(
                 '${cost.name}: ${cost.amount}/${cost.unit}',
                 style: const TextStyle(
-                  fontSize: 11,
-                  color: Color(0xff666666),
+                  fontSize: 14,
+                  color: Color(0xff3D3D3D),
                 ),
                 textAlign: TextAlign.center,
                 maxLines: 1, // 限制为单行
@@ -524,11 +511,23 @@ SizedBox(height: 12,),
       }
 
       if (costWidgets.isNotEmpty) {
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: costWidgets,
-        );
+        // 如果价格信息超过2行，使用可滑动的SingleChildScrollView
+        if (costWidgets.length > 2) {
+          return SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: costWidgets,
+            ),
+          );
+        } else {
+          // 2行或以下，直接展示
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: costWidgets,
+          );
+        }
       }
     }
 

@@ -1,5 +1,4 @@
 {
-  "@@locale": "it",
   "appTitle": "OUHUA RISTOO(Cameriere)",
   "@appTitle": {
     "description": "Titolo dell'applicazione"
@@ -26,7 +25,7 @@
   },
   "passwordCannotBeEmpty": "La password non può essere vuota.",
   "@passwordCannotBeEmpty": {
-    "description": "La password non può essere vuota."
+    "description": "La password non può essere vuota"
   },
   "incorrectPassword": "Password errata",
   "@incorrectPassword": {
@@ -106,23 +105,23 @@
   },
   "currentTableUnavailable": "Il tavolo corrente non è disponibile.",
   "@currentTableUnavailable": {
-    "description": "Il tavolo corrente non è disponibile."
+    "description": "Il tavolo corrente non è disponibile"
   },
   "onlyOneNonFreeTableCanBeSelected": "Può essere selezionato solo uno dei seguenti tavoli non liberi.",
   "@onlyOneNonFreeTableCanBeSelected": {
-    "description": "Può essere selezionato solo uno dei seguenti tavoli non liberi."
+    "description": "Può essere selezionato solo uno dei seguenti tavoli non liberi"
   },
   "pleaseSelectNumberOfDiners": "Seleziona il numero di commensali",
   "@pleaseSelectNumberOfDiners": {
     "description": "Seleziona il numero di commensali"
   },
-  "standardAdultsForThisTable": "Numero standard di adulti per questo tavolo: [4]",
+  "standardAdultsForThisTable": "Numero standard di adulti per questo tavolo: ",
   "@standardAdultsForThisTable": {
-    "description": "Numero standard di adulti per questo tavolo: [4]"
+    "description": "Numero standard di adulti per questo tavolo"
   },
-  "standardChildrenForThisTable": "Numero standard di bambini per questo tavolo:[5]",
+  "standardChildrenForThisTable": "Numero standard di bambini per questo tavolo:",
   "@standardChildrenForThisTable": {
-    "description": "Numero standard di bambini per questo tavolo:[5]"
+    "description": "Numero standard di bambini per questo tavolo"
   },
   "pleaseSelectMenu": "Seleziona un menù",
   "@pleaseSelectMenu": {
@@ -134,11 +133,11 @@
   },
   "mergeFailedPleaseRetry": "Fusione fallita, riprova per favore.",
   "@mergeFailedPleaseRetry": {
-    "description": "Fusione fallita, riprova per favore."
+    "description": "Fusione fallita, riprova per favore"
   },
   "oneTableMustRemainWhenRemoving": "Quando si rimuovono i tavoli, deve rimanere un tavolo.",
   "@oneTableMustRemainWhenRemoving": {
-    "description": "Quando si rimuovono i tavoli, deve rimanere un tavolo."
+    "description": "Quando si rimuovono i tavoli, deve rimanere un tavolo"
   },
   "tableRemovalSuccessful": "Rimozione del tavolo avvenuta con successo",
   "@tableRemovalSuccessful": {
@@ -164,9 +163,9 @@
   "@tableOpeningFailedPleaseRetry": {
     "description": "Apertura del tavolo fallita, riprova per favore"
   },
-  "pleaseEnterLast4DigitsOfReservedPhone": "Inserisci gli ultimi 4 cifri del numero di cellulare prenotato?/Annulla/Conferma",
+  "pleaseEnterLast4DigitsOfReservedPhone": "Inserisci gli ultimi 4 cifri del numero di cellulare prenotato?",
   "@pleaseEnterLast4DigitsOfReservedPhone": {
-    "description": "Inserisci gli ultimi 4 cifri del numero di cellulare prenotato?/Annulla/Conferma"
+    "description": "Inserisci gli ultimi 4 cifri del numero di cellulare prenotato"
   },
   "numberIncorrectPleaseReenter": "Il numero non è corretto, reinserisci per favore",
   "@numberIncorrectPleaseReenter": {
@@ -174,9 +173,9 @@
   },
   "numberCorrectEnjoyYourMeal": "Il numero è corretto. Buon appetito!",
   "@numberCorrectEnjoyYourMeal": {
-    "description": "Il numero è corretto. Buon appetito!"
+    "description": "Il numero è corretto. Buon appetito"
   },
-  "menu": "Menù",
+  "menu": "Menù ",
   "@menu": {
     "description": "Menù"
   },
@@ -188,17 +187,9 @@
   "@enterDishCodeOrName": {
     "description": "Inserisci codice o nome del piatto"
   },
-  "max1PerPerson": "Max 1/pers.",
-  "@max1PerPerson": {
-    "description": "Max 1/pers."
-  },
-  "twoLeft": "2 rimasti",
-  "@twoLeft": {
-    "description": "2 rimasti"
-  },
   "selectSpecification": "Variante",
   "@selectSpecification": {
-    "description": "Variante"
+    "description": "Seleziona specifica"
   },
   "placeOrder": "Ordina",
   "@placeOrder": {
@@ -218,7 +209,7 @@
   },
   "selected": "Selezionato:",
   "@selected": {
-    "description": "Selezionato:"
+    "description": "Selezionato"
   },
   "cart": "Carrello",
   "@cart": {
@@ -236,33 +227,17 @@
   "@increaseNumberOfPeople": {
     "description": "Aumenta il Numero di Persone"
   },
-  "roundQuantity": "Turno: 1/2; Quantità: 4/6",
-  "@roundQuantity": {
-    "description": "Turno: 1/2; Quantità: 4/6"
-  },
   "noRelevantDishesFound": "Non sono stati trovati piatti correlati",
   "@noRelevantDishesFound": {
     "description": "Non sono stati trovati piatti correlati"
   },
-  "dishSoldOutPleaseChooseAnother": "[某菜名] è esaurito. Si prega di scegliere un altro piatto.",
+  "dishSoldOutPleaseChooseAnother": "è esaurito. Si prega di scegliere un altro piatto.",
   "@dishSoldOutPleaseChooseAnother": {
-    "description": "[某菜名] è esaurito. Si prega di scegliere un altro piatto."
-  },
-  "dishQuantityExceedsLimit": "[某菜名]Quantità oltre il limite, Max 1/persona",
-  "@dishQuantityExceedsLimit": {
-    "description": "[某菜名]Quantità oltre il limite, Max 1/persona"
-  },
-  "dishInsufficientStock": "[某菜名]Inventario insufficiente, 2 rimasti",
-  "@dishInsufficientStock": {
-    "description": "[某菜名]Inventario insufficiente, 2 rimasti"
+    "description": "è esaurito. Si prega di scegliere un altro piatto"
   },
   "nextRoundTimeNotReached": "Tempo del prossimo turno non raggiunto",
   "@nextRoundTimeNotReached": {
     "description": "Tempo del prossimo turno non raggiunto"
-  },
-  "dishPlusOne": "[某菜品]+1",
-  "@dishPlusOne": {
-    "description": "[某菜品]+1"
   },
   "cartHasNewChanges": "Carrello ha nuovi cambiamenti",
   "@cartHasNewChanges": {
@@ -276,13 +251,13 @@
   "@orderPlacementFailedContactWaiter": {
     "description": "Ordine non inviato, contatta il cameriere"
   },
-  "clearShoppingCart": "Vuoi cancellare il carrello?/Annulla/Conferma",
+  "clearShoppingCart": "Vuoi cancellare il",
   "@clearShoppingCart": {
-    "description": "Vuoi cancellare il carrello?/Annulla/Conferma"
+    "description": "Vuoi cancellare il"
   },
-  "dishQuantityExceedsLimitPlaceAtOriginalPrice": "[某菜名]La quantità supera il limite. Vuoi ordinare al prezzo originale?",
-  "@dishQuantityExceedsLimitPlaceAtOriginalPrice": {
-    "description": "[某菜名]La quantità supera il limite. Vuoi ordinare al prezzo originale?"
+  "quantityExceedsLimitPlaceAtOriginalPrice": "La quantità supera il limite. Vuoi ordinare al prezzo originale?",
+  "@quantityExceedsLimitPlaceAtOriginalPrice": {
+    "description": "La quantità supera il limite. Vuoi ordinare al prezzo originale"
   },
   "takeaway": "Da Asporto",
   "@takeaway": {
@@ -346,7 +321,7 @@
   },
   "pickupTimeMustBeAtLeast30MinutesLater": "L'orario di ritiro deve essere almeno 30 minuti dopo.",
   "@pickupTimeMustBeAtLeast30MinutesLater": {
-    "description": "L'orario di ritiro deve essere almeno 30 minuti dopo."
+    "description": "L'orario di ritiro deve essere almeno 30 minuti dopo"
   },
   "profile": "Profilo",
   "@profile": {
@@ -356,9 +331,9 @@
   "@account": {
     "description": "Account"
   },
-  "expirationDate": "Data di Scadenza",
+  "expirationDate": "Scadenza",
   "@expirationDate": {
-    "description": "Data di Scadenza"
+    "description": "Scadenza"
   },
   "remainingDays": "Giorni Rimanenti",
   "@remainingDays": {
@@ -388,8 +363,8 @@
   "@newPassword": {
     "description": "Nuova Password"
   },
-  "anyCharactersOf8OrMoreDigits": "Qualsiasi carattere di 8 o più cifre",
-  "@anyCharactersOf8OrMoreDigits": {
+  "anyCharactersOf8OrMore": "Qualsiasi carattere di 8 o più cifre",
+  "@anyCharactersOf8OrMore": {
     "description": "Qualsiasi carattere di 8 o più cifre"
   },
   "pleaseEnterNewPassword": "Inserisci la nuova password",
@@ -414,7 +389,7 @@
   },
   "passwordChangeFailedPleaseRetry": "La modifica della password è fallita, riprova per favore.",
   "@passwordChangeFailedPleaseRetry": {
-    "description": "La modifica della password è fallita, riprova per favore."
+    "description": "La modifica della password è fallita, riprova per favore"
   },
   "languageSwitchedSuccessfully": "Lingua cambiata con successo",
   "@languageSwitchedSuccessfully": {
@@ -422,7 +397,7 @@
   },
   "languageSwitchFailedPleaseRetry": "Il cambio di lingua è fallito, riprova per favore.",
   "@languageSwitchFailedPleaseRetry": {
-    "description": "Il cambio di lingua è fallito, riprova per favore."
+    "description": "Il cambio di lingua è fallito, riprova per favore"
   },
   "networkErrorPleaseTryAgain": "Errore di rete, riprova per favore",
   "@networkErrorPleaseTryAgain": {
@@ -430,70 +405,46 @@
   },
   "operationTooFrequentPleaseTryAgainLater": "L'operazione è troppo frequente, riprova più tardi.",
   "@operationTooFrequentPleaseTryAgainLater": {
-    "description": "L'operazione è troppo frequente, riprova più tardi."
+    "description": "L'operazione è troppo frequente, riprova più tardi"
   },
-  "selectLanguage": "Seleziona Lingua",
-  "@selectLanguage": {
-    "description": "Seleziona Lingua"
-  },
-  "chinese": "Cinese",
-  "@chinese": {
-    "description": "Cinese"
-  },
-  "english": "Inglese",
-  "@english": {
-    "description": "Inglese"
-  },
-  "italian": "Italiano",
-  "@italian": {
-    "description": "Italiano"
-  },
-  "systemTitle": "Sistema Ristorante OUHUA",
-  "@systemTitle": {
-    "description": "Titolo del sistema"
-  },
-  "noData": "Nessun Dato",
+  "noData": "Nessun dato disponibile",
   "@noData": {
-    "description": "Nessun Dato"
+    "description": "Nessun dato disponibile"
   },
-  "pending": "In Attesa",
-  "@pending": {
-    "description": "In Attesa"
+  "loadAgain": "Riprova",
+  "@loadAgain": {
+    "description": "Riprova"
   },
-  "quantity": "Quantità",
-  "@quantity": {
-    "description": "Quantità"
+  "allData": "Tutti",
+  "@allData": {
+    "description": "Tutti"
   },
-  "specifications": "Specifiche",
-  "@specifications": {
-    "description": "Specifiche"
+  "loadingData": "Caricamento...",
+  "@loadingData": {
+    "description": "Caricamento..."
   },
-  "info": "Info",
-  "@info": {
-    "description": "Info"
+  "success": "Successo",
+  "@success": {
+    "description": "Successo"
   },
-  "home": "Home",
-  "@home": {
-    "description": "Home"
+  "failed": "Non riuscito",
+  "@failed": {
+    "description": "Non riuscito"
   },
-  "order": "Ordine",
-  "@order": {
-    "description": "Ordine"
+  "selectPeople": "Seleziona persone",
+  "@selectPeople": {
+    "description": "Seleziona persone"
   },
-  "moreDishesComingSoon": "Altri piatti in arrivo",
-  "@moreDishesComingSoon": {
-    "description": "Altri piatti in arrivo"
+  "loadMenuFailed": "Caricamento menu fallito",
+  "@loadMenuFailed": {
+    "description": "Caricamento menu fallito"
   },
-  "switchLanguage": "Cambia Lingua",
-  "@switchLanguage": {
-    "description": "Cambia Lingua"
+  "twoPasswordsDoNotMatch": "Le password non corrispondono",
+  "@twoPasswordsDoNotMatch": {
+    "description": "Le password non corrispondono"
   },
-  "authDebug": "Debug Autenticazione",
-  "@authDebug": {
-    "description": "Debug Autenticazione"
-  },
-  "welcomeToUse": "Benvenuto",
-  "@welcomeToUse": {
-    "description": "Benvenuto"
+  "passwordLengthCannotBeLessThan8": "Minimo 8 caratteri",
+  "@passwordLengthCannotBeLessThan8": {
+    "description": "Minimo 8 caratteri"
   }
 }

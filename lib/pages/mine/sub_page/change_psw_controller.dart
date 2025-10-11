@@ -2,6 +2,7 @@
 import 'package:get/get.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:order_app/pages/login/login_page.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 
@@ -37,22 +38,22 @@ class ChangePasswordController extends GetxController {
   void submit() async {
     // 验证输入
     if (newPassword.value.isEmpty) {
-      GlobalToast.error('请输入新密码');
+      GlobalToast.error(Get.context!.l10n.pleaseEnterNewPassword);
       return;
     }
     
     if (confirmPassword.value.isEmpty) {
-      GlobalToast.error('请确认新密码');
+      GlobalToast.error(Get.context!.l10n.pleaseReenterNewPassword);
       return;
     }
     
     if (newPassword.value != confirmPassword.value) {
-      GlobalToast.error('两次输入的密码不一致');
+      GlobalToast.error(Get.context!.l10n.twoPasswordsDoNotMatch);
       return;
     }
     
-    if (newPassword.value.length < 6) {
-      GlobalToast.error('密码长度不能少于6位');
+    if (newPassword.value.length < 8) {
+      GlobalToast.error(Get.context!.l10n.passwordLengthCannotBeLessThan8);
       return;
     }
 
@@ -65,7 +66,7 @@ class ChangePasswordController extends GetxController {
       );
       
       if (result.isSuccess) {
-        GlobalToast.success('密码修改成功');
+        GlobalToast.success(Get.context!.l10n.passwordUpdatedSuccessfully);
         
         // 清除登录信息缓存并跳转到登录页面
         await _authService.logout();
@@ -73,10 +74,10 @@ class ChangePasswordController extends GetxController {
         // 跳转到登录页面
         Get.offAll(() => LoginPage());
       } else {
-        GlobalToast.error(result.msg ?? '密码修改失败');
+        GlobalToast.error(result.msg ?? Get.context!.l10n.passwordChangeFailedPleaseRetry);
       }
     } catch (e) {
-      GlobalToast.error('密码修改失败: $e');
+      GlobalToast.error(Get.context!.l10n.passwordChangeFailedPleaseRetry);
     } finally {
       isLoading.value = false;
     }

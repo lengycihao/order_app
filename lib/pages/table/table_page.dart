@@ -5,6 +5,7 @@ import 'package:order_app/pages/table/state/table_page_state.dart';
 import 'package:get/get.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:order_app/components/skeleton_widget.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
 import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
@@ -156,7 +157,7 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
       backgroundColor: Color(0xFFF9F9F9),
       appBar: AppBar(
         automaticallyImplyLeading: false, // 禁用自动返回按钮
-        title: Text('桌台'),
+        title: Text(context.l10n.table),
         backgroundColor: Colors.white,
         centerTitle: true,
         shadowColor: Colors.grey.withValues(alpha: 0.3),
@@ -191,7 +192,7 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
               ),
               alignment: Alignment.center,
               child: Text(
-                '并桌',
+                context.l10n.more,
                 style: TextStyle(color: Colors.white, fontSize: 14),
               ),
             ),
@@ -238,7 +239,7 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
       return GestureDetector(
         onTap: () => controller.onTabTapped(index),
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -246,7 +247,7 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
                 '$title($tableCount)',
                 style: TextStyle(
                   color: selected ? Colors.orange : Colors.black,
-                  fontSize: 16,
+                  fontSize: selected ? 16 : 14,
                   fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
@@ -333,10 +334,10 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
   }
 
   @override
-  String getEmptyStateText() => '暂无桌台';
+  String getEmptyStateText() => context.l10n.noData;
 
   @override
-  String getNetworkErrorText() => '暂无网络';
+  String getNetworkErrorText() => context.l10n.networkErrorPleaseTryAgain;
   
   /// 重写空状态操作按钮
   @override
@@ -354,9 +355,9 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      child: const Text(
-        '重新加载',
-        style: TextStyle(fontSize: 14),
+      child: Text(
+        context.l10n.loadAgain,
+        style: const TextStyle(fontSize: 14),
       ),
     );
   }
@@ -378,7 +379,7 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
         ),
       ),
       child: Text(
-        controller.isLoading.value ? '加载中...' : '重新加载',
+        controller.isLoading.value ? context.l10n.loadingData : context.l10n.loadAgain,
         style: TextStyle(fontSize: 14),
       ),
     ));

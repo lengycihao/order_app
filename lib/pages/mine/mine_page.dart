@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/mine/mine_controller.dart';
 import 'package:order_app/pages/mine/sub_page/change_lan_page.dart';
 import 'package:order_app/pages/mine/sub_page/change_psw_page.dart';
+import 'package:order_app/utils/l10n_utils.dart';
  
 class MinePage extends StatelessWidget {
   final MineController c = Get.put(MineController());
@@ -52,7 +53,7 @@ class MinePage extends StatelessWidget {
                               ),
                               SizedBox(height: 8),
                               Text(
-                                "账户: ${c.account.value.isNotEmpty ? c.account.value : c.loginId.value}",
+                                "${context.l10n.account}: ${c.account.value.isNotEmpty ? c.account.value : c.loginId.value}",
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.black,
@@ -86,7 +87,7 @@ class MinePage extends StatelessWidget {
                         alignment: Alignment.centerLeft,
                         child: Obx(
                           () => Text(
-                            c.storeName.value.isNotEmpty ? c.storeName.value : '欧化智创餐饮有限公司',
+                            c.storeName.value.isNotEmpty ? c.storeName.value : context.l10n.appTitle,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -123,7 +124,7 @@ class MinePage extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      '到期',
+                                      context.l10n.expirationDate,
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Colors.grey[700],
@@ -153,7 +154,7 @@ class MinePage extends StatelessWidget {
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
                                     Text(
-                                      '剩余',
+                                      context.l10n.remainingDays,
                                       style: TextStyle(
                                         fontSize: 10,
                                         color: Colors.grey[700],
@@ -188,7 +189,7 @@ class MinePage extends StatelessWidget {
                       children: [
                         _SettingItem(
                           icon: 'assets/order_mine_psw.webp',
-                          title: '修改密码',
+                          title: context.l10n.changePassword,
                           trailing: Image.asset(
                             'assets/order_mine_arrowR.webp',
                             width: 20,
@@ -201,7 +202,7 @@ class MinePage extends StatelessWidget {
                         ),
                         _SettingItem(
                           icon: 'assets/order_mine_lan.webp',
-                          title: '语言',
+                          title: context.l10n.language,
                           trailing: Image.asset(
                             'assets/order_mine_arrowR.webp',
                             width: 20,
@@ -215,7 +216,7 @@ class MinePage extends StatelessWidget {
                         Obx(
                           () => _SettingItem(
                             icon: 'assets/order_mine_sys.webp',
-                            title: '系统版本',
+                            title: context.l10n.systemVersion,
                             trailing: Text(
                               c.version.value,
                               style: TextStyle(
@@ -246,7 +247,7 @@ class MinePage extends StatelessWidget {
                         ),
                         alignment: Alignment.center,
                         child: Text(
-                          '退出登录',
+                            context.l10n.logout,
                           style: TextStyle(
                             fontSize: 20,
                             color: Color(0xff666666),

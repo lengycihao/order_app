@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -13,8 +14,6 @@ import 'package:order_app/pages/order/components/unified_cart_widget.dart';
 import 'package:order_app/utils/focus_manager.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/components/skeleton_widget.dart';
-import 'package:lib_base/network/interceptor/auth_service.dart';
-import 'package:get_it/get_it.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:order_app/pages/nav/screen_nav_page.dart';
@@ -422,7 +421,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   Widget _buildSearchAndFilter() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
       child: Obx(() {
         // 如果是外卖页面，直接显示搜索框
         if (controller.source.value == 'takeaway') {
@@ -447,25 +446,23 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
               child: Row(
                 children: [
                   // 根据状态显示桌台信息或搜索框
-                  if (!_showSearchField) ...[
-                    // 桌台号和人数信息
-                    Expanded(
-                       child: Text(
-                        '桌子:${controller.table.value?.tableName ?? 'null'} | 大人:${controller.adultCount.value} 小孩:${controller.childCount.value}',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Color(0xff666666),
-                          fontWeight: FontWeight.w400,
-                        ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
+                  Expanded(
+                    child: Container(
+                      alignment: Alignment.centerLeft,
+                      height: 30,
+                      child: !_showSearchField 
+                        ? Text(
+                            '桌子:${controller.table.value?.tableName ?? 'null'} | 大人:${controller.adultCount.value} 小孩:${controller.childCount.value}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xff666666),
+                              fontWeight: FontWeight.w400,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          )
+                        : _buildSearchField(showClearIcon: true, showSearchIcon: false),
                     ),
-                  ] else ...[
-                    // 搜索框
-                    Expanded(
-                      child: _buildSearchField(showClearIcon: true, showSearchIcon: false),
-                    ),
-                  ],
+                  ),
                   // Spacer(),
                   // 搜索按钮
                   SizedBox(width: 10,),
@@ -807,9 +804,9 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
       child: Text(
         categoryName,
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          color: Color(0xFF000000),
         ),
       ),
     );
@@ -1201,17 +1198,26 @@ class _UnifiedStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
     
     return Container(
       height: height,
-      decoration: BoxDecoration(
-        color: Colors.white, // 统一白色背景
-        boxShadow: overlapsContent ? [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 2,
-            offset: Offset(0, 1),
+      margin: EdgeInsets.only(left: 10),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10), // 毛玻璃模糊效果
+          child: Container(
+            height: height,
+            decoration: BoxDecoration(
+              color: Color(0x90F4F4F4), // 半透明背景色
+              boxShadow: overlapsContent ? [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 2,
+                  offset: Offset(0, 1),
+                ),
+              ] : null,
+            ),
+            child: _buildCategoryHeader(currentCategoryIndex),
           ),
-        ] : null,
+        ),
       ),
-      child: _buildCategoryHeader(currentCategoryIndex),
     );
   }
 
@@ -1243,13 +1249,14 @@ class _UnifiedStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
     return Container(
       height: height,
       padding: EdgeInsets.symmetric(horizontal: 16),
+      margin: EdgeInsets.only(left: 10),
       alignment: Alignment.centerLeft,
       child: Text(
         categoryName,
         style: TextStyle(
-          fontSize: 16,
+          fontSize: 12,
           fontWeight: FontWeight.w600,
-          color: Colors.black87,
+          color: Color(0xFF000000),
         ),
       ),
     );

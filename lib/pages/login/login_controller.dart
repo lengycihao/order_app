@@ -7,6 +7,13 @@ import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/services/language_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:order_app/pages/table/table_controller.dart';
+import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/pages/order/order_main_page.dart';
+import 'package:order_app/pages/takeaway/takeaway_controller.dart';
+import 'package:order_app/pages/table/sub_page/select_menu_controller.dart';
+import 'package:lib_base/network/interceptor/cache_control_interceptor.dart';
+import 'package:order_app/pages/mine/mine_controller.dart';
 
 class LoginController extends GetxController {
   // 使用 TextEditingController 管理输入框
@@ -197,7 +204,11 @@ class LoginController extends GetxController {
       );
 
       if (result.isSuccess) {
-        // 登录成功后保存账号和密码
+        // 登录成功后，先清理所有旧账号的缓存数据
+        // 包括所有Controller（会在下次访问时重新创建）
+        await _clearAllCacheData();
+        
+        // 保存账号和密码
         await _saveRecentAccount(name, psw);
         _showToast('登录成功', isError: false);
         Get.offAll(() => ScreenNavPage());
@@ -206,6 +217,60 @@ class LoginController extends GetxController {
       }
     } catch (e) {
       _showToast('登录失败: $e', isError: true);
+    }
+  }
+  
+  /// 清理所有缓存数据和Controller
+  /// 确保切换账号时不会显示旧账号的数据
+  Future<void> _clearAllCacheData() async {
+    try {
+      logDebug('开始清理所有缓存数据...', tag: 'LoginController');
+      
+      // 清理TableController及其数据
+      if (Get.isRegistered<TableControllerRefactored>()) {
+        Get.delete<TableControllerRefactored>();
+        logDebug('TableController已清理', tag: 'LoginController');
+      }
+      
+      // 清理OrderController及其WebSocket连接
+      if (Get.isRegistered<OrderController>()) {
+        Get.delete<OrderController>();
+        logDebug('OrderController已清理', tag: 'LoginController');
+      }
+      
+      // 清理OrderMainPageController
+      if (Get.isRegistered<OrderMainPageController>()) {
+        Get.delete<OrderMainPageController>();
+        logDebug('OrderMainPageController已清理', tag: 'LoginController');
+      }
+      
+      // 清理TakeawayController（如果存在）
+      if (Get.isRegistered<TakeawayController>(tag: 'takeaway_page')) {
+        Get.delete<TakeawayController>(tag: 'takeaway_page');
+        logDebug('TakeawayController已清理', tag: 'LoginController');
+      }
+      
+      // 清理SelectMenuController（如果存在）
+      if (Get.isRegistered<SelectMenuController>(tag: 'select_menu_page')) {
+        Get.delete<SelectMenuController>(tag: 'select_menu_page');
+        logDebug('SelectMenuController已清理', tag: 'LoginController');
+      }
+      
+      // 清理MineController（个人中心页面）
+      // 删除后会在下次访问时重新创建，自动加载新账号的信息
+      if (Get.isRegistered<MineController>()) {
+        Get.delete<MineController>();
+        logDebug('MineController已清理', tag: 'LoginController');
+      }
+      
+      // 清理HTTP缓存（内存缓存）
+      // 文件缓存会因为token变化自动失效，不需要手动清理
+      CacheControlInterceptor.clearMemoryCache();
+      logDebug('HTTP内存缓存已清理', tag: 'LoginController');
+      
+      logDebug('所有缓存数据清理完成', tag: 'LoginController');
+    } catch (e) {
+      logError('清理缓存数据时出现异常: $e', tag: 'LoginController');
     }
   }
 }

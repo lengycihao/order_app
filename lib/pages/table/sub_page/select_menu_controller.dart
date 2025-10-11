@@ -8,22 +8,23 @@ import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 
 class SelectMenuController extends GetxController {
   // 传入的数据
   var table = TableListModel( 
     hallId: 1,
-    hallName: '测试大厅',
+    hallName: '',
     tableId: 1,
-    tableName: '测试桌台',
+    tableName: '',
     standardAdult: 2,
     standardChild: 1,
     currentAdult: 0,
     currentChild: 0,
     status: 0,
     businessStatus: 0,
-    businessStatusName: '空闲',
+    businessStatusName: '',
     mainTableId: 1,
     menuId: 1,
     openTime: '',
@@ -105,7 +106,7 @@ class SelectMenuController extends GetxController {
           _loadAllMenuDishes(tableId);
         }
       } else {
-        ToastUtils.showError(Get.context!, '获取菜单失败: ${menuResult.msg}');
+        ToastUtils.showError(Get.context!, '${Get.context!.l10n.loadMenuFailed}: ${menuResult.msg}');
       }
     } catch (e) {
       logError('❌ 请求菜单数据失败: $e', tag: 'SelectMenuController');

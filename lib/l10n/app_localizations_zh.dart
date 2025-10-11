@@ -96,10 +96,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get pleaseSelectNumberOfDiners => '请选择就餐人数';
 
   @override
-  String get standardAdultsForThisTable => '本桌标准大人人数:[4]';
+  String get standardAdultsForThisTable => '本桌标准大人人数:';
 
   @override
-  String get standardChildrenForThisTable => '本桌标准小孩人数:[5]';
+  String get standardChildrenForThisTable => '本桌标准小孩人数:';
 
   @override
   String get pleaseSelectMenu => '请选择菜单';
@@ -132,7 +132,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get tableOpeningFailedPleaseRetry => '开桌失败，请重试';
 
   @override
-  String get pleaseEnterLast4DigitsOfReservedPhone => '请输入预留手机号码后 4 位？/取消/确认';
+  String get pleaseEnterLast4DigitsOfReservedPhone => '请输入预留手机号码后 4 位？';
 
   @override
   String get numberIncorrectPleaseReenter => '号码不正确，请重新输入';
@@ -148,12 +148,6 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get enterDishCodeOrName => '输入菜品编码或名称';
-
-  @override
-  String get max1PerPerson => '限1份/人';
-
-  @override
-  String get twoLeft => '剩2份';
 
   @override
   String get selectSpecification => '选规格';
@@ -186,25 +180,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get increaseNumberOfPeople => '增加人数';
 
   @override
-  String get roundQuantity => '轮次：';
-
-  @override
   String get noRelevantDishesFound => '未找到相关菜品';
 
   @override
-  String get dishSoldOutPleaseChooseAnother => '[某菜名]已售罄，请选择其他菜品';
-
-  @override
-  String get dishQuantityExceedsLimit => '[某菜名]数量超出限制,限1份/人';
-
-  @override
-  String get dishInsufficientStock => '[某菜名]库存不足，剩2份';
+  String get dishSoldOutPleaseChooseAnother => '已售罄，请选择其他菜品';
 
   @override
   String get nextRoundTimeNotReached => '下一轮次时间未到';
-
-  @override
-  String get dishPlusOne => '[某菜品]+1';
 
   @override
   String get cartHasNewChanges => '购物车有新的变动';
@@ -216,11 +198,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get orderPlacementFailedContactWaiter => '下单失败，请联系服务员';
 
   @override
-  String get clearShoppingCart => '是否清空购物车？/取消/确认';
+  String get clearShoppingCart => '是否清空购物车？';
 
   @override
-  String get dishQuantityExceedsLimitPlaceAtOriginalPrice =>
-      '[某菜名]数量超出限制，是否以原价下单';
+  String get quantityExceedsLimitPlaceAtOriginalPrice => '数量超出限制，是否以原价下单？';
 
   @override
   String get takeaway => '外卖';
@@ -301,7 +282,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get newPassword => '新密码';
 
   @override
-  String get anyCharactersOf8OrMoreDigits => '任意8位以上字符';
+  String get anyCharactersOf8OrMore => '任意8位以上字符';
 
   @override
   String get pleaseEnterNewPassword => '请输入新密码';
@@ -334,50 +315,32 @@ class AppLocalizationsZh extends AppLocalizations {
   String get operationTooFrequentPleaseTryAgainLater => '操作频繁 请稍后再试';
 
   @override
-  String get selectLanguage => '选择语言';
-
-  @override
-  String get chinese => '中文';
-
-  @override
-  String get english => '英语';
-
-  @override
-  String get italian => '意大利语';
-
-  @override
-  String get systemTitle => '欧华餐饮系统';
-
-  @override
   String get noData => '暂无数据';
 
   @override
-  String get pending => '待处理';
+  String get loadAgain => '重新加载';
 
   @override
-  String get quantity => '数量';
+  String get allData => '全部';
 
   @override
-  String get specifications => '规格';
+  String get loadingData => '加载中...';
 
   @override
-  String get info => '信息';
+  String get success => '成功';
 
   @override
-  String get home => '首页';
+  String get failed => '失败';
 
   @override
-  String get order => '订单';
+  String get selectPeople => '选择人数';
 
   @override
-  String get moreDishesComingSoon => '更多菜品即将推出';
+  String get loadMenuFailed => '获取菜单失败';
 
   @override
-  String get switchLanguage => '切换语言';
+  String get twoPasswordsDoNotMatch => '两次输入的密码不一致';
 
   @override
-  String get authDebug => '认证调试';
-
-  @override
-  String get welcomeToUse => '欢迎使用';
+  String get passwordLengthCannotBeLessThan8 => '密码最少8位字符';
 }

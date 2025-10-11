@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:order_app/pages/mine/mine_page.dart';
 import 'package:order_app/pages/table/table_page.dart';
 import 'package:order_app/pages/takeaway/takeaway_page.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 
 class ScreenNavPage extends StatefulWidget {
   final int initialIndex;
@@ -65,7 +66,7 @@ class _ScreenNavPageState extends State<ScreenNavPage> {
                   width: 24,
                   height: 24,
                 ),
-                label: '桌台',
+                label: context.l10n.table,
               ),
               BottomNavigationBarItem(
                 icon: Image.asset(
@@ -75,7 +76,7 @@ class _ScreenNavPageState extends State<ScreenNavPage> {
                   width: 24,
                   height: 24,
                 ),
-                label: '外卖',
+                label: context.l10n.takeaway,
               ),
               BottomNavigationBarItem(
                 icon: Image.asset(
@@ -85,7 +86,7 @@ class _ScreenNavPageState extends State<ScreenNavPage> {
                   width: 24,
                   height: 24,
                 ),
-                label: '我的',
+                label: context.l10n.profile,
               ),
             ],
           ),

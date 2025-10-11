@@ -7,8 +7,10 @@ import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_mo
 import 'package:order_app/cons/table_status.dart';
 import 'package:lib_base/utils/websocket_manager.dart';
 import 'package:order_app/pages/table/sub_page/merge_tables_page.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:order_app/l10n/app_localizations.dart';
 
 // 导入服务模块
 import 'services/table_data_service.dart';
@@ -335,9 +337,15 @@ class TableControllerRefactored extends GetxController {
 
   /// 更改桌台状态
   Future<void> changeTableStatus({
+    required BuildContext context,
     required int tableId,
     required TableStatus newStatus,
   }) async {
+    // 在 async gap 之前提取所有需要的多语言文本
+    final l10n = AppLocalizations.of(context)!;
+     final failedMsg = l10n.failed;
+    final networkErrorMsg = l10n.networkErrorPleaseTryAgain;
+
     try {
       final result = await _dataService.changeTableStatus(
         tableId: tableId,
@@ -345,16 +353,16 @@ class TableControllerRefactored extends GetxController {
       );
 
       if (result.isSuccess) {
-        GlobalToast.success('桌台状态更新成功');
+        GlobalToast.success(Get.context!.l10n.success);
         // 刷新当前tab的桌台数据
         await fetchDataForTab(selectedTab.value);
       } else {
-        GlobalToast.error(result.msg ?? '状态更新失败');
+        GlobalToast.error(result.msg ?? failedMsg);
       }
     } catch (e) {
       // 关闭加载对话框
       Get.back();
-      GlobalToast.error('网络错误: $e');
+      GlobalToast.error(networkErrorMsg);
     }
   }
 

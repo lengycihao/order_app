@@ -14,6 +14,7 @@ import 'package:order_app/components/skeleton_widget.dart';
 import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:order_app/cons/table_status.dart';
 
 class MergeTablesPage extends BaseListPageWidget {
   final List<List<TableListModel>> allTabTables;
@@ -36,7 +37,8 @@ class MergeTablesPage extends BaseListPageWidget {
 }
 
 class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with TickerProviderStateMixin {
-  final RefreshController _refreshController = RefreshController();
+  // 每个tab一个独立的RefreshController
+  final List<RefreshController> _refreshControllers = [];
   final List<String> selectedTableIds = [];
   final BaseApi _baseApi = BaseApi();
   bool _isMerging = false;
@@ -57,6 +59,9 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   
   // Tab滚动相关
   late ScrollController _tabScrollController;
+  
+  // 已选桌台区域滚动控制器
+  late ScrollController _selectedTablesScrollController;
 
   @override
   void initState() {
@@ -68,6 +73,9 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     
     // 初始化tab滚动控制器
     _tabScrollController = ScrollController();
+    
+    // 初始化已选桌台滚动控制器
+    _selectedTablesScrollController = ScrollController();
     
     // 初始化tab数据
     _initializeTabData();
@@ -83,6 +91,12 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       halls.length,
       (_) => <TableListModel>[].obs,
     );
+    
+    // 为每个tab创建独立的RefreshController
+    _refreshControllers.clear();
+    for (int i = 0; i < halls.length; i++) {
+      _refreshControllers.add(RefreshController());
+    }
     
     // 初始化TabController
     _tabController = TabController(length: halls.length, vsync: this);
@@ -270,7 +284,11 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   void dispose() {
     _tabController.dispose();
     _tabScrollController.dispose();
-    _refreshController.dispose();
+    _selectedTablesScrollController.dispose();
+    // 释放所有RefreshController
+    for (var controller in _refreshControllers) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -337,6 +355,16 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         selectedTableIds.remove(tableId);
       } else {
         selectedTableIds.add(tableId);
+        // 添加新桌台后，延迟滚动到底部以查看最新添加的桌台
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (_selectedTablesScrollController.hasClients) {
+            _selectedTablesScrollController.animateTo(
+              _selectedTablesScrollController.position.maxScrollExtent,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            );
+          }
+        });
       }
     });
   }
@@ -590,7 +618,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
           _scrollToTab(index);
         },
         child: Container(
-          padding: EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+          padding: EdgeInsets.symmetric(vertical: 10, horizontal: 8),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -598,7 +626,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                 '$title($tableCount)',
                 style: TextStyle(
                   color: selected ? Colors.orange : Colors.black,
-                  fontSize: 16,
+                  fontSize: selected ? 16 : 14,
                   fontWeight: selected ? FontWeight.bold : FontWeight.normal,
                 ),
               ),
@@ -622,16 +650,16 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   Widget _buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
       return PullToRefreshWrapper(
-        controller: _refreshController,
+        controller: _refreshControllers[tabIndex],
         onRefresh: () async {
           try {
             await _fetchDataForTab(tabIndex);
             // 通知刷新完成
-            _refreshController.refreshCompleted();
+            _refreshControllers[tabIndex].refreshCompleted();
           } catch (e) {
             logError('并桌页面刷新失败: $e', tag: 'MergeTablesPage');
             // 刷新失败也要通知完成
-            _refreshController.refreshFailed();
+            _refreshControllers[tabIndex].refreshFailed();
           }
         },
         child: CustomScrollView(
@@ -654,14 +682,24 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                         (context, index) {
                           final table = data[index];
                           final isSelected = selectedTableIds.contains(table.tableId.toString());
+                          final status = _getStatus(table.businessStatus.toInt());
+                          // 不可用、维修中、已预定的桌台不能被选择
+                          final isUnselectable = status == TableStatus.Unavailable || 
+                                                 status == TableStatus.Maintenance || 
+                                                 status == TableStatus.Reserved;
                           
                           return GestureDetector(
-                            onTap: () => _toggleTableSelection(table.tableId.toString()),
-                            child: TableCard(
-                              table: table,
-                              tableModelList: widget.menuModelList,
-                              isSelected: isSelected,
-                              isMergeMode: true,
+                            onTap: isUnselectable 
+                                ? null 
+                                : () => _toggleTableSelection(table.tableId.toString()),
+                            child: Opacity(
+                              opacity: isUnselectable ? 0.5 : 1.0,
+                              child: TableCard(
+                                table: table,
+                                tableModelList: widget.menuModelList,
+                                isSelected: isSelected,
+                                isMergeMode: true,
+                              ),
                             ),
                           );
                         },
@@ -764,6 +802,9 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
               ),
             ),
           ),
+          // 已选桌台信息显示区域
+          if (selectedTableIds.isNotEmpty)
+            _buildSelectedTablesInfo(),
           // TabBarView
           Expanded(
             child: TabBarView(
@@ -776,6 +817,166 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         ],
       );
     });
+  }
+
+  /// 构建已选桌台信息显示区域
+  Widget _buildSelectedTablesInfo() {
+    // 计算3行的高度：标签高度(28) * 3 + 行间距(8) * 2 = 100
+    const double chipHeight = 28.0; // 标签高度
+    const double runSpacing = 8.0; // 行间距
+    const double maxHeight = chipHeight * 3 + runSpacing * 2; // 3行的最大高度
+    
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Color(0xFFFFF8F0),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Color(0xFFFF9027).withOpacity(0.3), width: 1),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            '已选桌台（${selectedTableIds.length}）',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF666666),
+            ),
+          ),
+          SizedBox(height: 8),
+          // 限制最大高度为3行，超过时可滚动
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: maxHeight,
+            ),
+            child: SingleChildScrollView(
+              controller: _selectedTablesScrollController,
+              physics: BouncingScrollPhysics(),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: selectedTableIds.map((tableId) {
+                  final table = _getTableById(tableId);
+                  final tableName = table?.tableName ?? tableId;
+                  return _buildTableChip(tableId, tableName);
+                }).toList(),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 构建单个桌台标签（可点击取消选中）
+  Widget _buildTableChip(String tableId, String tableName) {
+    // 限制桌台名称长度，最多显示8个字符
+    String displayName = tableName.length > 8 
+        ? '${tableName.substring(0, 8)}...' 
+        : tableName;
+    
+    // 获取桌台状态颜色
+    final table = _getTableById(tableId);
+    final status = _getStatus(table?.businessStatus.toInt() ?? 0);
+    final bgColor = _getStatusColor(status);
+    // 空桌台用深色文字，其他状态用白色文字
+    final textColor =  Color(0xff333333) ;
+    
+    return GestureDetector(
+      onTap: () {
+        // 取消选中该桌台
+        setState(() {
+          selectedTableIds.remove(tableId);
+        });
+      },
+      child: Container(
+        constraints: BoxConstraints(maxWidth: 120), // 限制标签最大宽度
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          // boxShadow: [
+          //   BoxShadow(
+          //     color: Color(0xFFFF9027).withOpacity(0.3),
+          //     blurRadius: 4,
+          //     offset: Offset(0, 2),
+          //   ),
+          // ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Flexible(
+              child: Text(
+                displayName,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: textColor,
+                ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+              ),
+            ),
+            SizedBox(width: 4),
+            Icon(
+              Icons.close,
+              size: 16,
+              color: textColor,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 根据业务状态码获取TableStatus
+  TableStatus _getStatus(int status) {
+    switch (status) {
+      case 0:
+        return TableStatus.Empty;
+      case 1:
+        return TableStatus.Occupied;
+      case 2:
+        return TableStatus.WaitingOrder;
+      case 3:
+        return TableStatus.PendingBill;
+      case 4:
+        return TableStatus.PreBilled;
+      case 5:
+        return TableStatus.Unavailable;
+      case 6:
+        return TableStatus.Maintenance;
+      case 7:
+        return TableStatus.Reserved;
+    }
+    return TableStatus.Empty;
+  }
+
+  /// 根据TableStatus获取背景色
+  Color _getStatusColor(TableStatus status) {
+    switch (status) {
+      case TableStatus.Unavailable:
+        return Color(0xff999999);
+      case TableStatus.PendingBill:
+        return Color(0xffF47E97);
+      case TableStatus.PreBilled:
+        return Color(0xff77DD77);
+      case TableStatus.WaitingOrder:
+        return Color(0xffFFD700);
+      case TableStatus.Empty:
+        return Colors.white;
+      case TableStatus.Occupied:
+        return Color(0xff999999);
+      case TableStatus.Maintenance:
+        return Color(0xff999999);
+      case TableStatus.Reserved:
+        return Color(0xff999999);
+    }
   }
 
   /// 构建单个tab的内容

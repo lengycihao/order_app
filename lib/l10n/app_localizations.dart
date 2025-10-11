@@ -274,16 +274,16 @@ abstract class AppLocalizations {
   /// **'请选择就餐人数'**
   String get pleaseSelectNumberOfDiners;
 
-  /// 本桌标准大人人数:[4]
+  /// 本桌标准大人人数
   ///
   /// In zh, this message translates to:
-  /// **'本桌标准大人人数:[4]'**
+  /// **'本桌标准大人人数:'**
   String get standardAdultsForThisTable;
 
-  /// 本桌标准小孩人数:[5]
+  /// 本桌标准小孩人数
   ///
   /// In zh, this message translates to:
-  /// **'本桌标准小孩人数:[5]'**
+  /// **'本桌标准小孩人数:'**
   String get standardChildrenForThisTable;
 
   /// 请选择菜单
@@ -346,10 +346,10 @@ abstract class AppLocalizations {
   /// **'开桌失败，请重试'**
   String get tableOpeningFailedPleaseRetry;
 
-  /// 请输入预留手机号码后 4 位？/取消/确认
+  /// 请输入预留手机号码后 4 位
   ///
   /// In zh, this message translates to:
-  /// **'请输入预留手机号码后 4 位？/取消/确认'**
+  /// **'请输入预留手机号码后 4 位？'**
   String get pleaseEnterLast4DigitsOfReservedPhone;
 
   /// 号码不正确，请重新输入
@@ -382,18 +382,6 @@ abstract class AppLocalizations {
   /// **'输入菜品编码或名称'**
   String get enterDishCodeOrName;
 
-  /// 限1份/人
-  ///
-  /// In zh, this message translates to:
-  /// **'限1份/人'**
-  String get max1PerPerson;
-
-  /// 剩2份
-  ///
-  /// In zh, this message translates to:
-  /// **'剩2份'**
-  String get twoLeft;
-
   /// 选规格
   ///
   /// In zh, this message translates to:
@@ -424,7 +412,7 @@ abstract class AppLocalizations {
   /// **'去除含有指定敏感物的菜品'**
   String get excludeDishesWithAllergens;
 
-  /// 已选：
+  /// 已选
   ///
   /// In zh, this message translates to:
   /// **'已选：'**
@@ -454,47 +442,23 @@ abstract class AppLocalizations {
   /// **'增加人数'**
   String get increaseNumberOfPeople;
 
-  /// 轮次：
-  ///
-  /// In zh, this message translates to:
-  /// **'轮次：'**
-  String get roundQuantity;
-
   /// 未找到相关菜品
   ///
   /// In zh, this message translates to:
   /// **'未找到相关菜品'**
   String get noRelevantDishesFound;
 
-  /// [某菜名]已售罄，请选择其他菜品
+  /// 已售罄，请选择其他菜品
   ///
   /// In zh, this message translates to:
-  /// **'[某菜名]已售罄，请选择其他菜品'**
+  /// **'已售罄，请选择其他菜品'**
   String get dishSoldOutPleaseChooseAnother;
-
-  /// [某菜名]数量超出限制,限1份/人
-  ///
-  /// In zh, this message translates to:
-  /// **'[某菜名]数量超出限制,限1份/人'**
-  String get dishQuantityExceedsLimit;
-
-  /// [某菜名]库存不足，剩2份
-  ///
-  /// In zh, this message translates to:
-  /// **'[某菜名]库存不足，剩2份'**
-  String get dishInsufficientStock;
 
   /// 下一轮次时间未到
   ///
   /// In zh, this message translates to:
   /// **'下一轮次时间未到'**
   String get nextRoundTimeNotReached;
-
-  /// [某菜品]+1
-  ///
-  /// In zh, this message translates to:
-  /// **'[某菜品]+1'**
-  String get dishPlusOne;
 
   /// 购物车有新的变动
   ///
@@ -514,17 +478,17 @@ abstract class AppLocalizations {
   /// **'下单失败，请联系服务员'**
   String get orderPlacementFailedContactWaiter;
 
-  /// 是否清空购物车？/取消/确认
+  /// 是否清空购物车
   ///
   /// In zh, this message translates to:
-  /// **'是否清空购物车？/取消/确认'**
+  /// **'是否清空购物车？'**
   String get clearShoppingCart;
 
-  /// [某菜名]数量超出限制，是否以原价下单
+  /// 数量超出限制，是否以原价下单
   ///
   /// In zh, this message translates to:
-  /// **'[某菜名]数量超出限制，是否以原价下单'**
-  String get dishQuantityExceedsLimitPlaceAtOriginalPrice;
+  /// **'数量超出限制，是否以原价下单？'**
+  String get quantityExceedsLimitPlaceAtOriginalPrice;
 
   /// 外卖
   ///
@@ -686,7 +650,7 @@ abstract class AppLocalizations {
   ///
   /// In zh, this message translates to:
   /// **'任意8位以上字符'**
-  String get anyCharactersOf8OrMoreDigits;
+  String get anyCharactersOf8OrMore;
 
   /// 请输入新密码
   ///
@@ -748,101 +712,65 @@ abstract class AppLocalizations {
   /// **'操作频繁 请稍后再试'**
   String get operationTooFrequentPleaseTryAgainLater;
 
-  /// 选择语言
-  ///
-  /// In zh, this message translates to:
-  /// **'选择语言'**
-  String get selectLanguage;
-
-  /// 中文
-  ///
-  /// In zh, this message translates to:
-  /// **'中文'**
-  String get chinese;
-
-  /// 英语
-  ///
-  /// In zh, this message translates to:
-  /// **'英语'**
-  String get english;
-
-  /// 意大利语
-  ///
-  /// In zh, this message translates to:
-  /// **'意大利语'**
-  String get italian;
-
-  /// 系统标题
-  ///
-  /// In zh, this message translates to:
-  /// **'欧华餐饮系统'**
-  String get systemTitle;
-
   /// 暂无数据
   ///
   /// In zh, this message translates to:
   /// **'暂无数据'**
   String get noData;
 
-  /// 待处理
+  /// 重新加载
   ///
   /// In zh, this message translates to:
-  /// **'待处理'**
-  String get pending;
+  /// **'重新加载'**
+  String get loadAgain;
 
-  /// 数量
+  /// 全部
   ///
   /// In zh, this message translates to:
-  /// **'数量'**
-  String get quantity;
+  /// **'全部'**
+  String get allData;
 
-  /// 规格
+  /// 加载中...
   ///
   /// In zh, this message translates to:
-  /// **'规格'**
-  String get specifications;
+  /// **'加载中...'**
+  String get loadingData;
 
-  /// 信息
+  /// 成功
   ///
   /// In zh, this message translates to:
-  /// **'信息'**
-  String get info;
+  /// **'成功'**
+  String get success;
 
-  /// 首页
+  /// 失败
   ///
   /// In zh, this message translates to:
-  /// **'首页'**
-  String get home;
+  /// **'失败'**
+  String get failed;
 
-  /// 订单
+  /// 选择人数
   ///
   /// In zh, this message translates to:
-  /// **'订单'**
-  String get order;
+  /// **'选择人数'**
+  String get selectPeople;
 
-  /// 更多菜品即将推出
+  /// 获取菜单失败
   ///
   /// In zh, this message translates to:
-  /// **'更多菜品即将推出'**
-  String get moreDishesComingSoon;
+  /// **'获取菜单失败'**
+  String get loadMenuFailed;
 
-  /// 切换语言
+  /// 两次输入的密码不一致
   ///
   /// In zh, this message translates to:
-  /// **'切换语言'**
-  String get switchLanguage;
+  /// **'两次输入的密码不一致'**
+  String get twoPasswordsDoNotMatch;
 
-  /// 认证调试
+  /// 密码最少8位字符
   ///
   /// In zh, this message translates to:
-  /// **'认证调试'**
-  String get authDebug;
-
-  /// 欢迎使用
-  ///
-  /// In zh, this message translates to:
-  /// **'欢迎使用'**
-  String get welcomeToUse;
+  /// **'密码最少8位字符'**
+  String get passwordLengthCannotBeLessThan8;
 }
 
 class _AppLocalizationsDelegate

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:order_app/services/language_service.dart';
 import 'package:order_app/service/service_locator.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 
 class ChangeLanPage extends StatefulWidget {
@@ -32,7 +33,7 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('语言', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+        title: Text(context.l10n.language, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -110,17 +111,17 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
                     try {
                       await _languageService.changeLanguage(newLocale);
                       if (mounted) {
-                        GlobalToast.success('语言切换成功');
+                        GlobalToast.success(context.l10n.languageSwitchedSuccessfully);
                         Navigator.of(context).pop();
                       }
                     } catch (e) {
                       if (mounted) {
-                        GlobalToast.error('语言切换失败：$e');
+                        GlobalToast.error(context.l10n.languageSwitchFailedPleaseRetry);
                       }
                     }
                   },
                   child: Text(
-                    '确认',
+                    context.l10n.confirm,
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

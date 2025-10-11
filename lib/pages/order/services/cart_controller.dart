@@ -753,9 +753,8 @@ class CartController extends GetxController {
     // 如果接口没有返回总价，则计算本地购物车总价（兜底逻辑）
     // 注意：这里只计算基础价格，不包含价格增量、税费等
     // 因为API返回的totalPrice可能包含了这些额外费用
-    double total = cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
-    // 修复浮点数精度问题，保留2位小数
-    return double.parse(total.toStringAsFixed(2));
+    // 不做精度处理，接口返回什么展示什么
+    return cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
   }
   
   /// 获取基础总价格（不包含价格增量、税费等额外费用）

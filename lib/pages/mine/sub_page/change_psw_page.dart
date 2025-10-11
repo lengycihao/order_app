@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/mine/sub_page/change_psw_controller.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 
 class ChangePasswordPage extends StatelessWidget {
   final ChangePasswordController controller = Get.put(
@@ -14,7 +15,7 @@ class ChangePasswordPage extends StatelessWidget {
       backgroundColor: Colors.white,
       resizeToAvoidBottomInset: false, // 防止页面跟随键盘调整大小
       appBar: AppBar(
-        title: Text('修改密码', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
+        title: Text(context.l10n.changePassword, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500)),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -41,7 +42,7 @@ class ChangePasswordPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '新密码',
+                            context.l10n.newPassword,
                             style: TextStyle(
                               fontSize: 14,
                               color: Color(0xff666666),
@@ -58,7 +59,7 @@ class ChangePasswordPage extends StatelessWidget {
                           ),
                           SizedBox(width: 4),
                           Text(
-                            '任意8位字符',
+                            context.l10n.anyCharactersOf8OrMore,
                             style: TextStyle(
                               fontSize: 10,
                               color: Color(0xff999999),
@@ -72,7 +73,7 @@ class ChangePasswordPage extends StatelessWidget {
                         () => TextField(
                           obscureText: !controller.tempShowNewPassword.value,
                           decoration: InputDecoration(
-                            hintText: '请输入新密码',
+                            hintText: context.l10n.pleaseEnterNewPassword,
                             hintStyle: const TextStyle(color: Colors.grey),
                             // 移除默认内边距，避免下划线过长
                             contentPadding: const EdgeInsets.symmetric(vertical: 10),
@@ -128,7 +129,7 @@ class ChangePasswordPage extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            '确认新密码',
+                            context.l10n.confirmPassword,
                             style: TextStyle(
                               fontSize: 14,
                               color: Color(0xff666666),
@@ -151,7 +152,7 @@ class ChangePasswordPage extends StatelessWidget {
                         () => TextField(
                           obscureText: !controller.tempShowConfirmPassword.value,
                           decoration: InputDecoration(
-                            hintText: '请再次输入密码',
+                            hintText: context.l10n.pleaseReenterNewPassword,
                             hintStyle: const TextStyle(color: Colors.grey),
                             contentPadding: const EdgeInsets.symmetric(vertical: 10),
                             // 仅显示下边框
@@ -238,8 +239,8 @@ class ChangePasswordPage extends StatelessWidget {
                             size: 20,
                             color: Colors.white,
                           )
-                        : const Text(
-                            '提交',
+                        :   Text(
+                            context.l10n.submit,
                             style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w500),
                           ),
                   ),
