@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'order_detail_controller_new.dart';
 import 'model/takeaway_order_detail_model.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
@@ -33,7 +34,7 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
   Future<void> onRefresh() => controller.refreshOrderDetail();
 
   @override
-  String getEmptyStateText() => '暂无详情';
+  String getEmptyStateText() => Get.context!.l10n.noData;
 
   @override
   Widget buildDataContent() {
@@ -111,24 +112,24 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
-                '订单信息',
+                Text(
+                Get.context!.l10n.orderInformation,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
           const SizedBox(height: 16),
           // 订单信息内容
-          _buildInfoRow('取餐码:', order.pickupCode ?? '1324'),
+          _buildInfoRow('${Get.context!.l10n.pickupCode}:', order.pickupCode ?? '1324'),
           const SizedBox(height: 8),
-          _buildInfoRow('备注：', order.remark ?? ''),
+          _buildInfoRow('${Get.context!.l10n.remarks}：', order.remark ?? ''),
           const SizedBox(height: 8),
-          _buildInfoRow('订单编号:', order.orderNo ?? ''),
+          _buildInfoRow('${Get.context!.l10n.orderNo}:', order.orderNo ?? ''),
           const SizedBox(height: 8),
-          _buildInfoRow('单据来源:', order.sourceName ?? ''),
+          _buildInfoRow('${Get.context!.l10n.orderSourceNew}:', order.sourceName ?? ''),
           const SizedBox(height: 8),
           _buildInfoRow(
-            '下单时间:',
+            '${Get.context!.l10n.orderPlacementTime}:',
             order.formattedOrderTime ?? '9999-99-99 00:00:00',
           ),
         ],
@@ -160,8 +161,8 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
                 ),
               ),
               const SizedBox(width: 8),
-              const Text(
-                '商品详情',
+               Text(
+                Get.context!.l10n.productDetails,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
@@ -265,7 +266,7 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
                           const SizedBox(height: 4),
                           if (item.remark != null && item.remark!.isNotEmpty)
                             Text(
-                              '备注：${item.remark}',
+                              '${Get.context!.l10n.remarks}：${item.remark}',
                               style: const TextStyle(
                                 fontSize: 10,
                                 color: Color(0xff999999),
@@ -407,7 +408,7 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(
-            width: 80,
+            // width: 120,
             child: Text(
               label,
               style: TextStyle(
@@ -417,6 +418,7 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
               ),
             ),
           ),
+          const SizedBox(width: 8),
           Expanded(
             child: Text(
               value,

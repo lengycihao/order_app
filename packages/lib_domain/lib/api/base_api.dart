@@ -34,19 +34,35 @@ class BaseApi {
       queryParam: params,
     );
     if (result.isSuccess) {
-       
-      final List<TableListModel> list = (result.dataJson as List)
-          .map((e) => TableListModel.fromJson(e as Map<String, dynamic>))
-          .toList();
-
-      // 检查解析后的桌台数据
-      for (int i = 0; i < list.length; i++) {
-        final table = list[i];
-        if (table.tableId == 0) {
-         }
+      // 检查dataJson是否为null或不是List类型
+      if (result.dataJson == null) {
+        logDebug('⚠️ 桌台列表API返回成功但数据为空', tag: 'BaseApi');
+        return result.convert(data: <TableListModel>[]);
       }
+      
+      if (result.dataJson is! List) {
+        logDebug('⚠️ 桌台列表API返回的数据不是List类型: ${result.dataJson.runtimeType}', tag: 'BaseApi');
+        return result.convert(data: <TableListModel>[]);
+      }
+      
+      try {
+        final List<TableListModel> list = (result.dataJson as List)
+            .map((e) => TableListModel.fromJson(e as Map<String, dynamic>))
+            .toList();
 
-      return result.convert(data: list);
+        // 检查解析后的桌台数据
+        for (int i = 0; i < list.length; i++) {
+          final table = list[i];
+          if (table.tableId == 0) {
+            // 可以在这里添加特殊处理逻辑
+          }
+        }
+
+        return result.convert(data: list);
+      } catch (e) {
+        logDebug('❌ 桌台列表数据解析失败: $e', tag: 'BaseApi');
+        return result.convert(data: <TableListModel>[]);
+      }
     } else {
       logDebug('❌ 桌台列表API请求失败: ${result.msg}', tag: 'BaseApi');
       return result.convert();
@@ -94,11 +110,27 @@ class BaseApi {
     );
      
     if (result.isSuccess) {
-      final List<DishListModel> list = (result.dataJson as List)
-          .map((e) => DishListModel.fromJson(e as Map<String, dynamic>))
-          .toList();
+      // 检查dataJson是否为null或不是List类型
+      if (result.dataJson == null) {
+        logDebug('⚠️ 菜品列表API返回成功但数据为空', tag: 'BaseApi');
+        return result.convert(data: <DishListModel>[]);
+      }
+      
+      if (result.dataJson is! List) {
+        logDebug('⚠️ 菜品列表API返回的数据不是List类型: ${result.dataJson.runtimeType}', tag: 'BaseApi');
+        return result.convert(data: <DishListModel>[]);
+      }
+      
+      try {
+        final List<DishListModel> list = (result.dataJson as List)
+            .map((e) => DishListModel.fromJson(e as Map<String, dynamic>))
+            .toList();
 
-      return result.convert(data: list);
+        return result.convert(data: list);
+      } catch (e) {
+        logDebug('❌ 菜品列表数据解析失败: $e', tag: 'BaseApi');
+        return result.convert(data: <DishListModel>[]);
+      }
     } else {
       return result.convert();
     }

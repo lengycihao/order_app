@@ -430,6 +430,39 @@ class WebSocketManager {
     }
   }
 
+  /// 发送购物车备注消息
+  Future<bool> sendCartRemark({
+    required String tableId,
+    required String remark,
+  }) async {
+    final connection = _tableConnections[tableId];
+    if (connection == null) {
+      logDebug('❌ 桌台 $tableId 未连接，无法发送消息', tag: 'WebSocketManager');
+      return false;
+    }
+
+    try {
+      final message = {
+        'id': _generateMessageId(),
+        'type': 'cart',
+        'data': {
+          'action': 'remark',
+          'remark': remark,
+        },
+        'timestamp': DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      };
+
+      final success = await connection.sendRawMessage(message);
+      if (success) {
+        logDebug('📤 发送购物车备注消息: 桌台$tableId, 备注=$remark', tag: 'WebSocketManager');
+      }
+      return success;
+    } catch (e) {
+      logDebug('❌ 发送购物车备注消息失败: $e', tag: 'WebSocketManager');
+      return false;
+    }
+  }
+
   /// 发送刷新购物车消息
   Future<bool> sendRefreshCart({
     required String tableId,
@@ -517,6 +550,9 @@ class WebSocketManager {
             break;
           case 'refresh':
             logDebug('🔄 收到服务器购物车刷新消息: $data', tag: 'WebSocketManager');
+            break;
+          case 'remark':
+            logDebug('📝 收到服务器购物车备注消息: $data', tag: 'WebSocketManager');
             break;
           default:
             logDebug('❓ 收到未知购物车操作: $action', tag: 'WebSocketManager');

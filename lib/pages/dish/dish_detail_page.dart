@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import '../../constants/global_colors.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
@@ -119,8 +120,8 @@ class _DishDetailPageState extends State<DishDetailPage> {
           width: double.infinity,
           height: 300,
           color: Colors.grey.shade200,
-          child: const Center(
-            child: Text('图片加载失败'),
+          child:   Center(
+            child: Text(context.l10n.failed),
           ),
         );
       }
@@ -143,8 +144,8 @@ class _DishDetailPageState extends State<DishDetailPage> {
             width: double.infinity,
             height: 300,
             color: Colors.grey.shade200,
-            child: const Center(
-              child: Text('图片加载失败'),
+            child:   Center(
+              child: Text(context.l10n.failed),
             ),
           ),
           memCacheWidth: ImageCacheConfig.dishMemCacheWidth,
@@ -179,8 +180,8 @@ class _DishDetailPageState extends State<DishDetailPage> {
             const SizedBox(height: 8),
             // 敏感物信息（紧接着菜品名称）
             if (dish.allergens != null && dish.allergens!.isNotEmpty) ...[
-              const Text(
-                '敏感物',
+                Text(
+                context.l10n.allergens,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -262,8 +263,8 @@ class _DishDetailPageState extends State<DishDetailPage> {
                         color: Color(0xFF000000),
                       ),
                     ),
-                    const TextSpan(
-                      text: '/份',
+                      TextSpan(
+                      text: context.l10n.perPortion,
                       style: TextStyle(
                         fontSize: 12,
                         color: Color(0xFF666666),
@@ -405,7 +406,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Text(
-                '选规格',
+                context.l10n.selectSpecification,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
@@ -550,9 +551,9 @@ class _DishDetailPageState extends State<DishDetailPage> {
                     color: const Color(0xFFFF9027),
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  child: const Center(
+                  child:   Center(
                     child: Text(
-                      '下单',
+                      context.l10n.placeOrder,
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 16,
@@ -599,7 +600,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
       );
     } catch (e) {
       logError('跳转预约时间页面失败: $e', tag: 'DishDetailPage');
-      GlobalToast.error('跳转失败，请重试');
+      GlobalToast.error(context.l10n.operationTooFrequentPleaseTryAgainLater);
     }
   }
 
@@ -629,7 +630,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
         controller.loadCurrentOrder(showLoading: false);
       } else {
         // 下单失败，显示真实接口返回的错误信息
-        GlobalToast.error(result['message'] ?? '订单提交失败，请重试');
+        GlobalToast.error(result['message'] ?? context.l10n.orderPlacementFailedContactWaiter);
       }
     } catch (e) {
       logError('提交订单异常: $e', tag: 'DishDetailPage');
@@ -637,7 +638,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
         // 关闭加载弹窗
         Navigator.of(context).pop();
         // 显示错误提示
-        GlobalToast.error('提交订单时发生错误，请重试');
+        GlobalToast.error(context.l10n.networkErrorPleaseTryAgain);
       }
     }
   }

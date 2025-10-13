@@ -34,24 +34,37 @@ class TableDataService {
   }
 
   /// 获取桌台列表
-  Future<HttpResultN<List<TableListModel>>> getTableList(String hallId) async {
+  Future<HttpResultN<List<TableListModel>>> getTableList(String hallId, {int retryCount = 0, int maxRetries = 3}) async {
     try {
-      logDebug('🔄 获取桌台列表: hallId=$hallId', tag: _logTag);
+      logDebug('🔄 获取桌台列表: hallId=$hallId (重试次数: $retryCount/$maxRetries)', tag: _logTag);
       final result = await _api.getTableList(hallId: hallId);
       
       if (result.isSuccess) {
-         
+        logDebug('✅ 桌台列表获取成功: ${result.data?.length ?? 0} 个桌台', tag: _logTag);
+        
         // 检查桌台数据中的tableId
         if (result.data != null && result.data!.isNotEmpty) {
           for (int i = 0; i < result.data!.length; i++) {
             final table = result.data![i];
             if (table.tableId == 0) {
-             } else {
-             }
+              logDebug('⚠️ 发现桌台ID为0的异常数据', tag: _logTag);
+            } else {
+              // logDebug('✅ 桌台数据正常: tableId=${table.tableId}', tag: _logTag);
+            }
           }
         }
       } else {
-        logError('❌ 桌台列表获取失败: ${result.msg}', tag: _logTag);
+        // 检查是否是状态码210（数据处理中），需要重试
+        if ((result.code == 210 || result.msg?.contains('数据处理中') == true) 
+            && retryCount < maxRetries) {
+          logDebug('⚠️ 数据可能还在处理中，2秒后重试... (${retryCount + 1}/$maxRetries)', tag: _logTag);
+          
+          // 延迟2秒后重试
+          await Future.delayed(Duration(seconds: 2));
+          return getTableList(hallId, retryCount: retryCount + 1, maxRetries: maxRetries);
+        } else {
+          logError('❌ 桌台列表获取失败: ${result.msg} (状态码: ${result.code})', tag: _logTag);
+        }
       }
       
       return result;

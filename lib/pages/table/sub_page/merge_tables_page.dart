@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/entrity/home/lobby_list_model/lobby_list_model.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import '../../../constants/global_colors.dart';
 import 'package:lib_domain/api/base_api.dart';
@@ -398,7 +399,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
 
     try {
       // 显示加载提示（使用临时提示，会自动取消之前的提示）
-      GlobalToast.message('正在合并桌台...');
+      GlobalToast.message(context.l10n.merging);
 
       // 转换桌台ID为整数列表
       final tableIds = selectedTableIds.map((id) => int.parse(id)).toList();
@@ -411,11 +412,11 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         await _handleMergeSuccess(result.data!);
       } else {
         // 并桌失败，显示错误
-        GlobalToast.error(result.msg ?? '并桌失败');
+        GlobalToast.error(result.msg ?? Get.context!.l10n.mergeFailedPleaseRetry);
       }
     } catch (e) {
       // 网络错误，显示错误
-      GlobalToast.error('并桌操作失败: $e');
+      GlobalToast.error('${Get.context!.l10n.failed}: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -429,7 +430,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   Future<void> _handleMergeSuccess(TableListModel mergedTable) async {
     try {
       // 显示成功提示
-      GlobalToast.success('桌台合并成功');
+      GlobalToast.success(context.l10n.mergeSuccessful);
 
       // 判断选中的桌子中是否有非空闲桌子
       final hasNonEmptyTables = _hasNonEmptyTables();
@@ -443,7 +444,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       }
     } catch (e) {
       // 跳转异常，显示错误
-      GlobalToast.error('跳转失败: $e');
+      GlobalToast.error('${Get.context!.l10n.failed}: $e');
     }
   }
 
@@ -497,7 +498,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     // 获取非空闲桌子的菜单
     final selectedMenu = _getNonEmptyTableMenu();
     if (selectedMenu == null) {
-      GlobalToast.error('无法获取菜单信息');
+      GlobalToast.error(Get.context!.l10n.noCanUseMenu);
       return;
     }
 
@@ -528,7 +529,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     return Scaffold(
       backgroundColor: GlobalColors.primaryBackground,
       appBar: AppBar(
-        title: const Text('并桌'),
+        title: Text(context.l10n.mergeTables),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -565,7 +566,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                       ),
                     )
                   : Text(
-                      '确认',
+                      context.l10n.confirm,
                       style: TextStyle(
                         color: (selectedTableIds.length >= 2 && !_isMerging) 
                             ? Colors.white 
@@ -715,10 +716,10 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   
 
   @override
-  String getEmptyStateText() => '暂无桌台';
+  String getEmptyStateText() => context.l10n.noCanUseTable;
 
   @override
-  String getNetworkErrorText() => '暂无网络';
+  String getNetworkErrorText() => context.l10n.networkErrorPleaseTryAgain;
   
   /// 重写空状态操作按钮
   @override
@@ -735,8 +736,8 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      child: const Text(
-        '重新加载',
+      child:  Text(
+        context.l10n.loadAgain,
         style: TextStyle(fontSize: 14),
       ),
     );
@@ -757,8 +758,8 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      child: const Text(
-        '重新加载',
+      child: Text(
+        context.l10n.loadAgain,
         style: TextStyle(fontSize: 14),
       ),
     );
@@ -787,7 +788,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: List.generate(halls.length, (index) {
-                  final hallName = halls[index].hallName ?? '未知';
+                  final hallName = halls[index].hallName ?? context.l10n.unknown;
                   return Row(
                     children: [
                       SizedBox(width: 12),
@@ -840,7 +841,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            '已选桌台（${selectedTableIds.length}）',
+            '${context.l10n.selected}（${selectedTableIds.length}）',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w500,

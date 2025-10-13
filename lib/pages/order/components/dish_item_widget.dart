@@ -4,6 +4,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 
 /// 菜品列表项组件
 class DishItemWidget extends StatelessWidget {
@@ -305,7 +306,7 @@ class DishItemWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Text(
-                '选规格',
+                Get.context!.l10n.selectSpecification,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,

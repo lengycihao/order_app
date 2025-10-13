@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/utils/toast_utils.dart';
@@ -39,7 +40,7 @@ class _MoreOptionsModalContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ModalContainerWithMargin(
-      title: '更多',
+      title: context.l10n.more,
       margin: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -51,7 +52,7 @@ class _MoreOptionsModalContent extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _MoreOptionItem(
-                    title: '更换桌子',
+                    title: context.l10n.changeTable,
                     onTap: () {
                       Navigator.of(context).pop(); // 关闭更多选项弹窗
                       // 延迟显示更换桌台弹窗，确保导航栈稳定
@@ -62,7 +63,7 @@ class _MoreOptionsModalContent extends StatelessWidget {
                   ),
                   SizedBox(height: 30),
                   _MoreOptionItem(
-                    title: '更换菜单',
+                    title: context.l10n.changeMenu,
                     onTap: () {
                       Navigator.of(context).pop(); // 关闭更多选项弹窗
                       // 延迟显示更换菜单弹窗，确保导航栈稳定
@@ -73,7 +74,7 @@ class _MoreOptionsModalContent extends StatelessWidget {
                   ),
                   SizedBox(height: 30),
                   _MoreOptionItem(
-                    title: '更换人数',
+                    title: context.l10n.increaseNumberOfPeople,
                     onTap: () {
                       Navigator.of(context).pop(); // 关闭更多选项弹窗
                       // 延迟显示更换人数弹窗，确保导航栈稳定
@@ -230,13 +231,13 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         setState(() {
           _isLoading = false;
         });
-        GlobalToast.error('获取桌台列表失败');
+        GlobalToast.error(Get.context!.l10n.getTableFailed);
       }
     } catch (e) {
       setState(() {
         _isLoading = false;
       });
-      GlobalToast.error('获取桌台列表异常：$e');
+      GlobalToast.error('${Get.context!.l10n.getTableFailed}: $e');
     }
   }
 
@@ -248,7 +249,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
     }
 
     if (_selectedTableId == null) {
-      GlobalToast.error('请选择需要更换的桌台');
+      GlobalToast.error(Get.context!.l10n.pleaseSelectTable);
       return;
     }
 
@@ -256,7 +257,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
     final currentTableId = controller.table.value?.tableId.toInt();
 
     if (currentTableId == null) {
-      GlobalToast.error('当前桌台信息错误');
+      GlobalToast.error(Get.context!.l10n.pleaseExitAndInAdain);
       return;
     }
 
@@ -291,16 +292,16 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
           newTableName: newTable.tableName ?? '',
         );
 
-        GlobalToast.success('已成功更换桌台');
+        GlobalToast.success(Get.context!.l10n.success);
       } else {
-        GlobalToast.error(result.msg ?? '换桌失败');
+        GlobalToast.error(result.msg ?? Get.context!.l10n.failed);
       }
     } catch (e) {
       // 异常情况下也要关闭弹窗
       if (mounted) {
         Navigator.of(context).pop();
       }
-      GlobalToast.error('换桌操作异常：$e');
+      GlobalToast.error('${Get.context!.l10n.failed}: $e');
     } finally {
       // 重置处理状态
       if (mounted) {
@@ -314,7 +315,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
   @override
   Widget build(BuildContext context) {
     return ModalContainerWithMargin(
-      title: '更换桌子',
+      title: context.l10n.changeTable,
       margin: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -342,7 +343,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
                         ),
                         SizedBox(height: 16),
                         Text(
-                          '暂无可用桌台',
+                          context.l10n.noCanUseTable,
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey.shade600,
@@ -369,6 +370,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
                           _selectedTableId == table.tableId.toInt();
 
                       return _TableItem(
+                        businessStatusName: table.businessStatusName ?? '',
                         tableName: tableName,
                         adultCount: table.standardAdult.toInt(),
                         childCount: table.standardChild.toInt(),
@@ -397,7 +399,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
                   ),
                   child: Center(
                     child: Text(
-                      '确认',
+                      context.l10n.confirm,
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white,
@@ -420,6 +422,7 @@ class _TableItem extends StatelessWidget {
   final String tableName;
   final int adultCount;
   final int childCount;
+  final String businessStatusName;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -429,7 +432,7 @@ class _TableItem extends StatelessWidget {
     this.adultCount = 0,
     this.childCount = 0,
     required this.isSelected,
-    required this.onTap,
+    required this.onTap, required this.businessStatusName,
   }) : super(key: key);
 
   @override
@@ -524,7 +527,7 @@ class _TableItem extends StatelessWidget {
                 ),
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  '空闲中',
+                  businessStatusName,
                   style: TextStyle(fontSize: 12, color: Colors.black),
                 ),
               ),
@@ -813,7 +816,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  '选择菜单',
+                  context.l10n.selectMenu,
                   style: TextStyle(
                     fontSize: 20,
                     height: 1,
@@ -863,7 +866,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
                         ),
                         SizedBox(height: 16),
                         Text(
-                          '暂无可用菜单',
+                          context.l10n.noCanUseMenu,
                           style: TextStyle(
                             fontSize: 16,
                             color: Colors.grey.shade600,
@@ -888,7 +891,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
                 ),
                 onPressed: _performChangeMenu,
                 child: Text(
-                  '确认',
+                  context.l10n.confirm,
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -1094,7 +1097,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
       if (mounted) {
         Navigator.of(context).pop(); // 关闭弹窗
       }
-      GlobalToast.error('当前桌台信息错误');
+      GlobalToast.error(Get.context!.l10n.pleaseExitAndInAdain);
       return;
     }
 
@@ -1103,7 +1106,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
       if (mounted) {
         Navigator.of(context).pop(); // 关闭弹窗
       }
-      GlobalToast.error('请至少选择1人');
+      GlobalToast.error(Get.context!.l10n.pleaseSelectAtLeastOnePerson);
       return;
     }
 
@@ -1121,7 +1124,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
       // 直接传递增量给接口和WebSocket
       await _updateTableDetailAndRefresh(currentTableId, adultCount, childCount);
     } catch (e) {
-      GlobalToast.error('更换人数操作异常：$e');
+      GlobalToast.error('${Get.context!.l10n.networkErrorPleaseTryAgain}: $e');
     } finally {
       // 重置处理状态
       if (mounted) {
@@ -1143,7 +1146,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
       );
       
       if (!changeResult.isSuccess) {
-        GlobalToast.error('更新人数失败：${changeResult.msg ?? '未知错误'}');
+        GlobalToast.error('${Get.context!.l10n.failed}: ${changeResult.msg}');
         return;
       }
       
@@ -1171,19 +1174,19 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
         // 刷新点餐页面数据
         await controller.refreshOrderData();
 
-        GlobalToast.success('已成功更新人数');
+        GlobalToast.success(Get.context!.l10n.success);
       } else {
-        GlobalToast.error('获取桌台详情失败');
+        GlobalToast.error('${Get.context!.l10n.failed}: ${result.msg}');
       }
     } catch (e) {
-      GlobalToast.error('更新桌台数据异常：$e');
+      GlobalToast.error('${Get.context!.l10n.networkErrorPleaseTryAgain}: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return ModalContainerWithMargin(
-      title: '增加人数',
+      title: context.l10n.increaseNumberOfPeople,
       margin: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1199,7 +1202,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
                     height: 27,
                   ),
                   _PeopleCountSelector(
-                    label: '大人',
+                    label: context.l10n.adults,
                     count: adultCount,
                     onIncrement: () {
                       setState(() {
@@ -1216,7 +1219,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
                   ),
                   SizedBox(height: 20),
                   _PeopleCountSelector(
-                    label: '小孩',
+                    label: context.l10n.children,
                     count: childCount,
                     onIncrement: () {
                       setState(() {
@@ -1251,7 +1254,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
                   ),
                   child: Center(
                     child: Text(
-                      '确认',
+                      context.l10n.confirm,
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white,
@@ -1359,7 +1362,7 @@ class _PeopleCountSelector extends StatelessWidget {
             height: 40,
             color: Colors.grey.shade300,
           ),
-          // 增加按钮
+          // 增加按钮 
           GestureDetector(
             onTap: onIncrement,
             child: Container(

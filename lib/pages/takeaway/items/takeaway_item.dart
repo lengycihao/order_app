@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/takeaway/model/takeaway_order_model.dart';
 import 'package:order_app/pages/takeaway/order_detail_page_new.dart';
+import 'package:order_app/utils/l10n_utils.dart';
  
 class TakeawayItem extends StatefulWidget {
   final TakeawayOrderModel order; // 直接接收订单模型对象
@@ -115,7 +116,7 @@ class _TakeawayItemState extends State<TakeawayItem> {
           text: TextSpan(
             children: [
               TextSpan(
-                text: '备注：',
+                text: '${context.l10n.remarks}：',
                 style: const TextStyle(
                   fontSize: 15,
                   color: Color(0xff666666),
@@ -151,7 +152,7 @@ class _TakeawayItemState extends State<TakeawayItem> {
                   text: TextSpan(
                     children: [
                       TextSpan(
-                        text: '备注：',
+                        text: '${context.l10n.remarks}：',
                         style: const TextStyle(
                           fontSize: 15,
                           color: Color(0xff666666),
@@ -220,9 +221,9 @@ class _TakeawayItemState extends State<TakeawayItem> {
 
   String _getStatusString() {
     if (widget.order.isPaid) {
-      return '已结账';
+      return context.l10n.paid;
     } else if (widget.order.isUnpaid) {
-      return '未结账';
+      return context.l10n.unpaid;
     } else {
       return widget.order.checkoutStatusName ?? '处理中';
     }

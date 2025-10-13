@@ -107,9 +107,10 @@ class OrderedDishItemWidget extends StatelessWidget {
             style: TextStyle(
               fontSize: 12,
               color: Colors.grey[600],
+              height: 1.2,
             ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            maxLines: null, // 允许换行
+            overflow: TextOverflow.visible, // 允许完整显示
           ),
         SizedBox(height: 4),
         // 烹饪状态标签

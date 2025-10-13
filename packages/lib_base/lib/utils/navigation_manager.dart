@@ -100,4 +100,26 @@ class NavigationManager {
       print('⚠️ 导航栈过深: $routeCount 层，建议优化导航逻辑');
     }
   }
+  
+  /// 刷新桌台数据（用于外卖订单提交成功后）
+  static Future<void> refreshTableData() async {
+    try {
+      // 检查TableController是否存在
+      if (Get.isRegistered<TableControllerRefactored>()) {
+        final tableController = Get.find<TableControllerRefactored>();
+        
+        // 获取当前选中的tab索引
+        final currentTabIndex = tableController.selectedTab.value;
+        
+        // 执行隐式刷新当前tab的数据
+        await tableController.refreshDataForTab(currentTabIndex);
+        
+        print('✅ 桌台数据刷新完成 - Tab: $currentTabIndex');
+      } else {
+        print('⚠️ TableController不存在，跳过数据刷新');
+      }
+    } catch (e) {
+      print('⚠️ 刷新桌台数据失败: $e');
+    }
+  }
 }

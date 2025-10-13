@@ -171,6 +171,9 @@ class WebSocketHandler {
       case 'clear':
         onCartClear?.call();
         break;
+      case 'remark':
+        onCartRefresh?.call(); // 备注更新后刷新购物车
+        break;
       default:
         logDebug('⚠️ 未知的购物车操作: $action', tag: _logTag);
     }
@@ -430,6 +433,27 @@ class WebSocketHandler {
       return success;
     } catch (e) {
       logDebug('❌ 同步清空购物车到WebSocket异常: $e', tag: _logTag);
+      return false;
+    }
+  }
+
+  /// 发送购物车备注
+  Future<bool> sendCartRemark(String remark) async {
+    try {
+      final success = await _wsManager.sendCartRemark(
+        tableId: _tableId,
+        remark: remark,
+      );
+      
+      if (success) {
+        logDebug('📤 购物车备注已同步到WebSocket: $remark', tag: _logTag);
+      } else {
+        logDebug('❌ 购物车备注同步到WebSocket失败', tag: _logTag);
+      }
+      
+      return success;
+    } catch (e) {
+      logDebug('❌ 同步购物车备注到WebSocket异常: $e', tag: _logTag);
       return false;
     }
   }

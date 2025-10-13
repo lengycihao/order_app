@@ -4,6 +4,7 @@ import 'package:order_app/pages/takeaway/items/takeaway_item.dart';
 import 'package:order_app/utils/center_tabbar.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/components/skeleton_widget.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'takeaway_controller.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
@@ -13,7 +14,7 @@ import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:lib_base/logging/logging.dart';
 
 class TakeawayPage extends BaseListPageWidget {
-  final List<String> tabs = ['未结账', '已结账'];
+  final List<String> tabs = [Get.context!.l10n.unpaid, Get.context!.l10n.paid];
 
   TakeawayPage({super.key});
 
@@ -42,6 +43,8 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
     _tabController = TabController(length: widget.tabs.length, vsync: this);
     _tabController.addListener(() {
       _currentTabIndex = _tabController.index;
+      // 通知控制器tab切换，触发已结账页面数据加载
+      controller.onTabChanged(_currentTabIndex);
     });
   }
 
@@ -135,7 +138,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
         child: Scaffold(
         backgroundColor: Colors.transparent, // 改为透明背景，完全不显示
         appBar: CenteredTabBar(
-          tabs: ['未结账', '已结账'],
+          tabs: [context.l10n.unpaid, context.l10n.paid],
           controller: _tabController,
         ),
         body: Stack(
@@ -227,7 +230,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
                 height: 1.0, // 设置行高为1.0确保文字垂直居中
               ),
               decoration: InputDecoration(
-                hintText: "请输入取餐码",
+                hintText: context.l10n.pleaseEnterPickupCode,
                 hintStyle: TextStyle(
                   color: Colors.grey.shade500,
                   fontSize: 14,
@@ -367,7 +370,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
       }
     } catch (e) {
       logDebug('❌ 开桌操作异常: $e', tag: 'TakeawayPage');
-      GlobalToast.error('网络错误: $e');
+      GlobalToast.error(Get.context!.l10n.networkErrorPleaseTryAgain);
     }
   }
 
@@ -520,7 +523,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
           ),
           const SizedBox(height: 8),
           Text(
-            hasNetworkError ? '暂无网络' : '暂无订单',
+            hasNetworkError ? context.l10n.networkErrorPleaseTryAgain : context.l10n.noData,
             style: const TextStyle(
               fontSize: 12,
               color: Color(0xFFFF9027),
@@ -541,8 +544,8 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
                   borderRadius: BorderRadius.circular(8),
                 ),
               ),
-              child: const Text(
-                '重新加载',
+              child:  Text(
+                context.l10n.loadAgain,
                 style: TextStyle(fontSize: 14),
               ),
             ),
@@ -553,10 +556,10 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
   }
 
   @override
-  String getEmptyStateText() => '暂无订单';
+  String getEmptyStateText() => context.l10n.noData;
 
   @override
-  String getNetworkErrorText() => '暂无网络';
+  String getNetworkErrorText() => context.l10n.networkErrorPleaseTryAgain;
 
   @override
   Widget? getNetworkErrorAction() {
@@ -573,8 +576,8 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
           borderRadius: BorderRadius.circular(8),
         ),
       ),
-      child: const Text(
-        '重新加载',
+      child:  Text(
+        context.l10n.loadAgain,
         style: TextStyle(fontSize: 14),
       ),
     );

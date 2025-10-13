@@ -363,4 +363,107 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordLengthCannotBeLessThan8 => 'Minimum 8 characters';
+
+  @override
+  String get perPortion => 'per portion';
+
+  @override
+  String get replace => 'Replace';
+
+  @override
+  String get changePerson => 'Change guests';
+
+  @override
+  String get getTableFailed => 'Failed to get table';
+
+  @override
+  String get pleaseSelectTable => 'Please select a table';
+
+  @override
+  String get pleaseExitAndInAdain =>
+      'Please exit the ordering page and re-enter!';
+
+  @override
+  String get noCanUseTable => 'No available tables';
+
+  @override
+  String get noCanUseMenu => 'No available menu';
+
+  @override
+  String get pleaseSelectAtLeastOnePerson => 'Please select at least 1 person';
+
+  @override
+  String get merging => 'Merging...';
+
+  @override
+  String get unknown => 'Unknown';
+
+  @override
+  String get cartIsEmpty => 'The shopping cart is empty';
+
+  @override
+  String get areYouSureToDeleteTheDish => 'Do you want to delete this dish?';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get quantity => 'Quantity';
+
+  @override
+  String get pleaseSelect => 'Please select';
+
+  @override
+  String get filterDishesWithAllergens => 'Filter dishes containing allergens';
+
+  @override
+  String get noOrder => 'No order data available';
+
+  @override
+  String get goToOrder => 'Go to order';
+
+  @override
+  String get unpaid => 'Unpaid';
+
+  @override
+  String get paid => 'Paid';
+
+  @override
+  String get orderNo => 'Order Number';
+
+  @override
+  String get orderSourceNew => 'Source of Document';
+
+  @override
+  String get productDetails => 'Product Details';
+
+  @override
+  String get operationConfirmed => 'Confirm Action';
+
+  @override
+  String get areYouSureToLogout => 'Do you want to log out?';
+
+  @override
+  String get sureLogout => 'Confirm Logout';
+
+  @override
+  String get welcome => 'Welcome';
+
+  @override
+  String get serviceApp => 'Server';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get remark => 'Remark';
+
+  @override
+  String get addRemark => 'Add Remark';
+
+  @override
+  String get editRemark => 'Edit Remark';
+
+  @override
+  String get pleaseEnter => 'Please enter';
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:order_app/pages/login/login_controller.dart';
 import 'package:get/get.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/screen_adaptation.dart';
 import 'package:order_app/utils/keyboard_utils.dart';
 
@@ -175,7 +176,7 @@ class _LoginPageState extends State<LoginPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          "欢迎使用",
+                          context.l10n.welcome,
                           style: TextStyle(
                             color: Colors.black,
                             fontSize: context.adaptFontSize(36),
@@ -183,7 +184,7 @@ class _LoginPageState extends State<LoginPage> {
                           ),
                         ),
                         Text(
-                          "服务端",
+                          context.l10n.serviceApp,
                           style: TextStyle(
                             color: Color(0xFF3D3D3D),
                             fontSize: context.adaptFontSize(16),
@@ -245,7 +246,7 @@ class _LoginPageState extends State<LoginPage> {
                                 vertical: 0,
                                 horizontal: 16,
                               ),
-                              hintText: '请输入账号',
+                              hintText: context.l10n.account,
                               hintStyle: TextStyle(
                                 color: Color(0xff666666),
                                 fontSize: 12,
@@ -313,7 +314,7 @@ class _LoginPageState extends State<LoginPage> {
                                   vertical: 0,
                                   horizontal: 16,
                                 ),
-                                hintText: '请输入密码',
+                                hintText: context.l10n.password,
                                 hintStyle: TextStyle(
                                   color: Color(0xff666666),
                                   fontSize: 12,
@@ -346,7 +347,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                             alignment: Alignment.center,
                             child: Text(
-                              '登录',
+                              context.l10n.login,
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: context.adaptFontSize(16),

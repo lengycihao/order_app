@@ -57,7 +57,12 @@ class AuthService {
   }
 
   Future<void> _saveCurrentUser(WaiterLoginModel user) async {
-    await _storage.write(key: _currentUserKey, value: user.toRawJson());
+    try {
+      await _storage.write(key: _currentUserKey, value: user.toRawJson());
+      logger.debug('用户信息已保存到缓存', tag: 'AuthService');
+    } catch (e) {
+      logger.error('保存用户信息失败: $e', tag: 'AuthService');
+    }
   }
 
   /// 读取缓存用户
@@ -74,9 +79,17 @@ class AuthService {
   }
 
   Future<void> loadCurrentUser() async {
-    final userString = await _storage.read(key: _currentUserKey);
-    if (userString != null) {
-      _currentUser = WaiterLoginModel.fromRawJson(userString);
+    try {
+      final userString = await _storage.read(key: _currentUserKey);
+      if (userString != null) {
+        _currentUser = WaiterLoginModel.fromRawJson(userString);
+        logger.debug('从缓存加载用户信息成功: ${_currentUser?.waiterName}', tag: 'AuthService');
+      } else {
+        logger.debug('缓存中无用户信息', tag: 'AuthService');
+      }
+    } catch (e) {
+      logger.error('从缓存加载用户信息失败: $e', tag: 'AuthService');
+      _currentUser = null;
     }
   }
 

@@ -89,16 +89,16 @@ class OrderInfoModel {
     }
   }
 
-  /// 获取状态显示文本
-  String get statusDisplayText {
-    if (checkoutStatus == 1) {
-      return '已结账';
-    } else if (checkoutStatus == 3) {
-      return '未结账';
-    } else {
-      return checkoutStatusName ?? '处理中';
-    }
-  }
+  // /// 获取状态显示文本
+  // String get statusDisplayText {
+  //   if (checkoutStatus == 1) {
+  //     return '已结账';
+  //   } else if (checkoutStatus == 3) {
+  //     return '未结账';
+  //   } else {
+  //     return checkoutStatusName ?? '处理中';
+  //   }
+  // }
 }
 
 /// 商品信息模型

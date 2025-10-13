@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/nav/screen_nav_page.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:order_app/service/service_locator.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/services/language_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -210,13 +211,13 @@ class LoginController extends GetxController {
         
         // 保存账号和密码
         await _saveRecentAccount(name, psw);
-        _showToast('登录成功', isError: false);
+        _showToast(Get.context!.l10n.success, isError: false);
         Get.offAll(() => ScreenNavPage());
       } else {
         _showToast(result.msg ?? '登录失败', isError: true);
       }
     } catch (e) {
-      _showToast('登录失败: $e', isError: true);
+      _showToast('${Get.context!.l10n.failed}: $e', isError: true);
     }
   }
   

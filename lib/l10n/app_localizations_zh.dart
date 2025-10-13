@@ -343,4 +343,106 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get passwordLengthCannotBeLessThan8 => '密码最少8位字符';
+
+  @override
+  String get perPortion => '/份';
+
+  @override
+  String get replace => '更换';
+
+  @override
+  String get changePerson => '更换人数';
+
+  @override
+  String get getTableFailed => '获取桌台失败';
+
+  @override
+  String get pleaseSelectTable => '请选择桌台';
+
+  @override
+  String get pleaseExitAndInAdain => '请退出点餐页面重新进入!';
+
+  @override
+  String get noCanUseTable => '暂无可用桌台';
+
+  @override
+  String get noCanUseMenu => '暂无可用菜单';
+
+  @override
+  String get pleaseSelectAtLeastOnePerson => '请至少选择1人';
+
+  @override
+  String get merging => '合并中...';
+
+  @override
+  String get unknown => '未知';
+
+  @override
+  String get cartIsEmpty => '购物车是空的';
+
+  @override
+  String get areYouSureToDeleteTheDish => '是否删除菜品？';
+
+  @override
+  String get delete => '删除';
+
+  @override
+  String get quantity => '数量';
+
+  @override
+  String get pleaseSelect => '请选择';
+
+  @override
+  String get filterDishesWithAllergens => '请选择';
+
+  @override
+  String get noOrder => '暂无订单';
+
+  @override
+  String get goToOrder => '去点餐';
+
+  @override
+  String get unpaid => '未结账';
+
+  @override
+  String get paid => '已结账';
+
+  @override
+  String get orderNo => '订单编号';
+
+  @override
+  String get orderSourceNew => '单据来源';
+
+  @override
+  String get productDetails => '商品详情';
+
+  @override
+  String get operationConfirmed => '操作确认';
+
+  @override
+  String get areYouSureToLogout => '是否退出当前登录？';
+
+  @override
+  String get sureLogout => '确认退出';
+
+  @override
+  String get welcome => '欢迎使用';
+
+  @override
+  String get serviceApp => '服务端';
+
+  @override
+  String get password => '密码';
+
+  @override
+  String get remark => '备注';
+
+  @override
+  String get addRemark => '添加备注';
+
+  @override
+  String get editRemark => '修改备注';
+
+  @override
+  String get pleaseEnter => '请输入';
 }

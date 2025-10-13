@@ -446,5 +446,141 @@
   "passwordLengthCannotBeLessThan8": "密码最少8位字符",
   "@passwordLengthCannotBeLessThan8": {
     "description": "密码最少8位字符"
+  },
+  "perPortion": "/份",
+  "@perPortion": {
+    "description": "/份"
+  },
+  "replace": "更换",
+  "@replace": {
+    "description": "更换"
+  },
+  "changePerson": "更换人数",
+  "@changePerson": {
+    "description": "更换人数"
+  },
+  "getTableFailed": "获取桌台失败",
+  "@getTableFailed": {
+    "description": "获取桌台失败"
+  },
+  "pleaseSelectTable": "请选择桌台",
+  "@pleaseSelectTable": {
+    "description": "请选择桌台"
+  },
+  "pleaseExitAndInAdain": "请退出点餐页面重新进入!",
+  "@pleaseExitAndInAdain": {
+    "description": "请退出点餐页面重新进入!"
+  },
+  "noCanUseTable": "暂无可用桌台",
+  "@noCanUseTable": {
+    "description": "暂无可用桌台"
+  },
+  "noCanUseMenu": "暂无可用菜单",
+  "@noCanUseMenu": {
+    "description": "暂无可用菜单"
+  },
+  "pleaseSelectAtLeastOnePerson": "请至少选择1人",
+  "@pleaseSelectAtLeastOnePerson": {
+    "description": "请至少选择1人"
+  },
+  "merging": "合并中...",
+  "@merging": {
+    "description": "合并中..."
+  },
+  "unknown": "未知",
+  "@unknown": {
+    "description": "未知"
+  },
+  "cartIsEmpty": "购物车是空的",
+  "@cartIsEmpty": {
+    "description": "购物车是空的"
+  },
+  "areYouSureToDeleteTheDish": "是否删除菜品？",
+  "@areYouSureToDeleteTheDish": {
+    "description": "是否删除菜品？"
+  },
+  "delete": "删除",
+  "@delete": {
+    "description": "删除"
+  },
+  "quantity": "数量",
+  "@quantity": {
+    "description": "数量"
+  },
+  "pleaseSelect": "请选择",
+  "@pleaseSelect": {
+    "description": "请选择"
+  },
+  "filterDishesWithAllergens": "请选择",
+  "@filterDishesWithAllergens": {
+    "description": "请选择"
+  },
+  "noOrder": "暂无订单",
+  "@noOrder": {
+    "description": "暂无订单"
+  },
+  "goToOrder": "去点餐",
+  "@goToOrder": {
+    "description": "去点餐"
+  },
+  "unpaid": "未结账",
+  "@unpaid": {
+    "description": "未结账"
+  },
+  "paid": "已结账",
+  "@paid": {
+    "description": "已结账"
+  },
+  "orderNo": "订单编号",
+  "@orderNo": {
+    "description": "订单编号"
+  },
+  "orderSourceNew": "单据来源",
+  "@orderSourceNew": {
+    "description": "单据来源"
+  },
+  "productDetails": "商品详情",
+  "@productDetails": {
+    "description": "商品详情"
+  },
+  "operationConfirmed": "操作确认",
+  "@productDetails": {
+    "description": "操作确认"
+  },
+  "areYouSureToLogout": "是否退出当前登录？",
+  "@areYouSureToLogout": {
+    "description": "是否退出当前登录？"
+  },
+  "sureLogout": "确认退出",
+  "@sureLogout": {
+    "description": "确认退出"
+  },
+  "welcome": "欢迎使用",
+  "@welcome": {
+    "description": "欢迎使用"
+  },
+  "serviceApp": "服务端",
+  "@serviceApp": {
+    "description": "服务端"
+  },
+  "password": "密码",
+  "@password": {
+    "description": "密码"
+  },
+  "remark": "备注",
+  "@remark": {
+    "description": "备注"
+  },
+  "addRemark": "添加备注",
+  "@addRemark": {
+    "description": "添加备注"
+  },
+  "editRemark": "修改备注",
+  "@editRemark": {
+    "description": "修改备注"
+  },
+  "pleaseEnter": "请输入",
+  "@pleaseEnter": {
+    "description": "请输入"
   }
 }

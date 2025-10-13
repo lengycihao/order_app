@@ -771,6 +771,210 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'密码最少8位字符'**
   String get passwordLengthCannotBeLessThan8;
+
+  /// /份
+  ///
+  /// In zh, this message translates to:
+  /// **'/份'**
+  String get perPortion;
+
+  /// 更换
+  ///
+  /// In zh, this message translates to:
+  /// **'更换'**
+  String get replace;
+
+  /// 更换人数
+  ///
+  /// In zh, this message translates to:
+  /// **'更换人数'**
+  String get changePerson;
+
+  /// 获取桌台失败
+  ///
+  /// In zh, this message translates to:
+  /// **'获取桌台失败'**
+  String get getTableFailed;
+
+  /// 请选择桌台
+  ///
+  /// In zh, this message translates to:
+  /// **'请选择桌台'**
+  String get pleaseSelectTable;
+
+  /// 请退出点餐页面重新进入!
+  ///
+  /// In zh, this message translates to:
+  /// **'请退出点餐页面重新进入!'**
+  String get pleaseExitAndInAdain;
+
+  /// 暂无可用桌台
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无可用桌台'**
+  String get noCanUseTable;
+
+  /// 暂无可用菜单
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无可用菜单'**
+  String get noCanUseMenu;
+
+  /// 请至少选择1人
+  ///
+  /// In zh, this message translates to:
+  /// **'请至少选择1人'**
+  String get pleaseSelectAtLeastOnePerson;
+
+  /// 合并中...
+  ///
+  /// In zh, this message translates to:
+  /// **'合并中...'**
+  String get merging;
+
+  /// 未知
+  ///
+  /// In zh, this message translates to:
+  /// **'未知'**
+  String get unknown;
+
+  /// 购物车是空的
+  ///
+  /// In zh, this message translates to:
+  /// **'购物车是空的'**
+  String get cartIsEmpty;
+
+  /// 是否删除菜品？
+  ///
+  /// In zh, this message translates to:
+  /// **'是否删除菜品？'**
+  String get areYouSureToDeleteTheDish;
+
+  /// 删除
+  ///
+  /// In zh, this message translates to:
+  /// **'删除'**
+  String get delete;
+
+  /// 数量
+  ///
+  /// In zh, this message translates to:
+  /// **'数量'**
+  String get quantity;
+
+  /// 请选择
+  ///
+  /// In zh, this message translates to:
+  /// **'请选择'**
+  String get pleaseSelect;
+
+  /// 请选择
+  ///
+  /// In zh, this message translates to:
+  /// **'请选择'**
+  String get filterDishesWithAllergens;
+
+  /// 暂无订单
+  ///
+  /// In zh, this message translates to:
+  /// **'暂无订单'**
+  String get noOrder;
+
+  /// 去点餐
+  ///
+  /// In zh, this message translates to:
+  /// **'去点餐'**
+  String get goToOrder;
+
+  /// 未结账
+  ///
+  /// In zh, this message translates to:
+  /// **'未结账'**
+  String get unpaid;
+
+  /// 已结账
+  ///
+  /// In zh, this message translates to:
+  /// **'已结账'**
+  String get paid;
+
+  /// 订单编号
+  ///
+  /// In zh, this message translates to:
+  /// **'订单编号'**
+  String get orderNo;
+
+  /// 单据来源
+  ///
+  /// In zh, this message translates to:
+  /// **'单据来源'**
+  String get orderSourceNew;
+
+  /// 操作确认
+  ///
+  /// In zh, this message translates to:
+  /// **'商品详情'**
+  String get productDetails;
+
+  /// No description provided for @operationConfirmed.
+  ///
+  /// In zh, this message translates to:
+  /// **'操作确认'**
+  String get operationConfirmed;
+
+  /// 是否退出当前登录？
+  ///
+  /// In zh, this message translates to:
+  /// **'是否退出当前登录？'**
+  String get areYouSureToLogout;
+
+  /// 确认退出
+  ///
+  /// In zh, this message translates to:
+  /// **'确认退出'**
+  String get sureLogout;
+
+  /// 欢迎使用
+  ///
+  /// In zh, this message translates to:
+  /// **'欢迎使用'**
+  String get welcome;
+
+  /// 服务端
+  ///
+  /// In zh, this message translates to:
+  /// **'服务端'**
+  String get serviceApp;
+
+  /// 密码
+  ///
+  /// In zh, this message translates to:
+  /// **'密码'**
+  String get password;
+
+  /// 备注
+  ///
+  /// In zh, this message translates to:
+  /// **'备注'**
+  String get remark;
+
+  /// 添加备注
+  ///
+  /// In zh, this message translates to:
+  /// **'添加备注'**
+  String get addRemark;
+
+  /// 修改备注
+  ///
+  /// In zh, this message translates to:
+  /// **'修改备注'**
+  String get editRemark;
+
+  /// 请输入
+  ///
+  /// In zh, this message translates to:
+  /// **'请输入'**
+  String get pleaseEnter;
 }
 
 class _AppLocalizationsDelegate

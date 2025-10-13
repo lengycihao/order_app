@@ -14,8 +14,10 @@ import 'package:order_app/pages/order/components/unified_cart_widget.dart';
 import 'package:order_app/utils/focus_manager.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/components/skeleton_widget.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/lib_base.dart';
+import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/pages/nav/screen_nav_page.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
 
@@ -344,14 +346,14 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
         color: Color(0xffF5F5F5),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: TextField(
+      child: Obx(() => TextField(
         controller: _searchController,
         focusNode: _searchFocusNode,
         textAlignVertical: TextAlignVertical.center,
         // 性能优化配置
         enableInteractiveSelection: true,
-        autocorrect: false,
-        enableSuggestions: false,
+        autocorrect: true,
+        enableSuggestions: true,
         keyboardType: TextInputType.text,
         textInputAction: TextInputAction.search,
         // 光标样式配置
@@ -359,7 +361,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
         cursorWidth: 1.0,
         cursorHeight: 16.0,
         decoration: InputDecoration(
-          hintText: "请输入菜品编码或名称",
+          hintText: context.l10n.enterDishCodeOrName,
           hintStyle: TextStyle(
             color: Colors.grey.shade500,
             fontSize: 12,
@@ -413,7 +415,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
           // 点击搜索框时，确保焦点正确
           _searchFocusNode.requestFocus();
         },
-      ),
+      )),
     );
   }
 
@@ -452,7 +454,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                       height: 30,
                       child: !_showSearchField 
                         ? Text(
-                            '桌子:${controller.table.value?.tableName ?? 'null'} | 大人:${controller.adultCount.value} 小孩:${controller.childCount.value}',
+                            '${context.l10n.table}:${controller.table.value?.tableName ?? 'null'} | ${context.l10n.adults}:${controller.adultCount.value} ${context.l10n.children}:${controller.childCount.value}',
                             style: TextStyle(
                               fontSize: 12,
                               color: Color(0xff666666),
@@ -635,7 +637,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
           ),
           const SizedBox(height: 8),
           Text(
-            '暂无菜品数据',
+            context.l10n.noData,
             style: const TextStyle(
               fontSize: 12,
               color: Color(0xFFFF9027),
@@ -914,13 +916,13 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
       
       if (result['success'] == true) {
         // 下单成功，显示成功提示
-        GlobalToast.success('订单已提交成功！');
+        GlobalToast.success(context.l10n.orderPlacedSuccessfully);
         // 刷新已点订单数据后切换到已点页面
         controller.loadCurrentOrder(showLoading: false);
         _switchToOrderedTab();
       } else {
         // 下单失败，显示错误提示
-        GlobalToast.error(result['message'] ?? '订单提交失败，请重试');
+        GlobalToast.error(result['message'] ?? context.l10n.failed);
       }
     } catch (e) {
       logError('❌ 提交订单异常: $e', tag: 'OrderDishTab');
@@ -928,7 +930,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
         // 关闭加载弹窗
         Navigator.of(context).pop();
         // 显示错误提示
-        GlobalToast.error('提交订单时发生错误，请重试');
+        GlobalToast.error(context.l10n.networkErrorPleaseTryAgain);
       }
     }
   }
@@ -946,15 +948,15 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
       if (tableId == null || tableId <= 0) {
         if (mounted) {
           Navigator.of(context).pop();
-          ToastUtils.showError(context, '桌台ID不能为空');
+          ToastUtils.showError(context, context.l10n.operationTooFrequentPleaseTryAgainLater);
         }
         return;
       }
       
-      // 准备提交参数（不包含备注，直接提交空备注）
+      // 准备提交参数（包含备注）
       final params = {
         'table_id': tableId,
-        'remark': '', // 直接提交空备注
+        'remark': controller.remark.value, // 提交备注
       };
       
       // 调用外卖订单提交API
@@ -969,10 +971,16 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
       Navigator.of(context).pop();
       
       if (result.isSuccess) {
-        // 下单成功，显示成功提示
+        // 下单成功，清空备注
+        controller.clearRemark();
+        // 显示成功提示
         ToastUtils.showSuccess(context, '订单提交成功');
-        // 跳转到主页面并切换到外卖标签页
+        // 跳转到主页面并切换到外卖标签页，同时刷新桌台数据
         Get.offAll(() => ScreenNavPage(initialIndex: 1));
+        // 延迟刷新桌台数据，确保页面切换完成
+        Future.delayed(Duration(milliseconds: 500), () {
+          NavigationManager.refreshTableData();
+        });
       } else {
         // 下单失败，显示错误提示
         final errorMessage = result.msg ?? '订单提交失败';
@@ -984,7 +992,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
         // 关闭加载弹窗
         Navigator.of(context).pop();
         // 显示错误提示
-        ToastUtils.showError(context, '网络错误: ${e.toString()}');
+        ToastUtils.showError(context, '${context.l10n.networkErrorPleaseTryAgain}');
       }
     }
   }
@@ -1072,7 +1080,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '￥',
+                      '€',
                       style: TextStyle(
                         fontSize: 12,
                         height: 1,
@@ -1101,8 +1109,8 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                     color: const Color(0xFFFF9027),
                     borderRadius: BorderRadius.circular(15),
                   ),
-                  child: const Text(
-                    '下单',
+                  child:   Text(
+                    context.l10n.placeOrder,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,

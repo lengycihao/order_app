@@ -5,10 +5,7 @@ import 'package:order_app/pages/order/tabs/order_dish_tab.dart';
 import 'package:order_app/pages/order/tabs/ordered_tab.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/pages/order/components/more_options_modal_widget.dart';
-import 'package:order_app/pages/takeaway/components/menu_selection_modal_widget.dart';
-import 'package:order_app/utils/toast_utils.dart';
-import 'package:lib_domain/api/base_api.dart';
-import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/keyboard_utils.dart';
 import 'package:lib_base/logging/logging.dart';
 
@@ -113,51 +110,6 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
     }
   }
 
-  /// 显示更换菜单弹窗
-  void _showChangeMenuModal() async {
-    final selectedMenu = await MenuSelectionModalWidget.showMenuSelectionModal(
-      context,
-      currentMenu: controller.menu.value,
-    );
-    
-    if (selectedMenu != null && selectedMenu.menuId != controller.menu.value?.menuId) {
-      // 调用API更换菜单
-      await _performChangeMenu(selectedMenu);
-    }
-  }
-
-  /// 执行更换菜单操作
-  Future<void> _performChangeMenu(TableMenuListModel selectedMenu) async {
-    final currentTableId = controller.table.value?.tableId.toInt();
-
-    if (currentTableId == null) {
-      GlobalToast.error('当前桌台信息错误');
-      return;
-    }
-
-    try {
-      final result = await BaseApi().changeMenu(
-        tableId: currentTableId,
-        menuId: selectedMenu.menuId!,
-      );
-
-      if (result.isSuccess) {
-        // 更新controller中的菜单信息
-        controller.menu.value = selectedMenu;
-        // 同步更新menuId，确保菜品数据能正确加载
-        controller.menuId.value = selectedMenu.menuId ?? 0;
-        
-        // 刷新点餐页面数据
-        await controller.refreshOrderData();
-
-        GlobalToast.success('已成功更换菜单');
-      } else {
-        GlobalToast.error(result.msg ?? '更换菜单失败');
-      }
-    } catch (e) {
-      GlobalToast.error('更换菜单操作异常：$e');
-    }
-  }
 
   /// 构建顶部导航
   Widget _buildTopNavigation() {
@@ -195,46 +147,24 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
                 // 根据来源显示不同的导航
                 if (controller.source.value == 'takeaway') ...[
                   // 外卖页面只显示"外卖"
-                  _buildNavButton('外卖', true),
+                  _buildNavButton(context.l10n.takeaway, true),
                 ] else ...[
                   // 桌台页面显示"菜单"和"已点"
                   GestureDetector(
                     onTap: () => _tabController.animateTo(0),
-                    child: _buildNavButton('菜单', _tabController.index == 0),
+                    child: _buildNavButton(context.l10n.menu, _tabController.index == 0),
                   ),
                   SizedBox(width: 20),
                   GestureDetector(
                     onTap: () => _tabController.animateTo(1),
-                    child: _buildNavButton('已点', _tabController.index == 1),
+                    child: _buildNavButton(context.l10n.ordered, _tabController.index == 1),
                   ),
                 ],
               ],
             ),
           ),
           // 右侧按钮
-          if (controller.source.value == 'takeaway') ...[
-            // 外卖页面显示更换按钮
-            GestureDetector(
-              onTap: () {
-                _showChangeMenuModal();
-              },
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.orange,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Text(
-                  '更换',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-          ] else ...[
+          if (controller.source.value != 'takeaway') ...[
             // 桌台页面显示更多按钮
             GestureDetector(
               onTap: () {
@@ -249,7 +179,7 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
                 ),
                 child: Center(
                   child: Text(
-                    '更多',
+                    context.l10n.more,
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 14,
@@ -292,7 +222,7 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
             Container(
               margin: EdgeInsets.only(top: 4),
               height: 2,
-              width: text.length * 16.0, // 根据文字长度动态调整宽度
+              width: 40, // 固定宽度 40
               decoration: BoxDecoration(
                 color: Colors.orange,
                 borderRadius: BorderRadius.circular(1),

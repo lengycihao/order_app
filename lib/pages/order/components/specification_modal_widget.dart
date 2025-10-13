@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/utils/screen_adaptation.dart';
 import 'package:lib_base/logging/logging.dart';
@@ -44,48 +45,19 @@ class _SpecificationModalContentState
   Map<int, List<int>> selectedOptions = {}; // 规格ID -> 选中的选项ID列表
   int quantity = 1;
   double totalPrice = 0;
-  late TextEditingController _quantityController;
-  late FocusNode _quantityFocusNode;
+  // 已移除：_quantityController 和 _quantityFocusNode（禁用手动输入数量）
   final GlobalKey _addToCartButtonKey = GlobalKey(); // 加购按钮key用于动画
 
   @override
   void initState() {
     super.initState();
     totalPrice = widget.dish.price;
-    _quantityController = TextEditingController(text: '$quantity');
-    _quantityFocusNode = FocusNode();
-    
-    // 监听焦点变化，处理键盘抬起时的偏移和光标释放
-    _quantityFocusNode.addListener(() {
-      if (_quantityFocusNode.hasFocus) {
-        // 键盘弹起时，延迟一点时间让弹窗向上偏移
-        Future.delayed(Duration(milliseconds: 300), () {
-          if (mounted) {
-            // 滚动到输入框位置，确保不被键盘遮挡
-            Scrollable.ensureVisible(
-              _quantityFocusNode.context!,
-              duration: Duration(milliseconds: 300),
-              curve: Curves.easeInOut,
-            );
-          }
-        });
-      } else {
-        // 焦点丢失时，确保光标完全释放
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            // 强制清除焦点，确保光标消失
-            FocusScope.of(context).unfocus();
-            _quantityFocusNode.unfocus();
-          }
-        });
-      }
-    });
+    // 已移除：_quantityController 和 _quantityFocusNode 初始化（禁用手动输入数量）
   }
 
   @override
   void dispose() {
-    _quantityController.dispose();
-    _quantityFocusNode.dispose();
+    // 已移除：_quantityController 和 _quantityFocusNode dispose（禁用手动输入数量）
     super.dispose();
   }
 
@@ -166,7 +138,7 @@ class _SpecificationModalContentState
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '敏感物',
+          context.l10n.allergens,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.bold,
@@ -322,7 +294,7 @@ class _SpecificationModalContentState
   /// 构建已选规格文本
   Widget _buildSelectedSpecsText() {
     return Text(
-      '已选规格: ${_getSelectedSpecsText()}',
+      '${context.l10n.selected} ${_getSelectedSpecsText()}',
       style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
     );
   }
@@ -347,20 +319,7 @@ class _SpecificationModalContentState
     return specs.join(', ');
   }
 
-  /// 从输入框更新数量
-  void _updateQuantityFromInput(String value) {
-    final inputValue = int.tryParse(value);
-    if (inputValue != null && inputValue > 0) {
-      setState(() {
-        quantity = inputValue;
-        _quantityController.text = '$quantity';
-      });
-    } else {
-      // 输入无效，恢复原值
-      _quantityController.text = '$quantity';
-      GlobalToast.error('请输入有效的数量');
-    }
-  }
+  // 已移除：_updateQuantityFromInput 方法（禁用手动输入数量）
 
   /// 构建底部区域（数量选择 + 购物车按钮）
   Widget _buildBottomSection() {
@@ -378,7 +337,7 @@ class _SpecificationModalContentState
           Row(
             children: [
               Text(
-                '数量',
+                context.l10n.quantity,
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -402,7 +361,6 @@ class _SpecificationModalContentState
                         if (quantity > 1) {
                           setState(() {
                             quantity--;
-                            _quantityController.text = '$quantity';
                           });
                         }
                       },
@@ -434,44 +392,18 @@ class _SpecificationModalContentState
                       height: 24,
                       color: Colors.grey.shade300,
                     ),
-                    // 数字显示区域 - 可编辑输入框
+                    // 数字显示区域 - 禁用手动输入，仅显示数量
                     Container(
                       width: 32,
                       height: 24,
                       color: Colors.white,
                       child: Center(
-                        child: GestureDetector(
-                          onTap: () {
-                            _quantityFocusNode.requestFocus();
-                          },
-                          child: TextField(
-                            controller: _quantityController,
-                            focusNode: _quantityFocusNode,
-                            textAlign: TextAlign.center,
-                            keyboardType: TextInputType.number,
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.grey.shade800,
-                            ),
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding: EdgeInsets.zero,
-                              isDense: true,
-                              alignLabelWithHint: true,
-                            ),
-                            cursorColor: Colors.black54,
-                            showCursor: true,
-                            enableInteractiveSelection: false,
-                            onSubmitted: (value) {
-                              _updateQuantityFromInput(value);
-                              // 提交后释放焦点
-                              _quantityFocusNode.unfocus();
-                              FocusScope.of(context).unfocus();
-                            },
-                            onChanged: (value) {
-                              // 实时更新显示，但只在提交时验证
-                            },
+                        child: Text(
+                          '$quantity',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey.shade800,
                           ),
                         ),
                       ),
@@ -487,7 +419,6 @@ class _SpecificationModalContentState
                       onTap: () {
                         setState(() {
                           quantity++;
-                          _quantityController.text = '$quantity';
                         });
                       },
                       child: Container(
@@ -526,7 +457,7 @@ class _SpecificationModalContentState
           Row(
             children: [
               Text(
-                '￥',
+                '€',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 12,
@@ -553,7 +484,7 @@ class _SpecificationModalContentState
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    '+购物车',
+                    '+${context.l10n.cart}',
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 16,
@@ -622,7 +553,7 @@ class _SpecificationModalContentState
       Navigator.of(context).pop();
       // 移除本地成功提示，等待服务器确认后再显示
     } else {
-      GlobalToast.error('请选择$missingOptionName');
+      GlobalToast.error('${context.l10n.pleaseSelect}$missingOptionName');
     }
   }
 }

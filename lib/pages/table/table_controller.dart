@@ -55,8 +55,8 @@ class TableControllerRefactored extends GetxController {
     _pollingManager = TablePollingManager();
     _wsManager = TableWebSocketManager(wsManager: wsManager);
     
-    // 设置轮询回调 - 已禁用
-    // _pollingManager.startPolling(onPolling: _performPollingRefresh);
+    // 设置轮询回调
+    _pollingManager.startPolling(onPolling: _performPollingRefresh);
     
     // 初始化WebSocket状态监控
     _wsManager.initializeStatusMonitoring();
@@ -366,8 +366,7 @@ class TableControllerRefactored extends GetxController {
     }
   }
 
-  /// 执行轮询刷新 - 已禁用
-  /*
+  /// 执行轮询刷新
   Future<void> _performPollingRefresh() async {
     // 如果当前正在加载，跳过本次轮询
     if (isLoading.value) return;
@@ -400,12 +399,11 @@ class TableControllerRefactored extends GetxController {
       },
     );
   }
-  */
 
-  /// 启动轮询 - 已禁用
+  /// 启动轮询
   void startPolling() {
-    // _pollingManager.resumePolling(onPolling: _performPollingRefresh);
-    logDebug('⚠️ 轮询已被禁用', tag: _logTag);
+    _pollingManager.resumePolling(onPolling: _performPollingRefresh);
+    logDebug('🔄 轮询已启动', tag: _logTag);
   }
 
   /// 停止轮询
@@ -418,10 +416,10 @@ class TableControllerRefactored extends GetxController {
     _pollingManager.pausePolling();
   }
 
-  /// 恢复轮询（页面可见时调用） - 已禁用
+  /// 恢复轮询（页面可见时调用）
   void resumePolling() {
-    // _pollingManager.resumePolling(onPolling: _performPollingRefresh);
-    logDebug('⚠️ 轮询已被禁用', tag: _logTag);
+    _pollingManager.resumePolling(onPolling: _performPollingRefresh);
+    logDebug('▶️ 轮询已恢复', tag: _logTag);
   }
 
   /// 获取WebSocket连接统计信息

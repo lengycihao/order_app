@@ -446,5 +446,141 @@
   "passwordLengthCannotBeLessThan8": "Minimo 8 caratteri",
   "@passwordLengthCannotBeLessThan8": {
     "description": "Minimo 8 caratteri"
+  },
+  "perPortion": "a porzione",
+  "@perPortion": {
+    "description": "a porzione"
+  },
+  "replace": "Sostituire",
+  "@replace": {
+    "description": "Sostituire"
+  },
+  "changePerson": "Cambia persone",
+  "@changePerson": {
+    "description": "Cambia persone"
+  },
+  "getTableFailed": "Impossibile ottenere il tavolo",
+  "@getTableFailed": {
+    "description": "Impossibile ottenere il tavolo"
+  },
+  "pleaseSelectTable": "Seleziona un tavolo",
+  "@pleaseSelectTable": {
+    "description": "Seleziona un tavolo"
+  },
+  "pleaseExitAndInAdain": "Esci dalla pagina dell’ordine e rientra!",
+  "@pleaseExitAndInAdain": {
+    "description": "Esci dalla pagina dell’ordine e rientra!"
+  },
+  "noCanUseTable": "Nessun tavolo disponibile",
+  "@noCanUseTable": {
+    "description": "Nessun tavolo disponibile"
+  },
+  "noCanUseMenu": "Nessun menu disponibile",
+  "@noCanUseMenu": {
+    "description": "Nessun menu disponibile"
+  },
+  "pleaseSelectAtLeastOnePerson": "Seleziona almeno 1 persona",
+  "@pleaseSelectAtLeastOnePerson": {
+    "description": "Seleziona almeno 1 persona"
+  },
+  "merging": "Unione in corso...",
+  "@merging": {
+    "description": "Unione in corso..."
+  },
+  "unknown": "Sconosciuto",
+  "@unknown": {
+    "description": "Sconosciuto"
+  },
+  "cartIsEmpty": "Il carrello è vuoto",
+  "@cartIsEmpty": {
+    "description": "Il carrello è vuoto"
+  },
+  "areYouSureToDeleteTheDish": "Vuoi eliminare questo piatto?",
+  "@areYouSureToDeleteTheDish": {
+    "description": "Vuoi eliminare questo piatto?"
+  },
+  "delete": "Elimina",
+  "@delete": {
+    "description": "Elimina"
+  },
+  "quantity": "Quantità",
+  "@quantity": {
+    "description": "Quantità"
+  },
+  "pleaseSelect": "Seleziona",
+  "@pleaseSelect": {
+    "description": "Seleziona"
+  },
+  "filterDishesWithAllergens": "Filtra i piatti contenenti allergeni",
+  "@filterDishesWithAllergens": {
+    "description": "Filtra i piatti contenenti allergeni"
+  },
+  "noOrder": "Nessun dato sugli ordini disponibile",
+  "@noOrder": {
+    "description": "Nessun dato sugli ordini disponibile"
+  },
+  "goToOrder": "Vai a ordinare",
+  "@goToOrder": {
+    "description": "Vai a ordinare"
+  },
+  "unpaid": "Non pagato",
+  "@unpaid": {
+    "description": "Non pagato"
+  },
+  "paid": "Pagato",
+  "@paid": {
+    "description": "Pagato"
+  },
+  "orderNo": "Numero d'ordine",
+  "@orderNo": {
+    "description": "Numero d'ordine"
+  },
+  "orderSourceNew": "Fonte del documento",
+  "@orderSourceNew": {
+    "description": "Fonte del documento"
+  },
+  "productDetails": "Dettagli del prodotto",
+  "@productDetails": {
+    "description": "Dettagli del prodotto"
+  },
+  "operationConfirmed": "Conferma operazione",
+  "@operationConfirmed": {
+    "description": "Conferma operazione"
+  },
+  "areYouSureToLogout": "Vuoi disconnetterti?",
+  "@areYouSureToLogout": {
+    "description": "Vuoi disconnetterti?"
+  },
+  "sureLogout": "Conferma disconnessione",
+  "@sureLogout": {
+    "description": "Conferma disconnessione"
+  },
+  "welcome": "Benvenuto",
+  "@welcome": {
+    "description": "Benvenuto"
+  },
+  "serviceApp": "Server",
+  "@serviceApp": {
+    "description": "Server"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Password"
+  },
+  "remark": "Nota",
+  "@remark": {
+    "description": "Nota"
+  },
+  "addRemark": "Aggiungi Nota",
+  "@addRemark": {
+    "description": "Aggiungi Nota"
+  },
+  "editRemark": "Modifica Nota",
+  "@editRemark": {
+    "description": "Modifica Nota"
+  },
+  "pleaseEnter": "Per favore inserisci",
+  "@pleaseEnter": {
+    "description": "Per favore inserisci"
   }
 }

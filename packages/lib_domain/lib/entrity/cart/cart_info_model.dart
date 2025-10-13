@@ -31,6 +31,10 @@ class CartInfoModel {
   
   /// 更新时间
   String? updatedAt;
+  
+  /// 备注
+  @JsonKey(name: 'remark')
+  String? remark;
 
   CartInfoModel({
     this.cartId,
@@ -40,6 +44,7 @@ class CartInfoModel {
     this.totalPrice,
     this.createdAt,
     this.updatedAt,
+    this.remark,
   });
 
   factory CartInfoModel.fromJson(Map<String, dynamic> json) {

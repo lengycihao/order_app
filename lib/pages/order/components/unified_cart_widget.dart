@@ -4,8 +4,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/components/skeleton_widget.dart';
+import 'package:order_app/pages/order/components/remark_dialog_widget.dart';
 
 /// 统一的购物车弹窗组件
 class UnifiedCartWidget {
@@ -32,14 +34,28 @@ class UnifiedCartWidget {
   static void _showClearCartDialog(BuildContext context) {
     ModalUtils.showConfirmDialog(
       context: context,
-      message: '是否清空购物车？',
-      confirmText: '清空',
-      cancelText: '取消',
+      message: context.l10n.clearShoppingCart,
+      confirmText: context.l10n.clear,
+      cancelText: context.l10n.cancel,
       confirmColor: Colors.red,
       onConfirm: () {
         final controller = Get.find<OrderController>();
         controller.clearCart();
       },
+    );
+  }
+
+  /// 显示备注输入弹窗
+  static void _showRemarkDialog(BuildContext context) {
+    final controller = Get.find<OrderController>();
+    showDialog(
+      context: context,
+      builder: (context) => RemarkDialogWidget(
+        initialRemark: '', // 每次弹起时清空输入框
+        onConfirm: (remark) {
+          controller.setRemark(remark);
+        },
+      ),
     );
   }
 }
@@ -74,7 +90,7 @@ class _CartModalContent extends StatelessWidget {
                           ),
                           SizedBox(height: 16),
                           Text(
-                            '购物车是空的',
+                            context.l10n.cartIsEmpty,
                             style: TextStyle(
                               color: Colors.grey.shade500,
                               fontSize: 16,
@@ -103,6 +119,7 @@ class _CartModalContent extends StatelessWidget {
                         },
                       ),
                     ),
+           
           // 底部统计和下单
           if (controller.cart.isNotEmpty)
             Container(
@@ -117,99 +134,105 @@ class _CartModalContent extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  // 购物车图标
-                  Stack(
+                  // 下单栏
+                  Row(
                     children: [
-                      Image.asset(
-                        'assets/order_shop_car.webp',
-                        width: 50,
-                        height: 50,
+                      // 购物车图标
+                      Stack(
+                        children: [
+                          Image.asset(
+                            'assets/order_shop_car.webp',
+                            width: 50,
+                            height: 50,
+                          ),
+                          // 角标
+                          if (controller.cart.isNotEmpty)
+                            Positioned(
+                              right: 0,
+                              top: 0,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Color(0xFFFF1010),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                constraints: BoxConstraints(
+                                  minWidth: 16,
+                                  minHeight: 16,
+                                ),
+                                child: Text(
+                                  controller.cart.values.fold(0, (sum, count) => sum + count).toString(),
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
-                      // 角标
-                      if (controller.cart.isNotEmpty)
-                        Positioned(
-                          right: 0,
-                          top: 0,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFFF1010),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            constraints: BoxConstraints(
-                              minWidth: 16,
-                              minHeight: 16,
-                            ),
-                            child: Text(
-                              controller.cart.values.fold(0, (sum, count) => sum + count).toString(),
+                      SizedBox(width: 12),
+                      // 价格信息
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '€',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 10,
+                                fontSize: 12,
+                                height: 1,
+                                color: Color(0xFFFF1010),
                                 fontWeight: FontWeight.bold,
                               ),
-                              textAlign: TextAlign.center,
+                            ),
+                            Text(
+                              '${controller.apiTotalPrice}',
+                              style: TextStyle(
+                                fontSize: 24,
+                                height: 1,
+                                color: Color(0xFFFF1010),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // 下单按钮
+                      GestureDetector(
+                        onTap: () async {
+                          // 先关闭购物车弹窗
+                          Get.back();
+                          // 然后执行下单逻辑（会显示新的加载弹窗）
+                          if (onSubmitOrder != null) {
+                            onSubmitOrder!();
+                          }
+                        },
+                        child: Container(
+                          width: 76,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF9027),
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child:  Center(
+                            child: Text(
+                              context.l10n.placeOrder,
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                           ),
                         ),
+                      ),
                     ],
-                  ),
-                  SizedBox(width: 12),
-                  // 价格信息
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '￥',
-                          style: TextStyle(
-                            fontSize: 12,
-                            height: 1,
-                            color: Color(0xFFFF1010),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        Text(
-                          '${controller.apiTotalPrice}',
-                          style: TextStyle(
-                            fontSize: 24,
-                            height: 1,
-                            color: Color(0xFFFF1010),
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 下单按钮
-                  GestureDetector(
-                    onTap: () async {
-                      // 先关闭购物车弹窗
-                      Get.back();
-                      // 然后执行下单逻辑（会显示新的加载弹窗）
-                      if (onSubmitOrder != null) {
-                        onSubmitOrder!();
-                      }
-                    },
-                    child: Container(
-                      width: 76,
-                      height: 30,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFFF9027),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: const Center(
-                        child: Text(
-                          '下单',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
                   ),
                 ],
               ),
@@ -237,6 +260,8 @@ class _CartItem extends StatelessWidget {
     return Slidable(
       key: Key('cart_item_${cartItem.cartSpecificationId ?? cartItem.dish.id}'),
       // 使用更轻量的动画配置
+      // 策划删除功能已注释掉
+      /*
       endActionPane: ActionPane(
         motion: const BehindMotion(), // 使用更简单的动画
         extentRatio: 0.25,
@@ -245,9 +270,9 @@ class _CartItem extends StatelessWidget {
             onPressed: (context) {
               ModalUtils.showConfirmDialog(
                 context: context,
-                message: '是否删除菜品？',
-                confirmText: '删除',
-                cancelText: '取消',
+                message: context.l10n.areYouSureToDeleteTheDish,
+                confirmText: context.l10n.delete,
+                cancelText: context.l10n.cancel,
                 confirmColor: Colors.red,
                 onConfirm: () {
                   controller.deleteCartItem(cartItem);
@@ -257,13 +282,14 @@ class _CartItem extends StatelessWidget {
             backgroundColor: Colors.red,
             foregroundColor: Colors.white,
             icon: Icons.delete,
-            label: '删除',
+            label: context.l10n.delete,
             borderRadius: BorderRadius.circular(8),
             // 添加性能优化
             flex: 1,
           ),
         ],
       ),
+      */
       // 添加性能优化配置
       closeOnScroll: true,
       child: Container(
@@ -340,7 +366,7 @@ class _CartItem extends StatelessWidget {
                     textBaseline: TextBaseline.alphabetic,
                     children: [
                       Text(
-                        "￥",
+                        "€",
                         style: TextStyle(
                           fontSize: 8,
                           color: Color(0xFF000000),
@@ -356,7 +382,7 @@ class _CartItem extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        "/份",
+                        context.l10n.perPortion,
                         style: TextStyle(
                           fontSize: 6,
                           color: Color(0xFF999999),
@@ -450,9 +476,34 @@ class CartModalContainer extends StatelessWidget {
           ),
           // 顶部标题栏
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12).copyWith(bottom: 0),
+            child:Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                 Row(
+              children: [
+                GestureDetector(
+                  onTap: () => UnifiedCartWidget._showRemarkDialog(context),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset(
+                        'assets/order_remark.webp',
+                        width: 16,
+                        height: 16,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        context.l10n.remarks,
+                        style: TextStyle(
+                          color: Color(0xFF666666),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 Spacer(),
                 GestureDetector(
                   onTap: onClear,
@@ -466,7 +517,7 @@ class CartModalContainer extends StatelessWidget {
                       ),
                       SizedBox(width: 4),
                       Text(
-                        '清空',
+                        context.l10n.clear,
                         style: TextStyle(
                           color: Color(0xFF666666),
                           fontSize: 14,
@@ -476,6 +527,42 @@ class CartModalContainer extends StatelessWidget {
                     ],
                   ),
                 ),
+              ],
+            ),
+            //备注详情
+            Obx(() {
+              final controller = Get.find<OrderController>();
+              final remarkText = controller.cartInfo.value?.remark ?? controller.remark.value;
+              if (remarkText.isEmpty) {
+                return SizedBox.shrink();
+              }
+              return Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "${context.l10n.remarks}：",
+                      style: TextStyle(
+                        color: Color(0xFF3D3D3D),
+                        fontSize: 12,
+                       ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        remarkText,
+                        style: TextStyle(
+                          color: Color(0xFF3D3D3D),
+                          fontSize: 12,
+                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }),
               ],
             ),
           ),

@@ -5,6 +5,7 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
 import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 
 /// 统一的数量控制组件
 /// 用于菜品详情页面和菜品列表页面，保持UI和逻辑完全一致
@@ -165,7 +166,7 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
                 borderRadius: BorderRadius.circular(15),
               ),
               child: Text(
-                '选规格',
+                Get.context!.l10n.selectSpecification,
                 style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,

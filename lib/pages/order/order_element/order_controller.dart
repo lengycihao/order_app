@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import '../model/dish.dart';
 import 'package:lib_domain/entrity/order/dish_list_model/dish_list_model.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
@@ -57,6 +58,7 @@ class OrderController extends GetxController {
   var adultCount = 0.obs;
   var childCount = 0.obs;
   var source = "".obs; // 订单来源：table(桌台), takeaway(外卖)
+  var remark = "".obs; // 外卖订单备注
   
   // 购物车数据
   var cartInfo = Rx<CartInfoModel?>(null);
@@ -512,6 +514,12 @@ class OrderController extends GetxController {
     // 同步cartInfo状态
     cartInfo.value = _cartController.cartInfo.value;
     
+    // 同步备注状态
+    final cartRemark = _cartController.cartInfo.value?.remark;
+    if (cartRemark != null && cartRemark.isNotEmpty) {
+      remark.value = cartRemark;
+    }
+    
     // 恢复操作上下文（如果之前有保存的话）
     // 这样可以确保在409强制更新期间，操作上下文不会被清除
     if (savedOperationCartItem != null && savedOperationQuantity != null) {
@@ -527,6 +535,31 @@ class OrderController extends GetxController {
     
     // 同步状态回到OrderController
     _syncCartFromController();
+  }
+
+  /// 设置备注
+  void setRemark(String newRemark) {
+    remark.value = newRemark;
+    logDebug('✅ 设置订单备注: $newRemark', tag: OrderConstants.logTag);
+    
+    // 发送WebSocket消息
+    if (table.value?.tableId != null) {
+      _wsHandler.sendCartRemark(newRemark).then((success) {
+        if (success) {
+          logDebug('✅ 备注WebSocket消息发送成功', tag: OrderConstants.logTag);
+        } else {
+          logDebug('❌ 备注WebSocket消息发送失败', tag: OrderConstants.logTag);
+        }
+      });
+    } else {
+      logDebug('⚠️ 桌台ID为空，跳过发送备注消息', tag: OrderConstants.logTag);
+    }
+  }
+
+  /// 清空备注
+  void clearRemark() {
+    remark.value = "";
+    logDebug('🧹 清空外卖订单备注', tag: OrderConstants.logTag);
   }
 
   void addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) {
@@ -942,7 +975,7 @@ class OrderController extends GetxController {
         this.childCount.value = childCount;
         logDebug('✅ 人数更新成功', tag: OrderConstants.logTag);
       } else {
-        _errorHandler.handleApiError('人数更新', result.msg ?? '未知错误');
+        _errorHandler.handleApiError('人数更新', result.msg ?? Get.context!.l10n.failed);
       }
     } catch (e) {
       _errorHandler.handleException('人数更新', e);
@@ -1046,10 +1079,10 @@ class OrderController extends GetxController {
       // 立即显示确认弹窗，不等待任何延迟
       ModalUtils.showConfirmDialog(
         context: context,
-        title: '操作确认',
+        title: context.l10n.operationConfirmed,
         message: message,
-        confirmText: '确认',
-        cancelText: '取消',
+        confirmText: context.l10n.confirm,
+        cancelText: context.l10n.cancel,
         confirmColor: const Color(0xFFFF8C00),
         onConfirm: () {
           logDebug('✅ 用户确认409强制更新', tag: OrderConstants.logTag);
@@ -1302,7 +1335,7 @@ class OrderController extends GetxController {
       logDebug('❌ 桌台ID为空，无法提交订单', tag: OrderConstants.logTag);
       return {
         'success': false,
-        'message': '桌台ID为空，无法提交订单'
+        'message': Get.context!.l10n.operationTooFrequentPleaseTryAgainLater
       };
     }
 
@@ -1332,13 +1365,13 @@ class OrderController extends GetxController {
         
         return {
           'success': true,
-          'message': '订单提交成功'
+          'message': Get.context!.l10n.orderPlacedSuccessfully
         };
       } else {
         logDebug('❌ 订单提交失败: ${result.msg}', tag: OrderConstants.logTag);
         return {
           'success': false,
-          'message': result.msg ?? '订单提交失败'
+          'message': result.msg ?? Get.context!.l10n.failed
         };
       }
     } catch (e, stackTrace) {
@@ -1346,7 +1379,7 @@ class OrderController extends GetxController {
       logDebug('❌ StackTrace: $stackTrace', tag: OrderConstants.logTag);
       return {
         'success': false,
-        'message': '订单提交异常: $e'
+        'message': '$e'
       };
     }
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/login/login_page.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
@@ -47,10 +48,12 @@ class MineController extends GetxController {
       // 设置兼容性字段
       loginId.value = user.waiterId?.toString() ?? '未知ID';
       
-      // 如果API还没有加载，先使用现有数据
-      if (nickname.value.isEmpty) {
-        nickname.value = user.waiterName ?? user.waiterName.toString()  ;
-        account.value = user.waiterId?.toString() ?? '未知ID';
+      // 始终更新用户信息，确保登录新账号时能正确显示
+      nickname.value = user.waiterName ?? '未知用户';
+      account.value = user.waiterId?.toString() ?? '未知ID';
+      
+      // 如果API还没有加载，先使用默认值
+      if (storeName.value.isEmpty) {
         storeName.value = '未知餐馆';
         authExpireDate.value = '未知到期时间';
         surplusDays.value = 0;
@@ -59,6 +62,9 @@ class MineController extends GetxController {
       nickname.value = '未登录';
       loginId.value = '未登录';
       account.value = '未登录';
+      storeName.value = '未登录';
+      authExpireDate.value = '未登录';
+      surplusDays.value = 0;
     }
   }
 
@@ -105,9 +111,9 @@ class MineController extends GetxController {
       // 显示确认对话框
       final confirm = await ModalUtils.showConfirmDialog(
         context: Get.context!,
-        message: '是否退出当前登录？',
-        confirmText: '确认退出',
-        cancelText: '取消',
+        message: Get.context!.l10n.areYouSureToLogout,
+        confirmText:  Get.context!.l10n.confirm,
+        cancelText: Get.context!.l10n.cancel,
         confirmColor: Colors.red,
       );
       
@@ -124,14 +130,14 @@ class MineController extends GetxController {
       // 进入登录页面，不清除输入框内容
       Get.offAll(() => LoginPage());
       
-      ToastUtils.showSuccess(Get.context!, '退出登录成功');
+      ToastUtils.showSuccess(Get.context!, Get.context!.l10n.success);
       
       logDebug('✅ 退出登录成功', tag: 'MineController');
       
     } catch (e) {
       // 关闭加载对话框
       Get.back();
-      ToastUtils.showError(Get.context!, '退出登录失败: $e');
+      ToastUtils.showError(Get.context!, '${Get.context!.l10n.failed}: $e');
       logError('❌ 退出登录失败: $e', tag: 'MineController');
     }
   }

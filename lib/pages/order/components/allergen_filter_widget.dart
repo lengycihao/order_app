@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 
@@ -61,7 +62,7 @@ class _AllergenModalContent extends StatelessWidget {
       final controller = Get.find<OrderController>();
       
       return ModalContainerWithMargin(
-        title: '敏感物',
+        title: context.l10n.allergens,
         margin: EdgeInsets.zero,
         showCloseButton: true,
         onClose: () {
@@ -77,7 +78,7 @@ class _AllergenModalContent extends StatelessWidget {
               width: double.infinity,
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
-                '筛选含有敏感物的菜品',
+                context.l10n.filterDishesWithAllergens,
                 style: TextStyle(
                   fontSize: 12,
                   color: Color(0xff666666),
@@ -90,11 +91,11 @@ class _AllergenModalContent extends StatelessWidget {
                 padding: EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    Text('没有敏感物数据'),
+                    Text(context.l10n.noData),
                     SizedBox(height: 8),
                     ElevatedButton(
                       onPressed: () => controller.loadAllergens(),
-                      child: Text('重新获取'),
+                      child: Text(context.l10n.loadAgain),
                     ),
                   ],
                 ),
@@ -104,7 +105,7 @@ class _AllergenModalContent extends StatelessWidget {
               child: controller.isLoadingAllergens.value
                   ? Center(
                       child: RestaurantLoadingWidget(
-                        message: '加载敏感物中...',
+                        message: context.l10n.loadingData,
                         size: 40.0,
                       ),
                     )
@@ -134,7 +135,7 @@ class _AllergenModalContent extends StatelessWidget {
                 width: double.infinity,
                 padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
-                  '已选敏感物：${controller.tempSelectedAllergens.map((id) {
+                  '${context.l10n.selected} ${controller.tempSelectedAllergens.map((id) {
                     final allergen = controller.allAllergens.firstWhereOrNull((a) => a.id == id);
                     return allergen?.label ?? '';
                   }).where((name) => name.isNotEmpty).join('、')}',
@@ -161,7 +162,7 @@ class _AllergenModalContent extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      '确认',
+                      context.l10n.confirm,
                       style: TextStyle(
                         fontSize: 16,
                         color: Colors.white,

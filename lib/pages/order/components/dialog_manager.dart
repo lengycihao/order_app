@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/modal_utils.dart';
 
 /// 弹窗管理器 - 确保同时只显示一个弹窗
@@ -48,10 +49,10 @@ class DialogManager {
     try {
       await ModalUtils.showConfirmDialog(
         context: context,
-        title: '操作确认',
+        title: context.l10n.operationConfirmed,
         message: message,
-        confirmText: '确认',
-        cancelText: '取消',
+        confirmText: context.l10n.confirm,
+        cancelText: context.l10n.cancel,
         confirmColor: const Color(0xFFFF8C00),
         onConfirm: () {
           logDebug('✅ 用户确认409强制更新');

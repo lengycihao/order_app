@@ -446,5 +446,141 @@
   "passwordLengthCannotBeLessThan8": "Minimum 8 characters",
   "@passwordLengthCannotBeLessThan8": {
     "description": "Minimum 8 characters"
+  },
+  "perPortion": "per portion",
+  "@perPortion": {
+    "description": "per portion"
+  },
+  "replace": "Replace",
+  "@replace": {
+    "description": "Replace"
+  },
+  "changePerson": "Change guests",
+  "@changePerson": {
+    "description": "Change guests"
+  },
+  "getTableFailed": "Failed to get table",
+  "@getTableFailed": {
+    "description": "Failed to get table"
+  },
+  "pleaseSelectTable": "Please select a table",
+  "@pleaseSelectTable": {
+    "description": "Please select a table"
+  },
+  "pleaseExitAndInAdain": "Please exit the ordering page and re-enter!",
+  "@pleaseExitAndInAdain": {
+    "description": "Please exit the ordering page and re-enter!"
+  },
+  "noCanUseTable": "No available tables",
+  "@noCanUseTable": {
+    "description": "No available tables"
+  },
+  "noCanUseMenu": "No available menu",
+  "@noCanUseMenu": {
+    "description": "No available menu"
+  },
+  "pleaseSelectAtLeastOnePerson": "Please select at least 1 person",
+  "@pleaseSelectAtLeastOnePerson": {
+    "description": "Please select at least 1 person"
+  },
+  "merging": "Merging...",
+  "@merging": {
+    "description": "Merging..."
+  },
+  "unknown": "Unknown",
+  "@unknown": {
+    "description": "Unknown"
+  },
+  "cartIsEmpty": "The shopping cart is empty",
+  "@cartIsEmpty": {
+    "description": "The shopping cart is empty"
+  },
+  "areYouSureToDeleteTheDish": "Do you want to delete this dish?",
+  "@areYouSureToDeleteTheDish": {
+    "description": "Do you want to delete this dish?"
+  },
+  "delete": "Delete",
+  "@delete": {
+    "description": "Delete"
+  },
+  "quantity": "Quantity",
+  "@quantity": {
+    "description": "Quantity"
+  },
+  "pleaseSelect": "Please select",
+  "@pleaseSelect": {
+    "description": "Please select"
+  },
+  "filterDishesWithAllergens": "Filter dishes containing allergens",
+  "@filterDishesWithAllergens": {
+    "description": "Filter dishes containing allergens"
+  },
+  "noOrder": "No order data available",
+  "@noOrder": {
+    "description": "No order data available"
+  },
+  "goToOrder": "Go to order",
+  "@goToOrder": {
+    "description": "Go to order"
+  },
+  "unpaid": "Unpaid",
+  "@unpaid": {
+    "description": "Unpaid"
+  },
+  "paid": "Paid",
+  "@paid": {
+    "description": "Paid"
+  },
+  "orderNo": "Order Number",
+  "@orderNo": {
+    "description": "Order Number"
+  },
+  "orderSourceNew": "Source of Document",
+  "@orderSourceNew": {
+    "orderSource": "Source of Document"
+  },
+  "productDetails": "Product Details",
+  "@productDetails": {
+    "description": "Product Details"
+  },
+  "operationConfirmed": "Confirm Action",
+  "@operationConfirmed": {
+    "description": "Confirm Action"
+  },
+  "areYouSureToLogout": "Do you want to log out?",
+  "@areYouSureToLogout": {
+    "description": "Do you want to log out?"
+  },
+  "sureLogout": "Confirm Logout",
+  "@sureLogout": {
+    "description": "Confirm Logout"
+  },
+  "welcome": "Welcome",
+  "@welcome": {
+    "description": "Welcome"
+  },
+  "serviceApp": "Server",
+  "@serviceApp": {
+    "description": "Server"
+  },
+  "password": "Password",
+  "@password": {
+    "description": "Password"
+  },
+  "remark": "Remark",
+  "@remark": {
+    "description": "Remark"
+  },
+  "addRemark": "Add Remark",
+  "@addRemark": {
+    "description": "Add Remark"
+  },
+  "editRemark": "Edit Remark",
+  "@editRemark": {
+    "description": "Edit Remark"
+  },
+  "pleaseEnter": "Please enter",
+  "@pleaseEnter": {
+    "description": "Please enter"
   }
 }

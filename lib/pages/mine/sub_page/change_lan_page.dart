@@ -3,8 +3,16 @@ import 'package:order_app/services/language_service.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/pages/nav/screen_nav_page.dart';
+import 'package:order_app/pages/table/table_controller.dart';
+import 'package:order_app/pages/takeaway/takeaway_controller.dart';
+import 'package:order_app/pages/mine/mine_controller.dart';
+import 'package:get/get.dart';
+import 'package:lib_base/logging/logging.dart';
 
 class ChangeLanPage extends StatefulWidget {
+  const ChangeLanPage({super.key});
+  
   @override
   _ChangeLanPageState createState() => _ChangeLanPageState();
 }
@@ -27,6 +35,40 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
     final currentLang = _languageService.currentLocale.languageCode;
     _selectedIndex = _languages.indexWhere((lang) => lang['code'] == currentLang);
     if (_selectedIndex == -1) _selectedIndex = 0;
+  }
+
+  /// 刷新所有首页数据
+  /// 语言切换后需要重新获取所有数据，确保新语言的数据正确显示
+  Future<void> _refreshAllHomeData() async {
+    try {
+      logDebug('🔄 开始刷新所有首页数据...', tag: 'ChangeLanPage');
+      
+      // 刷新桌台页面数据
+      if (Get.isRegistered<TableControllerRefactored>()) {
+        final tableController = Get.find<TableControllerRefactored>();
+        await tableController.forceResetAllData();
+        logDebug('✅ 桌台页面数据刷新完成', tag: 'ChangeLanPage');
+      }
+      
+      // 刷新外卖页面数据
+      if (Get.isRegistered<TakeawayController>()) {
+        final takeawayController = Get.find<TakeawayController>();
+        await takeawayController.refreshData(0); // 刷新未结账订单
+        await takeawayController.refreshData(1); // 刷新已结账订单
+        logDebug('✅ 外卖页面数据刷新完成', tag: 'ChangeLanPage');
+      }
+      
+      // 刷新个人中心页面数据
+      if (Get.isRegistered<MineController>()) {
+        final mineController = Get.find<MineController>();
+        await mineController.refreshUserInfo();
+        logDebug('✅ 个人中心页面数据刷新完成', tag: 'ChangeLanPage');
+      }
+      
+      logDebug('✅ 所有首页数据刷新完成', tag: 'ChangeLanPage');
+    } catch (e) {
+      logError('❌ 刷新首页数据失败: $e', tag: 'ChangeLanPage');
+    }
   }
 
   @override
@@ -109,14 +151,28 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
                     final newLocale = Locale(selectedLang['code']!);
                     
                     try {
+                      logDebug('🌐 开始切换语言到: ${selectedLang['code']}', tag: 'ChangeLanPage');
+                      
+                      // 切换语言
                       await _languageService.changeLanguage(newLocale);
+                      
                       if (mounted) {
-                        GlobalToast.success(context.l10n.languageSwitchedSuccessfully);
-                        Navigator.of(context).pop();
+                        final currentContext = context;
+                        GlobalToast.success(currentContext.l10n.languageSwitchedSuccessfully);
+                        
+                        // 刷新所有首页数据
+                        await _refreshAllHomeData();
+                        
+                        // 回到首页
+                        Get.offAll(() => ScreenNavPage());
+                        
+                        logDebug('✅ 语言切换完成，已回到首页', tag: 'ChangeLanPage');
                       }
                     } catch (e) {
+                      logError('❌ 语言切换失败: $e', tag: 'ChangeLanPage');
                       if (mounted) {
-                        GlobalToast.error(context.l10n.languageSwitchFailedPleaseRetry);
+                        final currentContext = context;
+                        GlobalToast.error(currentContext.l10n.languageSwitchFailedPleaseRetry);
                       }
                     }
                   },

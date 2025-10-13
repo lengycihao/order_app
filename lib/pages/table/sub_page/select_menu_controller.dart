@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
@@ -45,6 +46,9 @@ class SelectMenuController extends GetxController {
   var childCount = 0.obs; // 初始状态儿童数量0
   var selectedMenuIndex = 0.obs;
   var isLoadingDishes = false.obs; // 加载状态
+  
+  // 防抖相关
+  Timer? _debounceTimer;
   
   // 获取当前选中的菜单
   TableMenuListModel? getSelectedMenu() {
@@ -232,8 +236,19 @@ class SelectMenuController extends GetxController {
     }
   }
 
-  /// 开始点餐
-  void startOrdering() async {
+  /// 开始点餐 - 带防抖
+  void startOrdering() {
+    // 取消之前的定时器
+    _debounceTimer?.cancel();
+    
+    // 设置新的防抖定时器，500ms内只能执行一次
+    _debounceTimer = Timer(Duration(milliseconds: 500), () {
+      _performStartOrdering();
+    });
+  }
+  
+  /// 实际执行开始点餐
+  void _performStartOrdering() async {
     if (getSelectedMenu() == null) {
       ToastUtils.showError(Get.context!, '请选择菜单');
       return;
@@ -243,12 +258,6 @@ class SelectMenuController extends GetxController {
       ToastUtils.showError(Get.context!, '菜品数据加载中，请稍后');
       return;
     }
-
-    // // 检查菜品数据是否有效
-    // if (selectedMenuIndex.value >= dishListModelList.length) {
-    //   ToastUtils.showError(Get.context!, '菜品数据还未加载完成');
-    //   return;
-    // }
 
     try {
       // 调用开桌接口
@@ -326,5 +335,11 @@ class SelectMenuController extends GetxController {
   /// 获取菜单边框宽度
   double getMenuBorderWidth(bool isSelected) {
     return isSelected ? 2.0 : 1.0;
+  }
+
+  @override
+  void onClose() {
+    _debounceTimer?.cancel();
+    super.onClose();
   }
 }

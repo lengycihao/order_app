@@ -369,4 +369,107 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get passwordLengthCannotBeLessThan8 => 'Minimo 8 caratteri';
+
+  @override
+  String get perPortion => 'a porzione';
+
+  @override
+  String get replace => 'Sostituire';
+
+  @override
+  String get changePerson => 'Cambia persone';
+
+  @override
+  String get getTableFailed => 'Impossibile ottenere il tavolo';
+
+  @override
+  String get pleaseSelectTable => 'Seleziona un tavolo';
+
+  @override
+  String get pleaseExitAndInAdain => 'Esci dalla pagina dell’ordine e rientra!';
+
+  @override
+  String get noCanUseTable => 'Nessun tavolo disponibile';
+
+  @override
+  String get noCanUseMenu => 'Nessun menu disponibile';
+
+  @override
+  String get pleaseSelectAtLeastOnePerson => 'Seleziona almeno 1 persona';
+
+  @override
+  String get merging => 'Unione in corso...';
+
+  @override
+  String get unknown => 'Sconosciuto';
+
+  @override
+  String get cartIsEmpty => 'Il carrello è vuoto';
+
+  @override
+  String get areYouSureToDeleteTheDish => 'Vuoi eliminare questo piatto?';
+
+  @override
+  String get delete => 'Elimina';
+
+  @override
+  String get quantity => 'Quantità';
+
+  @override
+  String get pleaseSelect => 'Seleziona';
+
+  @override
+  String get filterDishesWithAllergens =>
+      'Filtra i piatti contenenti allergeni';
+
+  @override
+  String get noOrder => 'Nessun dato sugli ordini disponibile';
+
+  @override
+  String get goToOrder => 'Vai a ordinare';
+
+  @override
+  String get unpaid => 'Non pagato';
+
+  @override
+  String get paid => 'Pagato';
+
+  @override
+  String get orderNo => 'Numero d\'ordine';
+
+  @override
+  String get orderSourceNew => 'Fonte del documento';
+
+  @override
+  String get productDetails => 'Dettagli del prodotto';
+
+  @override
+  String get operationConfirmed => 'Conferma operazione';
+
+  @override
+  String get areYouSureToLogout => 'Vuoi disconnetterti?';
+
+  @override
+  String get sureLogout => 'Conferma disconnessione';
+
+  @override
+  String get welcome => 'Benvenuto';
+
+  @override
+  String get serviceApp => 'Server';
+
+  @override
+  String get password => 'Password';
+
+  @override
+  String get remark => 'Nota';
+
+  @override
+  String get addRemark => 'Aggiungi Nota';
+
+  @override
+  String get editRemark => 'Modifica Nota';
+
+  @override
+  String get pleaseEnter => 'Per favore inserisci';
 }

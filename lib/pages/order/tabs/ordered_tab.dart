@@ -4,6 +4,7 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/order_module_widget.dart';
 import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/utils/order_page_utils.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
 
 class OrderedTab extends BaseListPageWidget {
@@ -35,7 +36,7 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
   }
 
   @override
-  String getEmptyStateText() => '暂无已点订单';
+  String getEmptyStateText() => context.l10n.noData;
 
   @override
   bool get shouldShowSkeleton => isLoading && !hasData;
@@ -112,7 +113,7 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          '去点餐',
+          context.l10n.goToOrder,
           style: TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -136,7 +137,7 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
           borderRadius: BorderRadius.circular(20),
         ),
         child: Text(
-          controller.isLoadingOrdered.value ? '加载中...' : '重新加载',
+          controller.isLoadingOrdered.value ? context.l10n.loadingData : context.l10n.loadAgain,
           style: TextStyle(
             color: Colors.white,
             fontSize: 16,
@@ -244,7 +245,7 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
             Row( 
               children: [
                 Text(
-                  '￥',
+                  '€',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.red,

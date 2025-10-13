@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:order_app/pages/takeaway/model/takeaway_order_model.dart';
 import 'package:lib_domain/api/takeout_api.dart';
 import 'package:lib_domain/api/base_api.dart';
+import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:order_app/utils/websocket_lifecycle_manager.dart';
@@ -149,7 +150,7 @@ class TakeawayController extends GetxController {
     } catch (e) {
       logDebug('❌ 加载未结账订单异常: $e', tag: 'TakeawayController');
       hasNetworkErrorUnpaid.value = true;
-      GlobalToast.error('获取未结账订单异常');
+      GlobalToast.error(Get.context!.l10n.networkErrorPleaseTryAgain);
     } finally {
       isRefreshingUnpaid.value = false;
     }
@@ -213,12 +214,12 @@ class TakeawayController extends GetxController {
         if (refresh && paidOrders.isEmpty) {
           // 保持数据不变，让用户仍能看到之前的数据
         }
-        GlobalToast.error(result.msg ?? '获取已结账订单失败');
+        GlobalToast.error(result.msg ?? Get.context!.l10n.networkErrorPleaseTryAgain);
       }
     } catch (e) {
       logDebug('❌ 加载已结账订单异常: $e', tag: 'TakeawayController');
       hasNetworkErrorPaid.value = true;
-      GlobalToast.error('获取已结账订单异常');
+      GlobalToast.error(Get.context!.l10n.networkErrorPleaseTryAgain);
     } finally {
       isRefreshingPaid.value = false;
     }
@@ -262,11 +263,11 @@ class TakeawayController extends GetxController {
           }
         }
       } else {
-        GlobalToast.error(result.msg ?? '搜索订单失败');
+        GlobalToast.error(result.msg ?? Get.context!.l10n.failed);
       }
     } catch (e) {
       logDebug('❌ 搜索订单异常: $e', tag: 'TakeawayController');
-      GlobalToast.error('搜索订单异常');
+      GlobalToast.error(Get.context!.l10n.networkErrorPleaseTryAgain);
     } finally {
       if (tabIndex == 0) {
         isRefreshingUnpaid.value = false;
@@ -354,21 +355,21 @@ class TakeawayController extends GetxController {
         };
       } else {
         logDebug('❌ 虚拟开桌失败: ${result.msg}', tag: 'TakeawayController');
-        GlobalToast.error(result.msg ?? '虚拟开桌失败');
+        GlobalToast.error(result.msg ?? Get.context!.l10n.failed);
         // 失败时明确返回不包含data的结果
         return {
           'success': false,
-          'message': result.msg ?? '虚拟开桌失败',
+          'message': result.msg ?? Get.context!.l10n.failed,
           'data': null, // 明确设置为null
         };
       }
     } catch (e) {
       logDebug('❌ 虚拟开桌异常: $e', tag: 'TakeawayController');
-      GlobalToast.error('网络异常，请检查网络连接');
+      GlobalToast.error(Get.context!.l10n.networkErrorPleaseTryAgain);
       // 网络异常时明确返回不包含data的结果
       return {
         'success': false,
-        'message': '网络异常: $e',
+        'message': Get.context!.l10n.networkErrorPleaseTryAgain,
         'data': null, // 明确设置为null
       };
     } finally {
