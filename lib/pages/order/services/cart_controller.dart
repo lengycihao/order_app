@@ -33,7 +33,6 @@ class CartController extends GetxController {
   // 依赖数据（由外部提供）
   List<Dish> _dishes = [];
   List<String> _categories = [];
-  bool _isInitialized = false;
   
   // 管理器
   late final CartManager _cartManager;
@@ -73,11 +72,9 @@ class CartController extends GetxController {
   void initializeDependencies({
     required List<Dish> dishes,
     required List<String> categories,
-    required bool isInitialized,
   }) {
     _dishes = dishes;
     _categories = categories;
-    _isInitialized = isInitialized;
   }
 
   /// 初始化管理器
@@ -132,7 +129,7 @@ class CartController extends GetxController {
       
       if (cartData != null) {
         cartInfo.value = cartData;
-        logDebug('✅ 购物车数据加载成功', tag: _logTag);
+        // logDebug('✅ 购物车数据加载成功', tag: _logTag);
         
         // 重要：将API数据转换为本地购物车格式
         convertApiCartToLocalCart();
@@ -155,19 +152,21 @@ class CartController extends GetxController {
   /// 将API购物车数据转换为本地购物车格式
   void convertApiCartToLocalCart() {
     if (cartInfo.value?.items == null || cartInfo.value!.items!.isEmpty) {
-      // 服务器购物车为空，但只在非初始化时清空本地购物车
-      if (_isInitialized) {
-        logDebug('🛒 服务器购物车为空，清空本地购物车', tag: _logTag);
-        // 取消所有待执行的WebSocket防抖操作
-        _wsDebounceManager?.cancelAllPendingOperations();
-        // 取消所有待执行的本地购物车防抖操作
-        _localCartManager.clearAllPendingOperations();
-        cart.clear();
-        cart.refresh();
-        update();
-      } else {
-        logDebug('🛒 初始化时服务器购物车为空，保留本地购物车数据', tag: _logTag);
+      // 服务器购物车为空，检查是否有待处理的操作
+      if (_pendingOperations.isNotEmpty) {
+        logDebug('🛒 服务器购物车为空，但有待处理操作，保留本地购物车', tag: _logTag);
+        return; // 保留本地购物车，不执行清空操作
       }
+      
+      // 服务器购物车为空且无待处理操作，清空本地购物车
+      logDebug('🛒 服务器购物车为空，清空本地购物车', tag: _logTag);
+      // 取消所有待执行的WebSocket防抖操作
+      _wsDebounceManager?.cancelAllPendingOperations();
+      // 取消所有待执行的本地购物车防抖操作
+      _localCartManager.clearAllPendingOperations();
+      cart.clear();
+      cart.refresh();
+      update();
       return;
     }
     
@@ -510,48 +509,20 @@ class CartController extends GetxController {
     final currentQuantity = cart[cartItem]!;
     final newQuantity = currentQuantity + 1;
     
-    // 使用本地购物车管理器进行本地优先的增减操作
-    _localCartManager.addDishQuantity(cartItem, currentQuantity);
+    // 立即更新本地购物车状态
+    cart[cartItem] = newQuantity;
+    cart.refresh();
+    update();
     
     logDebug('➕ 本地增加购物车项数量: ${cartItem.dish.name}', tag: _logTag);
     
-    // 检查是否有必要的ID
-    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
-      logDebug('⚠️ 增加的菜品缺少ID，无法同步到WebSocket: ${cartItem.dish.name}', tag: _logTag);
-      isCartOperationLoading.value = false;
-      return;
-    }
+    // 发送WebSocket消息 - 使用add操作而不是update操作
+    _sendAddDishWebSocketWithQuantity(cartItem.dish, 1, cartItem.selectedOptions);
     
-    // 使用WebSocket防抖管理器进行防抖发送
-    if (_wsDebounceManager != null) {
-      _wsDebounceManager!.debounceUpdateQuantity(
-        cartItem: cartItem,
-        quantity: newQuantity,
-      );
-      
-      // 延迟结束loading状态，给防抖一些时间
-      Future.delayed(Duration(milliseconds: 100), () {
-        isCartOperationLoading.value = false;
-      });
-      
-      logDebug('🔄 使用防抖管理器增加菜品数量: ${cartItem.dish.name}', tag: _logTag);
-    } else if (_wsHandler != null) {
-      // 回退到直接发送
-      _wsHandler!.sendUpdateQuantity(cartItem: cartItem, quantity: newQuantity).then((success) {
-        if (success) {
-          logDebug('✅ 增加菜品数量同步到WebSocket成功: ${cartItem.dish.name}', tag: _logTag);
-        } else {
-          logDebug('❌ 增加菜品数量同步到WebSocket失败', tag: _logTag);
-        }
-        isCartOperationLoading.value = false;
-      }).catchError((error) {
-        logDebug('❌ 增加菜品数量同步到WebSocket异常: $error', tag: _logTag);
-        isCartOperationLoading.value = false;
-      });
-    } else {
-      logDebug('⚠️ WebSocket处理器未初始化，跳过增加菜品数量同步', tag: _logTag);
+    // 延迟结束loading状态
+    Future.delayed(Duration(milliseconds: 100), () {
       isCartOperationLoading.value = false;
-    }
+    });
   }
 
   /// 发送添加指定数量菜品的WebSocket消息

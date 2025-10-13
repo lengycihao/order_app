@@ -123,7 +123,7 @@ class DialogManager {
                 Navigator.of(context).pop(true);
               },
               style: TextButton.styleFrom(
-                foregroundColor: confirmColor ?? Colors.red,
+                foregroundColor: confirmColor ?? Color(0xFFFF9027),
               ),
               child: Text(confirmText),
             ),

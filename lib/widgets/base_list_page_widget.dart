@@ -112,14 +112,17 @@ abstract class BaseListPageState<T extends BaseListPageWidget> extends State<T> 
           return buildSkeletonWidget();
         }
 
+        // 如果正在加载，显示加载动画
         if (isLoading) {
           return buildLoadingWidget();
         }
 
+        // 如果有网络错误，显示网络错误状态
         if (hasNetworkError) {
           return buildNetworkErrorState();
         }
 
+        // 如果没有数据，显示空状态
         if (!hasData) {
           return buildEmptyState();
         }

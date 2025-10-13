@@ -5,22 +5,25 @@ import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
-import 'package:order_app/utils/screen_adaptation.dart';
 import 'package:lib_base/logging/logging.dart';
 import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
 
 /// 规格选择弹窗组件
 class SpecificationModalWidget {
   /// 显示规格选择弹窗
-  static void showSpecificationModal(BuildContext context, Dish dish, {GlobalKey? cartButtonKey}) {
+  static void showSpecificationModal(
+    BuildContext context,
+    Dish dish, {
+    GlobalKey? cartButtonKey,
+  }) {
     showDialog(
       context: context,
       builder: (context) => Dialog(
         backgroundColor: Colors.transparent,
         insetPadding: EdgeInsets.symmetric(horizontal: 20),
-        child: Container(
-          height: ScreenAdaptation.adaptHeight(context, 420), // 使用420的屏幕适配高度
-          child: _SpecificationModalContent(dish: dish, cartButtonKey: cartButtonKey),
+        child: _SpecificationModalContent(
+          dish: dish,
+          cartButtonKey: cartButtonKey,
         ),
       ),
     );
@@ -32,8 +35,11 @@ class _SpecificationModalContent extends StatefulWidget {
   final Dish dish;
   final GlobalKey? cartButtonKey;
 
-  const _SpecificationModalContent({Key? key, required this.dish, this.cartButtonKey})
-    : super(key: key);
+  const _SpecificationModalContent({
+    Key? key,
+    required this.dish,
+    this.cartButtonKey,
+  }) : super(key: key);
 
   @override
   State<_SpecificationModalContent> createState() =>
@@ -70,10 +76,11 @@ class _SpecificationModalContentState
       ),
       padding: EdgeInsets.only(left: 16, right: 16),
       child: Column(
+        mainAxisSize: MainAxisSize.min, // 关键：只占用必要空间
         children: [
           // 标题栏
           Container(
-            padding: EdgeInsets.only(top: 14, bottom: 8),
+            padding: EdgeInsets.only(top: 14, bottom: 2),
             child: Row(
               children: [
                 Expanded(
@@ -81,7 +88,10 @@ class _SpecificationModalContentState
                     padding: EdgeInsets.only(right: 24),
                     child: Text(
                       widget.dish.name,
-                      style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -94,12 +104,12 @@ class _SpecificationModalContentState
               ],
             ),
           ),
-          Divider(height: 1),
-          // 可滚动的内容区域
-          Expanded(
+          Container(width: double.infinity, height: 0.4, color: Color(0xffD8D8D8)),
+          // 内容区域 - 固定高度，可滚动
+          Container(
+            height: 310, // 固定310px高度
             child: SingleChildScrollView(
               padding: EdgeInsets.only(top: 10, bottom: 16),
-
               child: SizedBox(
                 width: double.infinity,
                 child: Column(
@@ -118,7 +128,6 @@ class _SpecificationModalContentState
                       _buildOptionsSection(),
                       SizedBox(height: 20),
                     ],
-                     
                   ],
                 ),
               ),
@@ -141,7 +150,7 @@ class _SpecificationModalContentState
           context.l10n.allergens,
           style: TextStyle(
             fontSize: 14,
-            fontWeight: FontWeight.bold,
+            fontWeight: FontWeight.w500,
             color: Color(0xff666666),
           ),
         ),
@@ -150,30 +159,39 @@ class _SpecificationModalContentState
           spacing: 10,
           runSpacing: 8,
           children: widget.dish.allergens!.map((allergen) {
-            return Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (allergen.icon != null)
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: CachedNetworkImage(
-                      imageUrl: allergen.icon!,
-                      width: 16,
-                      height: 16,
-                      errorWidget: (context, url, error) => Image.asset(
-                        'assets/order_minganwu_place.webp',
+            return Container(
+              constraints: BoxConstraints(
+                maxWidth: double.infinity, // 允许占满可用宽度
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (allergen.icon != null)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: CachedNetworkImage(
+                        imageUrl: allergen.icon!,
                         width: 16,
                         height: 16,
-                        fit: BoxFit.contain,
+                        errorWidget: (context, url, error) => Image.asset(
+                          'assets/order_minganwu_place.webp',
+                          width: 16,
+                          height: 16,
+                          fit: BoxFit.contain,
+                        ),
                       ),
                     ),
+                  if (allergen.icon != null) SizedBox(width: 4),
+                  Flexible(
+                    child: Text(
+                      allergen.label ?? '',
+                      style: TextStyle(fontSize: 12, color: Color(0xff3D3D3D)),
+                      overflow: TextOverflow.visible, // 允许文字换行
+                      softWrap: true, // 启用软换行
+                    ),
                   ),
-                if (allergen.icon != null) SizedBox(width: 4),
-                Text(
-                  allergen.label ?? '',
-                  style: TextStyle(fontSize: 12, color: Color(0xff3D3D3D)),
-                ),
-              ],
+                ],
+              ),
             );
           }).toList(),
         ),
@@ -194,7 +212,7 @@ class _SpecificationModalContentState
                   option.name ?? '',
                   style: TextStyle(
                     fontSize: 14,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
                     color: Color(0xff666666),
                   ),
                 ),
@@ -293,9 +311,20 @@ class _SpecificationModalContentState
 
   /// 构建已选规格文本
   Widget _buildSelectedSpecsText() {
-    return Text(
-      '${context.l10n.selected} ${_getSelectedSpecsText()}',
-      style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+    return Container(
+      width: double.infinity,
+      constraints: BoxConstraints(
+        maxHeight: 70, // 最多3行的高度 (12px * 3 + padding)
+      ),
+      padding: EdgeInsets.symmetric(vertical: 10),
+      child: SingleChildScrollView(
+        child: Text(
+          '${context.l10n.selected} ${_getSelectedSpecsText()}',
+          style: TextStyle(fontSize: 12, color: Color(0xff666666)),
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
     );
   }
 
@@ -324,7 +353,7 @@ class _SpecificationModalContentState
   /// 构建底部区域（数量选择 + 购物车按钮）
   Widget _buildBottomSection() {
     return Container(
-       padding: EdgeInsets.only(bottom: 15),
+      padding: EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
         color: Colors.white,
         // border: Border(top: BorderSide(color: Colors.grey.shade200, width: 1)),
@@ -340,7 +369,7 @@ class _SpecificationModalContentState
                 context.l10n.quantity,
                 style: TextStyle(
                   fontSize: 14,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w500,
                   color: Color(0xff666666),
                 ),
               ),
@@ -447,10 +476,13 @@ class _SpecificationModalContentState
                 ),
               ),
             ],
-          ), SizedBox(height: 10),Divider(height: 1, color: Colors.grey.shade200), SizedBox(height: 10),
-          if (selectedOptions.isNotEmpty) ...[
-                      _buildSelectedSpecsText(),
-                    ],
+          ),
+          SizedBox(height: 10),
+          Container(
+            
+            width: MediaQuery.of(context).size.width, height: 0.4, color: Color(0xffD8D8D8)),
+          
+          if (selectedOptions.isNotEmpty) ...[_buildSelectedSpecsText()],
 
           SizedBox(height: 10),
           // 价格和购物车按钮
@@ -459,7 +491,7 @@ class _SpecificationModalContentState
               Text(
                 '€',
                 style: TextStyle(
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w500,
                   fontSize: 12,
                   color: Colors.black,
                 ),
@@ -478,7 +510,7 @@ class _SpecificationModalContentState
                 key: _addToCartButtonKey,
                 onTap: _addToCart,
                 child: Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: Colors.orange,
                     borderRadius: BorderRadius.circular(20),
@@ -516,7 +548,7 @@ class _SpecificationModalContentState
     if (missingOptionName == null) {
       // 添加到购物车
       final controller = Get.find<OrderController>();
-      
+
       // 触发抛物线动画（如果有购物车按钮key）
       if (widget.cartButtonKey != null) {
         ParabolicAnimationManager.triggerSpecificationAddAnimation(
@@ -525,31 +557,36 @@ class _SpecificationModalContentState
           cartButtonKey: widget.cartButtonKey!,
         );
       }
-      
+
       // 构建选择的规格选项 - 直接传递optionId和itemIds
       Map<String, List<String>> selectedOptionsMap = {};
       selectedOptions.forEach((optionId, selectedItemIds) {
         if (selectedItemIds.isNotEmpty) {
           // 直接使用optionId作为key，itemIds作为value
-          selectedOptionsMap[optionId.toString()] = selectedItemIds.map((id) => id.toString()).toList();
+          selectedOptionsMap[optionId.toString()] = selectedItemIds
+              .map((id) => id.toString())
+              .toList();
         }
       });
-      
+
       logDebug('🔍 规格选择弹窗调试信息:', tag: 'SpecModal');
       logDebug('  菜品: ${widget.dish.name}', tag: 'SpecModal');
       logDebug('  数量: $quantity', tag: 'SpecModal');
       logDebug('  规格选项: $selectedOptionsMap', tag: 'SpecModal');
       logDebug('  当前购物车项数: ${controller.cart.length}', tag: 'SpecModal');
-      
+
       // 直接添加指定数量的商品到购物车
       controller.addToCartWithQuantity(
-        widget.dish, 
+        widget.dish,
         quantity: quantity,
         selectedOptions: selectedOptionsMap,
       );
-      
-      logDebug('✅ 规格选择弹窗添加商品完成: ${widget.dish.name} x$quantity', tag: 'SpecModal');
-      
+
+      logDebug(
+        '✅ 规格选择弹窗添加商品完成: ${widget.dish.name} x$quantity',
+        tag: 'SpecModal',
+      );
+
       Navigator.of(context).pop();
       // 移除本地成功提示，等待服务器确认后再显示
     } else {

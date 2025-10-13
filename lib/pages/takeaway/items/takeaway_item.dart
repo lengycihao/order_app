@@ -84,7 +84,7 @@ class _TakeawayItemState extends State<TakeawayItem> {
                 widget.order.formattedTotalAmount,
                 style: const TextStyle(
                   fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                  // fontWeight: FontWeight.w500,
                   color: Color(0xff333333),
                 ),
               ),

@@ -326,7 +326,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
               minHeight: 220,
               maxHeight: ScreenAdaptation.adaptHeight(context, 500),
             ),
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(12).copyWith(bottom: 0),
             child: _isLoading
                 ? Center(
                     child: RestaurantLoadingWidget(size: 30),
@@ -357,9 +357,9 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
                     physics: ClampingScrollPhysics(),
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 124 / 150,
+                      crossAxisSpacing: 2,
+                      mainAxisSpacing: 10,
+                      childAspectRatio: 150 / 124,
                     ),
                     itemCount: _availableTables.length,
                     itemBuilder: (context, index) {
@@ -386,12 +386,26 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
           ),
           // 确认按钮
           Container(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.all(10),
+             decoration: BoxDecoration(
+              color: Color(0xffffffff),
+              boxShadow: [
+                BoxShadow(
+                  color: Color(0x11000000),
+                  blurRadius: 3,
+                  offset: Offset(0, -2),
+                ),
+              ],
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(12),
+                bottomRight: Radius.circular(12),
+              ),
+            ),
             child: Center(
               child: GestureDetector(
                 onTap: _performChangeTable,
                 child: Container(
-                  width: 180,
+                  width: 120,
                   height: 32,
                   decoration: BoxDecoration(
                     color: Colors.orange,
@@ -440,13 +454,22 @@ class _TableItem extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           color: isSelected ? Color(0x33000000) : Colors.white,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? Colors.orange : Colors.grey.shade300,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? Colors.orange : Colors.transparent,
+            width: isSelected ? 2 : 0,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: Color(0x33000000),
+              blurRadius: 3,
+              offset: Offset(0, 1),
+            ),
+          ],
+          
         ),
         child: Stack(
           children: [
@@ -462,7 +485,7 @@ class _TableItem extends StatelessWidget {
                       tableName,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w500,
                         color: Colors.black,
                       ),
                       maxLines: 3,
@@ -476,14 +499,14 @@ class _TableItem extends StatelessWidget {
                           Icon(
                             Icons.person,
                             size: 10,
-                            color: Colors.grey.shade600,
+                            color: Colors.black,
                           ),
                           SizedBox(width: 2),
                           Text(
                             '$adultCount',
                             style: TextStyle(
                               fontSize: 10,
-                              color: Colors.grey.shade600,
+                              color: Colors.black,
                             ),
                           ),
                         ],
@@ -493,14 +516,14 @@ class _TableItem extends StatelessWidget {
                           Icon(
                             Icons.child_care,
                             size: 10,
-                            color: Colors.grey.shade600,
+                            color: Colors.black,
                           ),
                           SizedBox(width: 2),
                           Text(
                             '$childCount',
                             style: TextStyle(
                               fontSize: 10,
-                              color: Colors.grey.shade600,
+                              color: Colors.black,
                             ),
                           ),
                         ],
@@ -665,33 +688,17 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
 
   /// 构建菜单网格
   Widget _buildMenuGrid() {
-    // 检查是否有menuType为2的菜单（只显示图片）
-    final hasImageOnlyMenus = _menuList.any((menu) => menu.menuType == 2);
-    final hasRegularMenus = _menuList.any((menu) => menu.menuType != 2);
-    
-    // 根据菜单类型动态设置高度
-    double itemHeight;
-    if (hasImageOnlyMenus && hasRegularMenus) {
-      // 混合类型，使用较大高度适配两种类型
-      itemHeight = 200;
-    } else if (hasImageOnlyMenus && !hasRegularMenus) {
-      // 全部是图片类型，使用较小高度
-      itemHeight = 140; // 88px图片 + 16px padding + 36px余量
-    } else {
-      // 全部是带价格信息的类型，使用标准高度
-      itemHeight = 200;
-    }
 
     return GridView.builder(
       shrinkWrap: true,
       padding: EdgeInsets.zero,
       physics: const NeverScrollableScrollPhysics(),
       itemCount: _menuList.length,
-      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 200,
-        crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
-        mainAxisExtent: itemHeight,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 2,
+        crossAxisSpacing: 10,
+        mainAxisSpacing: 10,
+        childAspectRatio: 150 / 156,
       ),
       itemBuilder: (context, index) {
         final menu = _menuList[index];
@@ -699,7 +706,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
 
         return _MenuItem(
           imageUrl: menu.menuImage ?? '',
-          menuName: menu.menuName ?? '未知菜单',
+          menuName: menu.menuName ?? '',
           adultPrice: int.tryParse(menu.adultPackagePrice ?? '0') ?? 0,
           childPrice: int.tryParse(menu.childPackagePrice ?? '0') ?? 0,
           menuFixedCosts: menu.menuFixedCosts,
@@ -829,14 +836,14 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
                   child: Container(
                     width: 24,
                     height: 24,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      shape: BoxShape.circle,
-                    ),
+                    // decoration: BoxDecoration(
+                    //   color: Colors.grey.shade200,
+                    //   shape: BoxShape.circle,
+                    // ),
                     child: Icon(
                       Icons.close,
-                      size: 16,
-                      color: Colors.grey.shade600,
+                      size: 20,
+                      color: Color(0xff666666),
                     ),
                   ),
                 ),
@@ -982,12 +989,13 @@ class _MenuItem extends StatelessWidget {
         children: [
           Container(
             margin: const EdgeInsets.only(top: 15),
-            width: 157, // 固定宽度157，自适应屏幕
+            width: 150, // 固定宽度124，与选择菜单页面保持一致
+            height: 156, // 固定高度150，与选择菜单页面保持一致
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border.all(
-                color: isSelected ? Colors.orange : Colors.grey.shade300,
-                width: isSelected ? 2 : 1,
+                color: isSelected ? Colors.orange : Colors.transparent,
+                width: isSelected ? 1 : 1,
               ),
               boxShadow: [
                 BoxShadow(
@@ -998,30 +1006,30 @@ class _MenuItem extends StatelessWidget {
               ],
               borderRadius: BorderRadius.circular(8),
             ),
-            padding: const EdgeInsets.all(8),
+            padding: const EdgeInsets.all(4),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // 菜单图片 - 142*88 适配容器宽度
+                // 菜单图片 - 108*88 适配容器宽度
                 Container(
-                  width: 142, // 调整为容器内容区域宽度
+                  width: 141, // 调整为容器内容区域宽度
                   height: 88,
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: CachedNetworkImage(
                       imageUrl: imageUrl,
-                      width: 142,
+                      width: 141,
                       height: 88,
                       fit: BoxFit.cover,
                       placeholder: (context, url) => Image.asset(
                         'assets/order_table_menu.webp',
-                        width: 142,
+                        width: 141,
                         height: 88,
                         fit: BoxFit.cover,
                       ),
                       errorWidget: (context, url, error) => Image.asset(
                         'assets/order_table_menu.webp',
-                        width: 142,
+                        width: 141,
                         height: 88,
                         fit: BoxFit.cover,
                       ),
@@ -1039,9 +1047,13 @@ class _MenuItem extends StatelessWidget {
           ),
           Positioned(
             left: 0,
-            top: 0,
+            top: 2,
             child: Container(
-              padding: const EdgeInsets.fromLTRB(15, 3, 15, 3),
+              constraints: BoxConstraints(
+                maxWidth: (MediaQuery.of(context).size.width - 90) / 2,
+                minWidth: 60, // 最小宽度
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
               decoration: BoxDecoration(
                 color: isSelected ? Colors.orange : Colors.grey.shade400,
                 borderRadius: BorderRadius.only(
@@ -1049,10 +1061,55 @@ class _MenuItem extends StatelessWidget {
                   bottomRight: Radius.elliptical(35, 35), // 右下角椭圆半径
                 ),
               ),
-              alignment: Alignment.centerLeft,
-              child: Text(
-                menuName,
-                style: const TextStyle(fontSize: 14, color: Colors.white),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final text = menuName;
+                  final maxWidth = constraints.maxWidth;
+                  
+                  // 计算合适的字体大小
+                  double fontSize = 14;
+                  int maxLines = 1;
+                  
+                  // 测量文本宽度
+                  final textPainter = TextPainter(
+                    text: TextSpan(
+                      text: text,
+                      style: TextStyle(fontSize: fontSize, color: Colors.white),
+                    ),
+                    maxLines: maxLines,
+                    textDirection: TextDirection.ltr,
+                  );
+                  textPainter.layout(maxWidth: maxWidth);
+                  
+                  // 如果文本超出宽度，尝试减小字体或增加行数
+                  if (textPainter.didExceedMaxLines || textPainter.width > maxWidth) {
+                    // 先尝试减小字体
+                    fontSize = 12;
+                    textPainter.text = TextSpan(
+                      text: text,
+                      style: TextStyle(fontSize: fontSize, color: Colors.white),
+                    );
+                    textPainter.layout(maxWidth: maxWidth);
+                    
+                    // 如果还是超出，再减小字体并允许换行
+                    if (textPainter.didExceedMaxLines || textPainter.width > maxWidth) {
+                      fontSize = 10;
+                      maxLines = 2;
+                    }
+                  }
+                  
+                  return Text(
+                    text,
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      color: Colors.white,
+                      height: 1.2, // 行高
+                    ),
+                    maxLines: maxLines,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  );
+                },
               ),
             ),
           ),

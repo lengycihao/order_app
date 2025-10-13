@@ -252,14 +252,18 @@ class TakeawayController extends GetxController {
         final response = TakeawayOrderListResponse.fromJson(result.data!);
         
         if (tabIndex == 0) {
-          unpaidOrders.clear();
+          // 使用assignAll替换数据，而不是先清空再添加
           if (response.data != null) {
-            unpaidOrders.addAll(response.data!);
+            unpaidOrders.assignAll(response.data!);
+          } else {
+            unpaidOrders.clear();
           }
         } else {
-          paidOrders.clear();
+          // 使用assignAll替换数据，而不是先清空再添加
           if (response.data != null) {
-            paidOrders.addAll(response.data!);
+            paidOrders.assignAll(response.data!);
+          } else {
+            paidOrders.clear();
           }
         }
       } else {
@@ -330,6 +334,14 @@ class TakeawayController extends GetxController {
       // 重新加载数据
       refreshData(0);
       refreshData(1);
+    }
+  }
+
+  /// 保持搜索框状态
+  void preserveSearchState() {
+    // 确保搜索框文本与当前搜索代码同步
+    if (_currentSearchCode != null && searchController.text != _currentSearchCode) {
+      searchController.text = _currentSearchCode!;
     }
   }
 

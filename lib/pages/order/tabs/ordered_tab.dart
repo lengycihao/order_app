@@ -6,6 +6,7 @@ import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/pages/order/utils/order_page_utils.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
+import 'package:order_app/utils/image_cache_manager.dart';
 
 class OrderedTab extends BaseListPageWidget {
   const OrderedTab({super.key});
@@ -176,6 +177,46 @@ class _OrderedTabState extends BaseListPageState<OrderedTab> with AutomaticKeepA
       tableId: controller.table.value?.tableId.toString() ?? '',
       showLoading: false,
     );
+    
+    // 预加载已点菜品的图片
+    _preloadOrderedImages();
+  }
+
+  /// 预加载已点菜品的图片
+  void _preloadOrderedImages() {
+    final order = controller.currentOrder.value;
+    if (order?.details == null || order!.details!.isEmpty) return;
+    
+    // 收集所有菜品的图片URL
+    List<String> imageUrls = [];
+    List<String> allergenUrls = [];
+    
+    for (final detail in order.details!) {
+      // OrderDetailModel 使用 dishes 字段
+      if (detail.dishes != null) {
+        for (final dish in detail.dishes!) {
+          // 菜品图片
+          if (dish.image != null && dish.image!.isNotEmpty) {
+            imageUrls.add(dish.image!);
+          }
+          
+          // 敏感物图标
+          if (dish.allergens != null) {
+            for (final allergen in dish.allergens!) {
+              if (allergen.icon != null && allergen.icon!.isNotEmpty) {
+                allergenUrls.add(allergen.icon!);
+              }
+            }
+          }
+        }
+      }
+    }
+    
+    // 异步预加载图片
+    if (imageUrls.isNotEmpty || allergenUrls.isNotEmpty) {
+      ImageCacheManager().preloadImagesAsync([...imageUrls, ...allergenUrls]);
+      print('🖼️ 已点页面预加载图片: ${imageUrls.length} 个菜品图片, ${allergenUrls.length} 个敏感物图标');
+    }
   }
 
 

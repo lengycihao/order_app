@@ -78,15 +78,9 @@ class OrderInfoModel {
     }
   }
 
-  /// 获取格式化的下单时间
+  /// 获取下单时间（直接返回接口原始数据，不进行二次处理）
   String get formattedOrderTime {
-    if (orderTime == null || orderTime!.isEmpty) return '9999-99-99 00:00:00';
-    try {
-      final dateTime = DateTime.parse(orderTime!);
-      return '${dateTime.year}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}:${dateTime.second.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return orderTime!;
-    }
+    return orderTime ?? '';
   }
 
   // /// 获取状态显示文本

@@ -44,6 +44,22 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _forceRefreshData();
       });
+    } else {
+      // 检查是否有部分数据（可能是从点餐页面返回）
+      final halls = controller.lobbyListModel.value.halls ?? [];
+      final hasPartialData = controller.tabDataList.isNotEmpty && halls.isNotEmpty;
+      
+      if (hasPartialData) {
+        // 有部分数据，使用智能刷新
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _smartRefreshData();
+        });
+      } else {
+        // 没有数据，检查是否需要刷新
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _checkAndRefreshDataIfNeeded();
+        });
+      }
     }
     
     // 更新骨架图状态
@@ -57,9 +73,17 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
   Future<void> _forceRefreshData() async {
     try {
       logDebug('🔄 开始强制刷新桌台数据...', tag: 'TablePage');
-      // 调用Controller的强制重置方法（内部已包含菜单数据重置）
-      await controller.forceResetAllData();
+      
+      // 设置超时机制，确保不会一直显示骨架图
+      await Future.any([
+        controller.forceResetAllData(),
+        Future.delayed(Duration(seconds: 10)), // 10秒超时
+      ]);
+      
       logDebug('✅ 强制刷新桌台数据完成', tag: 'TablePage');
+      
+      // 完成登录后的初始加载
+      _pageState.completeLoginInitialLoading();
       
       // 数据加载完成后更新骨架图状态
       _pageState.updateSkeletonState(
@@ -68,6 +92,66 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
       );
     } catch (e) {
       logError('❌ 强制刷新桌台数据失败: $e', tag: 'TablePage');
+      // 即使失败也要完成登录后的初始加载，避免一直显示骨架图
+      _pageState.completeLoginInitialLoading();
+    }
+  }
+  
+  /// 智能刷新数据（用于从点餐页面返回）
+  Future<void> _smartRefreshData() async {
+    try {
+      logDebug('🔄 开始智能刷新桌台数据...', tag: 'TablePage');
+      
+      // 设置超时机制，避免长时间等待
+      await Future.any([
+        controller.smartResetData(),
+        Future.delayed(Duration(seconds: 8)), // 8秒超时
+      ]);
+      
+      logDebug('✅ 智能刷新桌台数据完成', tag: 'TablePage');
+      
+      // 数据加载完成后更新骨架图状态
+      _pageState.updateSkeletonState(
+        controller.tabDataList, 
+        controller.selectedTab.value
+      );
+    } catch (e) {
+      logError('❌ 智能刷新桌台数据失败: $e', tag: 'TablePage');
+      // 即使失败也要更新骨架图状态，避免一直显示骨架图
+      _pageState.updateSkeletonState(
+        controller.tabDataList, 
+        controller.selectedTab.value
+      );
+    }
+  }
+
+  /// 检查并刷新数据（如果需要）
+  Future<void> _checkAndRefreshDataIfNeeded() async {
+    try {
+      // 检查大厅数据是否为空
+      final halls = controller.lobbyListModel.value.halls ?? [];
+      if (halls.isEmpty) {
+        logDebug('🔄 检测到大厅数据为空，开始刷新...', tag: 'TablePage');
+        await controller.getLobbyList();
+      }
+      
+      // 检查当前tab的数据是否为空
+      final currentTabIndex = controller.selectedTab.value;
+      if (currentTabIndex < controller.tabDataList.length) {
+        final currentTabData = controller.tabDataList[currentTabIndex];
+        if (currentTabData.isEmpty && halls.isNotEmpty) {
+          logDebug('🔄 检测到当前tab数据为空，开始刷新...', tag: 'TablePage');
+          await controller.fetchDataForTab(currentTabIndex);
+        }
+      }
+      
+      // 更新骨架图状态
+      _pageState.updateSkeletonState(
+        controller.tabDataList, 
+        controller.selectedTab.value
+      );
+    } catch (e) {
+      logError('❌ 检查并刷新数据失败: $e', tag: 'TablePage');
     }
   }
 
@@ -116,7 +200,13 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
   bool get isLoading => controller.isLoading.value;
 
   @override
-  bool get hasNetworkError => controller.hasNetworkError.value;
+  bool get hasNetworkError {
+    // 如果是登录后的初始加载期间，不显示网络错误状态
+    if (_pageState.isLoginInitialLoading) {
+      return false;
+    }
+    return controller.hasNetworkError.value;
+  }
 
   @override
   bool get hasData {
@@ -132,7 +222,13 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
   }
   
   @override
-  bool get shouldShowSkeleton => _pageState.shouldShowSkeleton;
+  bool get shouldShowSkeleton {
+    // 如果是登录后的初始加载期间，优先显示骨架图
+    if (_pageState.isLoginInitialLoading) {
+      return true;
+    }
+    return _pageState.shouldShowSkeleton;
+  }
 
   @override
   Future<void> onRefresh() async {

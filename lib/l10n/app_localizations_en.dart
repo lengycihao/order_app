@@ -465,5 +465,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editRemark => 'Edit Remark';
 
   @override
+  String get confirmOrder => 'Confirm order?';
+
+  @override
   String get pleaseEnter => 'Please enter';
 }

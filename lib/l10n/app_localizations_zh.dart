@@ -444,5 +444,8 @@ class AppLocalizationsZh extends AppLocalizations {
   String get editRemark => '修改备注';
 
   @override
+  String get confirmOrder => '确认下单？';
+
+  @override
   String get pleaseEnter => '请输入';
 }

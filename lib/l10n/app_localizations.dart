@@ -970,6 +970,12 @@ abstract class AppLocalizations {
   /// **'修改备注'**
   String get editRemark;
 
+  /// 确认下单？
+  ///
+  /// In zh, this message translates to:
+  /// **'确认下单？'**
+  String get confirmOrder;
+
   /// 请输入
   ///
   /// In zh, this message translates to:

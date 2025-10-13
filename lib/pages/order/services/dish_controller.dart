@@ -53,13 +53,14 @@ class DishController extends GetxController {
   }
 
   /// 从数据加载菜品
-  void _loadDishesFromData(List<DishListModel> dishListModels) {
+  void _loadDishesFromData(List<DishListModel> dishListModels, {bool clearExisting = true}) {
     logDebug('🔄 开始加载菜品数据...', tag: _logTag);
     
     DataConverter.loadDishesFromData(
       dishListModels: dishListModels,
       categories: categories,
       dishes: dishes,
+      clearExisting: clearExisting,
     );
     
     // 强制刷新UI

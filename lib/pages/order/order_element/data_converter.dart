@@ -10,9 +10,13 @@ class DataConverter {
     required List<DishListModel> dishListModels,
     required List<String> categories,
     required List<Dish> dishes,
+    bool clearExisting = true, // 新增参数，控制是否清空现有数据
   }) {
-    categories.clear();
-    dishes.clear();
+    // 只有在明确要求清空时才清空数据，避免刷新时丢失状态
+    if (clearExisting) {
+      categories.clear();
+      dishes.clear();
+    }
     
     for (int i = 0; i < dishListModels.length; i++) {
       var dishListModel = dishListModels[i];

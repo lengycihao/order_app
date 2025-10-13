@@ -48,7 +48,7 @@ class MinePage extends StatelessWidget {
                                 c.nickname.value,
                                 style: TextStyle(
                                   fontSize: 24,
-                                  fontWeight: FontWeight.bold,
+                                  fontWeight: FontWeight.w500,
                                 ),
                               ),
                               SizedBox(height: 8),
@@ -113,7 +113,7 @@ class MinePage extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Container(
-                                width: 147,
+                                width: 160,
                                 height: 30,
                                 padding: EdgeInsets.symmetric(horizontal: 10),
                                 decoration: BoxDecoration(
@@ -143,7 +143,7 @@ class MinePage extends StatelessWidget {
                                 ),
                               ),
                               Container(
-                                width: 147,
+                                width: 134,
                                 height: 30,
                                 padding: EdgeInsets.symmetric(horizontal: 10),
                                 decoration: BoxDecoration(
@@ -192,8 +192,8 @@ class MinePage extends StatelessWidget {
                           title: context.l10n.changePassword,
                           trailing: Image.asset(
                             'assets/order_mine_arrowR.webp',
-                            width: 20,
-                            height: 20,
+                            width: 16,
+                            height: 16,
                           ),
                           onTap: () {
                             // 跳转修改密码
@@ -205,8 +205,9 @@ class MinePage extends StatelessWidget {
                           title: context.l10n.language,
                           trailing: Image.asset(
                             'assets/order_mine_arrowR.webp',
-                            width: 20,
-                            height: 20,
+                            width: 16,
+                            height: 16,
+                            
                           ),
                           onTap: () {
                             // 跳转切换语言
@@ -221,7 +222,7 @@ class MinePage extends StatelessWidget {
                               c.version.value,
                               style: TextStyle(
                                 fontSize: 14,
-                                color: Colors.grey[600],
+                                color: Color(0xff666666),fontWeight: FontWeight.w400,
                               ),
                             ),
                           ),
@@ -282,14 +283,11 @@ class _SettingItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Padding(
-        padding: EdgeInsets.only(right: 1),
-        child: Image.asset(icon, width: 16, height: 16),
-      ),
+      leading: Image.asset(icon, width: 16, height: 16),
       title: Text(title, style: TextStyle(fontSize: 14)),
       trailing: trailing,
       onTap: onTap,
-      contentPadding: EdgeInsets.symmetric(horizontal: 12),
+      contentPadding: EdgeInsets.symmetric(horizontal: 10),
     );
   }
 }

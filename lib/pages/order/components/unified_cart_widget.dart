@@ -8,6 +8,7 @@ import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/modal_utils.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'package:order_app/pages/order/components/remark_dialog_widget.dart';
+import 'package:order_app/widgets/robust_image_widget.dart';
 
 /// 统一的购物车弹窗组件
 class UnifiedCartWidget {
@@ -299,23 +300,21 @@ class _CartItem extends StatelessWidget {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(8),
-              child: CachedNetworkImage(
+              child: RobustImageWidget(
                 imageUrl: cartItem.dish.image,
                 width: 46,
                 height: 46,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  width: 46,
-                  height: 46,
-                  color: Colors.grey.shade200,
-                  child: Icon(Icons.image, color: Colors.grey),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  width: 46,
-                  height: 46,
-                  color: Colors.grey.shade200,
-                  child: Icon(Icons.broken_image, color: Colors.grey),
-                ),
+                borderRadius: BorderRadius.circular(8),
+                maxRetries: 3,
+                retryDelay: Duration(seconds: 2),
+                enableRetry: true,
+                onImageLoaded: () {
+                  // print('✅ 购物车菜品图片加载成功: ${cartItem.dish.name}');
+                },
+                onImageError: () {
+                  // print('❌ 购物车菜品图片加载失败: ${cartItem.dish.name}');
+                },
               ),
             ),
             SizedBox(width: 12),

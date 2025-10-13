@@ -58,7 +58,7 @@ class CartManager {
       return {};
     }
     
-    logDebug('🔄 开始转换购物车数据，共${cartInfo.items!.length}个商品，当前菜品列表有${dishes.length}个菜品', tag: _logTag);
+    // logDebug('🔄 开始转换购物车数据，共${cartInfo.items!.length}个商品，当前菜品列表有${dishes.length}个菜品', tag: _logTag);
     
     // 创建新的购物车映射
     final newCart = <CartItem, int>{};
@@ -66,15 +66,22 @@ class CartManager {
     int invalidItemCount = 0;
     
     for (var apiCartItem in cartInfo.items!) {
-      logDebug('🔄 转换购物车商品: ${apiCartItem.dishName} (ID: ${apiCartItem.dishId}) x${apiCartItem.quantity}', tag: _logTag);
+      // logDebug('🔄 转换购物车商品: ${apiCartItem.dishName} (ID: ${apiCartItem.dishId}) x${apiCartItem.quantity}', tag: _logTag);
+      
+      // 检查dishId是否有效
+      if (apiCartItem.dishId == null) {
+        logDebug('⚠️ 跳过无效菜品ID的商品: ${apiCartItem.dishName}', tag: _logTag);
+        invalidItemCount++;
+        continue;
+      }
       
       // 从现有菜品列表中查找对应的菜品
       Dish? existingDish;
       try {
         existingDish = dishes.firstWhere(
-          (dish) => dish.id == (apiCartItem.dishId ?? 0).toString(),
+          (dish) => dish.id == apiCartItem.dishId.toString(),
         );
-        // logDebug('✅ 找到对应菜品: ${existingDish.name}', tag: _logTag);
+        logDebug('✅ 找到对应菜品: ${existingDish.name}', tag: _logTag);
       } catch (e) {
         logDebug('⚠️ 未找到对应菜品ID: ${apiCartItem.dishId}，使用API数据创建临时菜品', tag: _logTag);
         
@@ -83,7 +90,7 @@ class CartManager {
         
         // 如果找不到对应的菜品，创建一个临时的菜品对象
         existingDish = Dish(
-          id: (apiCartItem.dishId ?? 0).toString(),
+          id: apiCartItem.dishId.toString(),
           name: apiCartItem.dishName ?? '',
           price: apiCartItem.price ?? 0.0, // price字段已经映射到unit_price
           image: apiCartItem.image ?? OrderConstants.defaultDishImage,

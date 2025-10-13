@@ -429,9 +429,13 @@ SizedBox(height: 12,),
                 ),
                 Positioned(
                   left: 0,
-                  top: 0,
+                  top: 2,
                   child: Container(
-                    padding: const EdgeInsets.fromLTRB(15, 3, 15, 3),
+                    constraints: BoxConstraints(
+                      maxWidth: (MediaQuery.of(context).size.width - 80) / 2,
+                      minWidth: 60, // 最小宽度
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
                       color: isSelected ? Colors.orange : Colors.grey.shade400,
                       borderRadius: BorderRadius.only(
@@ -439,10 +443,55 @@ SizedBox(height: 12,),
                         bottomRight: Radius.elliptical(35, 35), // 右下角椭圆半径
                       ),
                     ),
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      item.menuName ?? '',
-                      style: const TextStyle(fontSize: 14, color: Colors.white),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        final text = item.menuName ?? '';
+                        final maxWidth = constraints.maxWidth;
+                        
+                        // 计算合适的字体大小
+                        double fontSize = 14;
+                        int maxLines = 1;
+                        
+                        // 测量文本宽度
+                        final textPainter = TextPainter(
+                          text: TextSpan(
+                            text: text,
+                            style: TextStyle(fontSize: fontSize, color: Colors.white),
+                          ),
+                          maxLines: maxLines,
+                          textDirection: TextDirection.ltr,
+                        );
+                        textPainter.layout(maxWidth: maxWidth);
+                        
+                        // 如果文本超出宽度，尝试减小字体或增加行数
+                        if (textPainter.didExceedMaxLines || textPainter.width > maxWidth) {
+                          // 先尝试减小字体
+                          fontSize = 12;
+                          textPainter.text = TextSpan(
+                            text: text,
+                            style: TextStyle(fontSize: fontSize, color: Colors.white),
+                          );
+                          textPainter.layout(maxWidth: maxWidth);
+                          
+                          // 如果还是超出，再减小字体并允许换行
+                          if (textPainter.didExceedMaxLines || textPainter.width > maxWidth) {
+                            fontSize = 10;
+                            maxLines = 2;
+                          }
+                        }
+                        
+                        return Text(
+                          text,
+                          style: TextStyle(
+                            fontSize: fontSize,
+                            color: Colors.white,
+                            height: 1.2, // 行高
+                          ),
+                          maxLines: maxLines,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        );
+                      },
                     ),
                   ),
                 ),

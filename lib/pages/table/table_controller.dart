@@ -55,19 +55,26 @@ class TableControllerRefactored extends GetxController {
     _pollingManager = TablePollingManager();
     _wsManager = TableWebSocketManager(wsManager: wsManager);
     
-    // 设置轮询回调
+    // 启动轮询功能
     _pollingManager.startPolling(onPolling: _performPollingRefresh);
     
     // 初始化WebSocket状态监控
     _wsManager.initializeStatusMonitoring();
     
-    logDebug('✅ 服务模块初始化完成', tag: _logTag);
+    logDebug('✅ 服务模块初始化完成（轮询已启动）', tag: _logTag);
   }
 
   /// 加载初始数据
   Future<void> _loadInitialData() async {
-    await getLobbyList();
-    await getMenuList();
+    logDebug('🔄 TableController: 开始加载初始数据...', tag: _logTag);
+    
+    // 并行加载大厅数据和菜单数据，提高加载速度
+    await Future.wait([
+      getLobbyList(),
+      getMenuList(),
+    ]);
+    
+    logDebug('✅ TableController: 初始数据加载完成', tag: _logTag);
   }
 
   /// 获取大厅列表
@@ -79,17 +86,24 @@ class TableControllerRefactored extends GetxController {
       final result = await _dataService.getLobbyList();
       if (result.isSuccess && result.data != null) {
         lobbyListModel.value = result.data!;
-        // 初始化 tabDataList
-        tabDataList.value = List.generate(
-          lobbyListModel.value.halls?.length ?? 0,
-          (_) => <TableListModel>[].obs,
-        );
-        // 清空预加载状态
-        _preloadManager.clearPreloadStatus();
         
         // 只有当确实有大厅数据时，才清除网络错误状态
         if (lobbyListModel.value.halls?.isNotEmpty == true) {
           hasNetworkError.value = false;
+          
+          // 初始化 tabDataList，确保与大厅数量一致
+          final hallsLength = lobbyListModel.value.halls!.length;
+          if (tabDataList.length != hallsLength) {
+            tabDataList.value = List.generate(
+              hallsLength,
+              (_) => <TableListModel>[].obs,
+            );
+            logDebug('🔄 重新初始化tabDataList，数量: $hallsLength', tag: _logTag);
+          }
+          
+          // 清空预加载状态
+          _preloadManager.clearPreloadStatus();
+          
           // 获取第一个 tab 数据
           fetchDataForTab(0);
           logDebug('✅ 大厅数据获取成功', tag: _logTag);
@@ -156,6 +170,65 @@ class TableControllerRefactored extends GetxController {
     await getMenuList();
     
     logDebug('✅ TableController: 强制重置所有数据完成', tag: _logTag);
+  }
+  
+  /// 智能重置数据（用于从点餐页面返回时的数据恢复）
+  Future<void> smartResetData() async {
+    logDebug('🔄 TableController: 开始智能重置数据...', tag: _logTag);
+    
+    // 并行检查并加载缺失的数据，提高恢复速度
+    final List<Future<void>> loadTasks = [];
+    
+    // 检查是否需要重新加载大厅数据
+    final halls = lobbyListModel.value.halls ?? [];
+    if (halls.isEmpty) {
+      logDebug('🔄 大厅数据为空，重新加载...', tag: _logTag);
+      loadTasks.add(getLobbyList());
+    }
+    
+    // 检查是否需要重新加载菜单数据
+    if (menuModelList.isEmpty) {
+      logDebug('🔄 菜单数据为空，重新加载...', tag: _logTag);
+      loadTasks.add(getMenuList());
+    }
+    
+    // 如果有需要加载的数据，并行执行
+    if (loadTasks.isNotEmpty) {
+      await Future.wait(loadTasks);
+    }
+    
+    // 确保tab数据结构正确
+    final updatedHalls = lobbyListModel.value.halls ?? [];
+    if (tabDataList.length != updatedHalls.length) {
+      logDebug('🔄 Tab数据结构不匹配，重新初始化...', tag: _logTag);
+      tabDataList.clear();
+      for (int i = 0; i < updatedHalls.length; i++) {
+        tabDataList.add(<TableListModel>[].obs);
+      }
+    }
+    
+    // 确保选中的tab索引有效
+    if (selectedTab.value >= updatedHalls.length) {
+      logDebug('🔄 Tab索引无效，重置为0...', tag: _logTag);
+      selectedTab.value = 0;
+    }
+    
+    // 加载当前tab的数据（如果为空）
+    final currentTabIndex = selectedTab.value;
+    if (currentTabIndex < tabDataList.length && tabDataList[currentTabIndex].isEmpty) {
+      logDebug('🔄 当前tab数据为空，开始加载...', tag: _logTag);
+      await fetchDataForTab(currentTabIndex);
+    }
+    
+    // 确保轮询已启动
+    try {
+      startPolling();
+      logDebug('🔄 轮询已启动', tag: _logTag);
+    } catch (e) {
+      logError('⚠️ 启动轮询失败: $e', tag: _logTag);
+    }
+    
+    logDebug('✅ TableController: 智能重置数据完成', tag: _logTag);
   }
 
   /// 获取指定tab的数据

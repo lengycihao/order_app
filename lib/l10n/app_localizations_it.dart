@@ -471,5 +471,8 @@ class AppLocalizationsIt extends AppLocalizations {
   String get editRemark => 'Modifica Nota';
 
   @override
+  String get confirmOrder => 'Confermare l\'ordine?';
+
+  @override
   String get pleaseEnter => 'Per favore inserisci';
 }

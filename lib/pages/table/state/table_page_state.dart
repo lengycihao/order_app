@@ -8,11 +8,13 @@ class TablePageState {
   final RxBool _shouldShowSkeleton = true.obs;
   final RxBool _isFromLogin = false.obs;
   final RxBool _isInitialized = false.obs;
+  final RxBool _isLoginInitialLoading = false.obs; // 新增：登录后的初始加载状态
   
   // Getters
   bool get shouldShowSkeleton => _shouldShowSkeleton.value;
   bool get isFromLogin => _isFromLogin.value;
   bool get isInitialized => _isInitialized.value;
+  bool get isLoginInitialLoading => _isLoginInitialLoading.value; // 新增getter
   
   // 检查是否应该显示骨架图（不修改状态，只返回结果）
   bool shouldShowSkeletonForTab(List<RxList<TableListModel>> tabDataList, int selectedTab) {
@@ -36,16 +38,32 @@ class TablePageState {
   
   // 检查是否来自登录页面
   bool checkIfFromLogin(List<RxList<TableListModel>> tabDataList, dynamic lobbyListModel) {
-    final isFromLogin = tabDataList.isEmpty || 
-                       lobbyListModel.halls?.isEmpty == true;
+    // 检查是否是从点餐页面返回（通过检查是否有部分数据但结构不完整）
+    final hasPartialData = tabDataList.isNotEmpty && 
+                          lobbyListModel.halls != null && 
+                          lobbyListModel.halls!.isNotEmpty;
+    
+    // 只有在完全没有数据时才认为是来自登录页面
+    final isFromLogin = tabDataList.isEmpty && 
+                       (lobbyListModel.halls == null || lobbyListModel.halls!.isEmpty);
     
     _isFromLogin.value = isFromLogin;
     
+    // 如果是来自登录页面，设置初始加载状态
     if (isFromLogin) {
+      _isLoginInitialLoading.value = true;
       logDebug('✅ 检测到需要刷新数据（新登录或数据为空）', tag: 'TablePageState');
+    } else if (hasPartialData) {
+      logDebug('✅ 检测到部分数据存在，可能是从点餐页面返回', tag: 'TablePageState');
     }
     
     return isFromLogin;
+  }
+  
+  // 完成登录后的初始加载
+  void completeLoginInitialLoading() {
+    _isLoginInitialLoading.value = false;
+    logDebug('✅ 登录后初始加载完成', tag: 'TablePageState');
   }
   
   // 标记为已初始化
@@ -58,5 +76,6 @@ class TablePageState {
     _shouldShowSkeleton.value = true;
     _isFromLogin.value = false;
     _isInitialized.value = false;
+    _isLoginInitialLoading.value = false;
   }
 }

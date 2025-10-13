@@ -29,6 +29,7 @@ import 'error_handler.dart';
 import 'data_converter.dart';
 import 'models.dart';
 import '../services/cart_controller.dart';
+import 'package:order_app/utils/image_cache_manager.dart';
 
 enum SortType { none, priceAsc, priceDesc }
 
@@ -434,6 +435,9 @@ class OrderController extends GetxController {
     // 同步数据回到OrderController
     _syncCartFromController();
     
+    // 预加载购物车图片
+    _preloadCartImages();
+    
     // 如果购物车为空但本地有数据，可能是状态码210，延迟重试
     if ((cartInfo.value?.items == null || cartInfo.value!.items!.isEmpty) && cart.isNotEmpty && retryCount < 2) {
       logDebug('⚠️ 购物车数据可能不稳定，2秒后重试 (${retryCount + 1}/2)', tag: OrderConstants.logTag);
@@ -445,9 +449,41 @@ class OrderController extends GetxController {
     }
   }
 
+  /// 预加载购物车图片
+  void _preloadCartImages() {
+    if (cart.isEmpty) return;
+    
+    // 收集所有购物车商品的图片URL
+    List<String> imageUrls = [];
+    List<String> allergenUrls = [];
+    
+    for (final entry in cart.entries) {
+      final cartItem = entry.key;
+      
+      // 菜品图片
+      if (cartItem.dish.image.isNotEmpty) {
+        imageUrls.add(cartItem.dish.image);
+      }
+      
+      // 敏感物图标
+      if (cartItem.dish.allergens != null) {
+        for (final allergen in cartItem.dish.allergens!) {
+          if (allergen.icon != null && allergen.icon!.isNotEmpty) {
+            allergenUrls.add(allergen.icon!);
+          }
+        }
+      }
+    }
+    
+    // 异步预加载图片
+    if (imageUrls.isNotEmpty || allergenUrls.isNotEmpty) {
+      ImageCacheManager().preloadImagesAsync([...imageUrls, ...allergenUrls]);
+      logDebug('🖼️ 购物车预加载图片: ${imageUrls.length} 个菜品图片, ${allergenUrls.length} 个敏感物图标', tag: OrderConstants.logTag);
+    }
+  }
 
   /// 从API获取菜品数据
-  Future<void> _loadDishesFromApi() async {
+  Future<void> _loadDishesFromApi({bool refreshMode = false}) async {
     if (menuId.value == 0) {
       GlobalToast.error('获取菜品数据失败');
       return;
@@ -462,7 +498,8 @@ class OrderController extends GetxController {
       );
       
       if (result.isSuccess && result.data != null) {
-         _loadDishesFromData(result.data!);
+         // 刷新模式下不清空现有数据，保持搜索框状态
+         _loadDishesFromData(result.data!, clearExisting: !refreshMode);
       } else {
          GlobalToast.error(result.msg ?? '获取菜品数据失败');
       }
@@ -474,24 +511,36 @@ class OrderController extends GetxController {
   }
 
   /// 从数据加载菜品
-  void _loadDishesFromData(List<DishListModel> dishListModels) {
+  void _loadDishesFromData(List<DishListModel> dishListModels, {bool clearExisting = true}) {
      
     DataConverter.loadDishesFromData(
       dishListModels: dishListModels,
       categories: categories,
       dishes: dishes,
+      clearExisting: clearExisting, // 传递清空标志
     );
     
     // 将菜品数据传递给CartController
     _cartController.initializeDependencies(
       dishes: dishes,
       categories: categories,
-      isInitialized: isInitialized.value,
     );
     
     // 强制刷新UI
     categories.refresh();
     dishes.refresh();
+    
+    // 预加载菜品图片
+    _preloadDishImages();
+  }
+
+  /// 预加载菜品图片
+  void _preloadDishImages() {
+    if (dishes.isNotEmpty) {
+      // 异步预加载，不阻塞UI
+      ImageCacheManager().preloadDishImages(dishes);
+      logDebug('🖼️ 开始预加载菜品图片: ${dishes.length}个菜品', tag: OrderConstants.logTag);
+    }
   }
 
   // ========== 购物车操作 ==========
@@ -1179,7 +1228,7 @@ class OrderController extends GetxController {
 
   Future<void> refreshOrderData() async {
     logDebug('🔄 开始刷新点餐页面数据...', tag: OrderConstants.logTag);
-    await _loadDishesFromApi();
+    await _loadDishesFromApi(refreshMode: true);
     logDebug('✅ 点餐页面数据刷新完成', tag: OrderConstants.logTag);
   }
   

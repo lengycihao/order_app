@@ -19,32 +19,25 @@ class ModalUtils {
       backgroundColor: backgroundColor ?? Colors.transparent,
       builder: (context) {
         Widget wrappedChild = child;
-        
+
         if (height != null) {
-          wrappedChild = Container(
-            height: height,
-            child: child,
-          );
+          wrappedChild = Container(height: height, child: child);
         } else if (margin != null) {
-          wrappedChild = Container(
-            margin: margin,
-            child: child,
-          );
+          wrappedChild = Container(margin: margin, child: child);
         }
-        
+
         // 当 isScrollControlled 为 true 时，包装在 SingleChildScrollView 中，并设置适当的约束
         if (isScrollControlled) {
-          return SingleChildScrollView(
-            child: wrappedChild,
-          );
+          return SingleChildScrollView(child: wrappedChild);
         }
-        
+
         return wrappedChild;
       },
     );
   }
+
   /// 显示确认弹窗
-  /// 
+  ///
   /// [context] 上下文
   /// [title] 弹窗标题
   /// [message] 弹窗消息内容
@@ -62,7 +55,7 @@ class ModalUtils {
     String cancelText = '取消',
     VoidCallback? onConfirm,
     VoidCallback? onCancel,
-    Color confirmColor = const Color(0xFFFF8C00),
+    Color confirmColor = const Color(0xFFFF9027),
     Color cancelColor = const Color(0xFF4A4A4A),
   }) {
     return showDialog<bool>(
@@ -71,9 +64,7 @@ class ModalUtils {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: EdgeInsets.zero,
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -93,11 +84,16 @@ class ModalUtils {
                     textAlign: TextAlign.center,
                   ),
                 ),
-              
+
               // 消息内容区域
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.fromLTRB(20, title != null ? 0 : 20, 20, 20),
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  title != null ? 0 : 20,
+                  20,
+                  20,
+                ),
                 child: Text(
                   message,
                   style: TextStyle(
@@ -108,13 +104,10 @@ class ModalUtils {
                   textAlign: TextAlign.center,
                 ),
               ),
-              
+
               // 分割线
-              Container(
-                height: 1,
-                color: const Color(0xFFE0E0E0),
-              ),
-              
+              Container(height: 1, color: const Color(0xFFE0E0E0)),
+
               // 按钮区域
               IntrinsicHeight(
                 child: Row(
@@ -128,9 +121,7 @@ class ModalUtils {
                         },
                         child: Container(
                           height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                          ),
+                          decoration: BoxDecoration(color: Colors.transparent),
                           child: Center(
                             child: Text(
                               cancelText,
@@ -144,13 +135,10 @@ class ModalUtils {
                         ),
                       ),
                     ),
-                    
+
                     // 垂直分割线
-                    Container(
-                      width: 1,
-                      color: const Color(0xFFE0E0E0),
-                    ),
-                    
+                    Container(width: 1, color: const Color(0xFFE0E0E0)),
+
                     // 确认按钮
                     Expanded(
                       child: InkWell(
@@ -160,9 +148,7 @@ class ModalUtils {
                         },
                         child: Container(
                           height: 48,
-                          decoration: BoxDecoration(
-                            color: Colors.transparent,
-                          ),
+                          decoration: BoxDecoration(color: Colors.transparent),
                           child: Center(
                             child: Text(
                               confirmText,
@@ -181,15 +167,13 @@ class ModalUtils {
               ),
             ],
           ),
-      
-      
         );
       },
     );
   }
 
   /// 显示简单提示弹窗
-  /// 
+  ///
   /// [context] 上下文
   /// [message] 提示消息
   /// [confirmText] 确认按钮文字，默认为"确定"
@@ -206,9 +190,7 @@ class ModalUtils {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: EdgeInsets.zero,
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -227,13 +209,10 @@ class ModalUtils {
                   textAlign: TextAlign.center,
                 ),
               ),
-              
+
               // 分割线
-              Container(
-                height: 1,
-                color: const Color(0xFFE0E0E0),
-              ),
-              
+              Container(height: 1, color: const Color(0xFFE0E0E0)),
+
               // 确认按钮
               InkWell(
                 onTap: () {
@@ -243,9 +222,7 @@ class ModalUtils {
                 child: Container(
                   width: double.infinity,
                   height: 48,
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                  ),
+                  decoration: BoxDecoration(color: Colors.transparent),
                   child: Center(
                     child: Text(
                       confirmText,
@@ -266,7 +243,7 @@ class ModalUtils {
   }
 
   /// 显示加载弹窗
-  /// 
+  ///
   /// [context] 上下文
   /// [message] 加载提示文字，默认为"加载中..."
   static Future<void> showLoadingDialog({
@@ -279,9 +256,7 @@ class ModalUtils {
       builder: (BuildContext context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           contentPadding: EdgeInsets.all(24),
           content: Row(
             mainAxisSize: MainAxisSize.min,
@@ -299,10 +274,7 @@ class ModalUtils {
               SizedBox(width: 16),
               Text(
                 message,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: const Color(0xFF4A4A4A),
-                ),
+                style: TextStyle(fontSize: 16, color: const Color(0xFF4A4A4A)),
               ),
             ],
           ),
@@ -312,7 +284,7 @@ class ModalUtils {
   }
 
   /// 显示SnackBar提示
-  /// 
+  ///
   /// [context] 上下文
   /// [title] 提示标题
   /// [message] 提示消息
@@ -329,9 +301,7 @@ class ModalUtils {
         duration: duration,
         backgroundColor: const Color(0xFF4A4A4A),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
     );
   }
@@ -367,42 +337,53 @@ class ModalContainerWithMargin extends StatelessWidget {
         children: [
           // 标题栏
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: EdgeInsets.symmetric( vertical: 10),
+            margin: EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               border: Border(
-                bottom: BorderSide(
-                  color: const Color(0xFFE0E0E0),
-                  width: 1,
-                ),
+                bottom: BorderSide(color: const Color(0xFF999999), width: 0.4),
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF333333),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF333333),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (showCloseButton)
+                      GestureDetector(
+                        onTap: () {
+                          if (onClose != null) {
+                            onClose!();
+                          } else {
+                            Navigator.of(context).pop();
+                          }
+                        },
+                        child: Icon(
+                          Icons.close,
+                          size: 20,
+                          color: const Color(0xFF666666),
+                        ),
+                      ),
+                  ],
                 ),
-                if (showCloseButton)
-                  GestureDetector(
-                    onTap: () {
-                      if (onClose != null) {
-                        onClose!();
-                      } else {
-                        Navigator.of(context).pop();
-                      }
-                    },
-                    child: Icon(
-                      Icons.close,
-                      size: 20,
-                      color: const Color(0xFF666666),
-                    ),
-                  ),
+                // Container(
+                //   width: double.infinity,
+                //   padding: EdgeInsets.symmetric(horizontal: 0, vertical: 0),
+                //   child: Text(
+                //     context.l10n.excludeDishesWithAllergens,
+                //     style: TextStyle(fontSize: 12, color: Color(0xff666666)),
+                //   ),
+                // ),
               ],
             ),
           ),

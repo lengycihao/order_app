@@ -875,10 +875,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
 
   /// 构建单个桌台标签（可点击取消选中）
   Widget _buildTableChip(String tableId, String tableName) {
-    // 限制桌台名称长度，最多显示8个字符
-    String displayName = tableName.length > 8 
-        ? '${tableName.substring(0, 8)}...' 
-        : tableName;
+    // 不再限制桌台名称长度，改为动态调整字体大小
     
     // 获取桌台状态颜色
     final table = _getTableById(tableId);
@@ -895,7 +892,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         });
       },
       child: Container(
-        constraints: BoxConstraints(maxWidth: 120), // 限制标签最大宽度
+        constraints: BoxConstraints(maxWidth: 200), // 增加标签最大宽度
         padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
           color: bgColor,
@@ -912,15 +909,27 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
           mainAxisSize: MainAxisSize.min,
           children: [
             Flexible(
-              child: Text(
-                displayName,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: textColor,
-                ),
-                overflow: TextOverflow.ellipsis,
-                maxLines: 1,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // 根据文字长度动态调整字体大小
+                  double fontSize = 13;
+                  if (tableName.length > 12) {
+                    fontSize = 11;
+                  } else if (tableName.length > 8) {
+                    fontSize = 12;
+                  }
+                  
+                  return Text(
+                    tableName,
+                    style: TextStyle(
+                      fontSize: fontSize,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                    maxLines: 1,
+                  );
+                },
               ),
             ),
             SizedBox(width: 4),

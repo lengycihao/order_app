@@ -39,7 +39,7 @@ class NavigationManager {
     );
     
     // 等待页面构建完成
-    await Future.delayed(Duration(milliseconds: 300));
+    await Future.delayed(Duration(milliseconds: 500));
     
     // 执行隐式刷新，不显示骨架图
     await _performImplicitRefresh();
@@ -51,16 +51,94 @@ class NavigationManager {
   /// 不显示加载状态和骨架图，静默更新数据
   static Future<void> _performImplicitRefresh() async {
     try {
-      // 导入TableController
+      // 等待TableController初始化完成 - 增加等待时间和重试次数
+      int retryCount = 0;
+      const maxRetries = 20; // 增加重试次数
+      
+      while (retryCount < maxRetries) {
+        try {
+          final tableController = Get.find<TableControllerRefactored>();
+          
+          // 检查控制器是否已初始化且有数据
+          if (tableController.lobbyListModel.value.halls != null && 
+              tableController.lobbyListModel.value.halls!.isNotEmpty) {
+            print('✅ TableController已初始化且有大厅数据，开始隐式刷新');
+            break;
+          }
+        } catch (e) {
+          // TableController还未初始化，继续等待
+        }
+        
+        await Future.delayed(Duration(milliseconds: 200)); // 增加等待间隔
+        retryCount++;
+      }
+      
+      if (retryCount >= maxRetries) {
+        print('⚠️ TableController初始化超时，尝试强制刷新');
+        // 即使超时也尝试获取控制器并强制刷新
+        try {
+          final tableController = Get.find<TableControllerRefactored>();
+          await tableController.forceResetAllData();
+          print('✅ 强制刷新完成');
+          return;
+        } catch (e) {
+          print('❌ 强制刷新也失败: $e');
+          return;
+        }
+      }
+      
+      // 获取TableController
       final tableController = Get.find<TableControllerRefactored>();
+      
+      // 检查是否需要重新加载数据（数据为空时）
+      final halls = tableController.lobbyListModel.value.halls ?? [];
+      if (halls.isEmpty) {
+        print('🔄 检测到大厅数据为空，开始重新加载...');
+        await tableController.getLobbyList();
+        
+        // 重新获取大厅数据
+        final updatedHalls = tableController.lobbyListModel.value.halls ?? [];
+        if (updatedHalls.isEmpty) {
+          print('⚠️ 重新加载后大厅数据仍为空');
+          return;
+        }
+      }
       
       // 获取当前选中的tab索引
       final currentTabIndex = tableController.selectedTab.value;
+      final updatedHalls = tableController.lobbyListModel.value.halls ?? [];
       
-      // 执行隐式刷新当前tab的数据
-      await tableController.refreshDataForTab(currentTabIndex);
+      // 确保tab索引有效
+      if (currentTabIndex >= updatedHalls.length) {
+        print('⚠️ Tab索引无效: $currentTabIndex >= ${updatedHalls.length}，重置为0');
+        tableController.selectedTab.value = 0;
+      }
       
-      print('✅ 桌台数据隐式刷新完成 - Tab: $currentTabIndex');
+      // 检查当前tab的数据是否为空
+      final finalTabIndex = tableController.selectedTab.value;
+      if (finalTabIndex < tableController.tabDataList.length) {
+        final currentTabData = tableController.tabDataList[finalTabIndex];
+        if (currentTabData.isEmpty) {
+          print('🔄 检测到当前tab数据为空，开始加载...');
+          await tableController.fetchDataForTab(finalTabIndex);
+        } else {
+          print('🔄 当前tab已有数据，执行隐式刷新...');
+          await tableController.refreshDataForTab(finalTabIndex);
+        }
+      } else {
+        print('🔄 Tab数据结构不匹配，开始加载当前tab...');
+        await tableController.fetchDataForTab(finalTabIndex);
+      }
+      
+      // 启动轮询功能
+      try {
+        tableController.startPolling();
+        print('🔄 轮询已启动');
+      } catch (e) {
+        print('⚠️ 启动轮询失败: $e');
+      }
+      
+      print('✅ 桌台数据隐式刷新完成 - Tab: $finalTabIndex');
     } catch (e) {
       print('⚠️ 隐式刷新桌台数据失败: $e');
       // 如果TableController不存在，说明是首次进入，不需要刷新
@@ -108,8 +186,24 @@ class NavigationManager {
       if (Get.isRegistered<TableControllerRefactored>()) {
         final tableController = Get.find<TableControllerRefactored>();
         
+        // 首先确保大厅数据是最新的
+        await tableController.getLobbyList();
+        
+        // 检查大厅数据是否有效
+        final halls = tableController.lobbyListModel.value.halls ?? [];
+        if (halls.isEmpty) {
+          print('⚠️ 大厅数据为空，跳过桌台数据刷新');
+          return;
+        }
+        
         // 获取当前选中的tab索引
         final currentTabIndex = tableController.selectedTab.value;
+        
+        // 确保tab索引有效
+        if (currentTabIndex >= halls.length) {
+          print('⚠️ Tab索引无效: $currentTabIndex >= ${halls.length}');
+          return;
+        }
         
         // 执行隐式刷新当前tab的数据
         await tableController.refreshDataForTab(currentTabIndex);

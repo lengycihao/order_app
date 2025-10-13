@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:lib_domain/entrity/order/ordered_dish_model.dart';
+import 'package:order_app/widgets/robust_image_widget.dart';
 
 class OrderedDishItemWidget extends StatelessWidget {
   final OrderedDishModel dish;
@@ -45,25 +45,21 @@ class OrderedDishItemWidget extends StatelessWidget {
       child: ClipRRect(
         borderRadius: BorderRadius.circular(8),
         child: dish.image != null && dish.image!.isNotEmpty
-            ? CachedNetworkImage(
+            ? RobustImageWidget(
                 imageUrl: dish.image!,
+                width: 70,
+                height: 70,
                 fit: BoxFit.cover,
-                placeholder: (context, url) => Container(
-                  color: Colors.grey[200],
-                  child: Icon(
-                    Icons.restaurant,
-                    color: Colors.grey[400],
-                    size: 24,
-                  ),
-                ),
-                errorWidget: (context, url, error) => Container(
-                  color: Colors.grey[200],
-                  child: Icon(
-                    Icons.restaurant,
-                    color: Colors.grey[400],
-                    size: 24,
-                  ),
-                ),
+                borderRadius: BorderRadius.circular(8),
+                maxRetries: 3,
+                retryDelay: Duration(seconds: 2),
+                enableRetry: true,
+                onImageLoaded: () {
+                  // print('✅ 已点菜品图片加载成功: ${dish.name}');
+                },
+                onImageError: () {
+                  // print('❌ 已点菜品图片加载失败: ${dish.name}');
+                },
               )
             : Container(
                 color: Colors.grey[200],
@@ -152,23 +148,32 @@ class OrderedDishItemWidget extends StatelessWidget {
       children: validAllergens.map((allergen) {
         return Container(
           margin: EdgeInsets.only(right: 4),
-          child: CachedNetworkImage(
+          child: RobustImageWidget(
             imageUrl: allergen.icon!,
             width: 16,
             height: 16,
             fit: BoxFit.contain,
-            placeholder: (context, url) => Image.asset(
+            maxRetries: 2,
+            retryDelay: Duration(seconds: 1),
+            enableRetry: true,
+            placeholder: Image.asset(
               'assets/order_minganwu_place.webp',
               width: 16,
               height: 16,
               fit: BoxFit.contain,
             ),
-            errorWidget: (context, url, error) => Image.asset(
+            errorWidget: Image.asset(
               'assets/order_minganwu_place.webp',
               width: 16,
               height: 16,
               fit: BoxFit.contain,
             ),
+            onImageLoaded: () {
+              print('✅ 已点敏感物图标加载成功: ${allergen.label ?? "未知"}');
+            },
+            onImageError: () {
+              print('❌ 已点敏感物图标加载失败: ${allergen.label ?? "未知"}');
+            },
           ),
         );
       }).toList(),
@@ -203,8 +208,9 @@ class OrderedDishItemWidget extends StatelessWidget {
     );
   }
 
-  /// 格式化价格
+  /// 格式化价格（保持原始格式）
   String _formatPrice(double price) {
+    // 直接返回原始数值，不做任何格式化处理
     return price.toString();
   }
 }

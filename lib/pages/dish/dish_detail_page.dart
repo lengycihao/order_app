@@ -180,21 +180,21 @@ class _DishDetailPageState extends State<DishDetailPage> {
             const SizedBox(height: 8),
             // 敏感物信息（紧接着菜品名称）
             if (dish.allergens != null && dish.allergens!.isNotEmpty) ...[
-                Text(
-                context.l10n.allergens,
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF666666),
-                ),
-              ),
-              const SizedBox(height: 8),
+              //   Text(
+              //   context.l10n.allergens,
+              //   style: TextStyle(
+              //     fontSize: 14,
+              //     fontWeight: FontWeight.bold,
+              //     color: Color(0xFF666666),
+              //   ),
+              // ),
+              // const SizedBox(height: 8),
               Wrap(
                 spacing: 10,
                 runSpacing: 8,
                 children: dish.allergens!.map((allergen) {
-                  return Row(
-                    mainAxisSize: MainAxisSize.min,
+                  return Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
                       if (allergen.icon != null)
                         CachedNetworkImage(
@@ -210,9 +210,13 @@ class _DishDetailPageState extends State<DishDetailPage> {
                           ),
                         ),
                       if (allergen.icon != null) const SizedBox(width: 4),
-                      Text(
-                        allergen.label ?? '',
-                        style: const TextStyle(fontSize: 12, color: Color(0xFF3D3D3D)),
+                      Flexible(
+                        child: Text(
+                          allergen.label ?? '',
+                          style: const TextStyle(fontSize: 12, color: Color(0xFF3D3D3D)),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   );
@@ -256,7 +260,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
                 text: TextSpan(
                   children: [
                     TextSpan(
-                      text: '￥${dish.price ?? '0'}',
+                      text: '€${dish.price ?? '0'}',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -521,7 +525,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '￥',
+                      '€',
                       style: TextStyle(
                         fontSize: 12,
                         height: 1,

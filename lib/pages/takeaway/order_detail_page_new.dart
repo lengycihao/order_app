@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'order_detail_controller_new.dart';
 import 'model/takeaway_order_detail_model.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
+import 'package:order_app/widgets/robust_image_widget.dart';
+import 'package:order_app/utils/image_cache_manager.dart';
 
 class OrderDetailPageNew extends BaseDetailPageWidget {
   const OrderDetailPageNew({Key? key}) : super(key: key);
@@ -38,6 +39,9 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
 
   @override
   Widget buildDataContent() {
+    // 预加载订单详情图片
+    _preloadOrderDetailImages();
+    
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
@@ -54,11 +58,63 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
     );
   }
 
+  /// 预加载订单详情图片
+  void _preloadOrderDetailImages() {
+    final order = controller.orderDetail.value;
+    if (order?.details == null || order!.details!.isEmpty) return;
+    
+    // 收集所有商品的图片URL
+    List<String> imageUrls = [];
+    List<String> allergenUrls = [];
+    
+    for (final item in order.details!) {
+      // 商品图片
+      if (item.image != null && item.image!.isNotEmpty) {
+        imageUrls.add(item.image!);
+      }
+      
+      // 敏感物图标
+      if (item.allergens != null) {
+        for (final allergen in item.allergens!) {
+          if (allergen.icon != null && allergen.icon!.isNotEmpty) {
+            allergenUrls.add(allergen.icon!);
+          }
+        }
+      }
+    }
+    
+    // 异步预加载图片
+    if (imageUrls.isNotEmpty || allergenUrls.isNotEmpty) {
+      ImageCacheManager().preloadImagesAsync([...imageUrls, ...allergenUrls]);
+      print('🖼️ 外卖订单详情预加载图片: ${imageUrls.length} 个商品图片, ${allergenUrls.length} 个敏感物图标');
+    }
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xfff9f9f9),
       appBar: AppBar(
-        title: const Text(''),
+        title: Obx(() {
+          final order = controller.orderDetail.value;
+          if (order == null) {
+            return const Text('');
+          }
+          
+          // 根据结账状态显示标题
+          String statusText;
+          if (order.checkoutStatus == 1) {
+            // 已结账
+            statusText = Get.context!.l10n.paid;
+          } else if (order.checkoutStatus == 3) {
+            // 未结账
+            statusText = Get.context!.l10n.unpaid;
+          } else {
+            // 其他状态，使用服务器返回的状态名称
+            statusText = order.checkoutStatusName ?? '';
+          }
+          
+          return Text(statusText,style: TextStyle(fontSize: 24, fontWeight: FontWeight.w400,color: Color(0xFF000000)),);
+        }),
         centerTitle: true,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
@@ -69,15 +125,15 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
         ),
       ),
       body: Obx(() {
-        if (isLoading && !hasData) {
+        if (controller.isLoading.value && controller.orderDetail.value == null) {
           return buildLoadingWidget();
         }
 
-        if (hasNetworkError) {
+        if (controller.orderDetail.value == null && !controller.isLoading.value) {
           return buildNetworkErrorState();
         }
 
-        if (!hasData) {
+        if (controller.orderDetail.value == null) {
           return buildEmptyState();
         }
 
@@ -121,8 +177,10 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
           const SizedBox(height: 16),
           // 订单信息内容
           _buildInfoRow('${Get.context!.l10n.pickupCode}:', order.pickupCode ?? '1324'),
-          const SizedBox(height: 8),
-          _buildInfoRow('${Get.context!.l10n.remarks}：', order.remark ?? ''),
+          if (order.remark != null && order.remark!.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            _buildInfoRow('${Get.context!.l10n.remarks}：', order.remark ?? ''),
+          ],
           const SizedBox(height: 8),
           _buildInfoRow('${Get.context!.l10n.orderNo}:', order.orderNo ?? ''),
           const SizedBox(height: 8),
@@ -130,7 +188,7 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
           const SizedBox(height: 8),
           _buildInfoRow(
             '${Get.context!.l10n.orderPlacementTime}:',
-            order.formattedOrderTime ?? '9999-99-99 00:00:00',
+            order.formattedOrderTime,
           ),
         ],
       ),
@@ -179,29 +237,21 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(8),
                       child: item.image != null && item.image!.isNotEmpty
-                          ? CachedNetworkImage(
+                          ? RobustImageWidget(
                               imageUrl: item.image!,
                               width: 60,
                               height: 60,
                               fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                width: 60,
-                                height: 60,
-                                color: Colors.grey[200],
-                                child: const Icon(
-                                  Icons.image,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                width: 60,
-                                height: 60,
-                                color: Colors.grey[200],
-                                child: const Icon(
-                                  Icons.broken_image,
-                                  color: Colors.grey,
-                                ),
-                              ),
+                              borderRadius: BorderRadius.circular(8),
+                              maxRetries: 3,
+                              retryDelay: Duration(seconds: 2),
+                              enableRetry: true,
+                              onImageLoaded: () {
+                                print('✅ 外卖订单商品图片加载成功: ${item.name}');
+                              },
+                              onImageError: () {
+                                print('❌ 外卖订单商品图片加载失败: ${item.name}');
+                              },
                             )
                           : Container(
                               width: 60,
@@ -233,23 +283,32 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
                               spacing: 4,
                               runSpacing: 2,
                               children: item.allergens!.map<Widget>((allergen) {
-                                return CachedNetworkImage(
+                                return RobustImageWidget(
                                   imageUrl: allergen.icon!,
                                   width: 16,
                                   height: 16,
                                   fit: BoxFit.contain,
-                                  placeholder: (context, url) => Image.asset(
+                                  maxRetries: 2,
+                                  retryDelay: Duration(seconds: 1),
+                                  enableRetry: true,
+                                  placeholder: Image.asset(
                                     'assets/order_minganwu_place.webp',
                                     width: 16,
                                     height: 16,
                                     fit: BoxFit.contain,
                                   ),
-                                  errorWidget: (context, url, error) => Image.asset(
+                                  errorWidget: Image.asset(
                                     'assets/order_minganwu_place.webp',
                                     width: 16,
                                     height: 16,
                                     fit: BoxFit.contain,
                                   ),
+                                  onImageLoaded: () {
+                                    print('✅ 外卖敏感物图标加载成功: ${allergen.label ?? "未知"}');
+                                  },
+                                  onImageError: () {
+                                    print('❌ 外卖敏感物图标加载失败: ${allergen.label ?? "未知"}');
+                                  },
                                 );
                               }).toList(),
                             ),
@@ -376,7 +435,7 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.w400, color: Color(0xffFF1010)),
           ),
           Text(
-            '${controller.totalAmount.toStringAsFixed(2)}',
+            controller.totalAmount,
             style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xffFF1010)),
           ),
         ],

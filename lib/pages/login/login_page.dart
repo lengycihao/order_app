@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
                 padding: EdgeInsets.all(6),
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.6),
-                  borderRadius: BorderRadius.circular(15), // 圆角
+                  borderRadius: BorderRadius.circular(4), // 圆角
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -294,22 +294,7 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                 ),
-                                suffixIcon: GestureDetector(
-                                  onTap: controller.togglePasswordVisibility,
-                                  child: Container(
-                                    width: 48,
-                                    height: 40,
-                                    alignment: Alignment.center,
-                                    child: Padding(
-                                      padding: const EdgeInsets.only(right: 16),
-                                      child: Image.asset(
-                                        'assets/order_login_eye.webp',
-                                        width: 16,
-                                        height: 16,
-                                      ),
-                                    ),
-                                  ),
-                                ),
+                                suffixIcon: null,
                                 contentPadding: EdgeInsets.symmetric(
                                   vertical: 0,
                                   horizontal: 16,

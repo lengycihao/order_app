@@ -16,10 +16,12 @@ import 'package:order_app/pages/order/order_main_page.dart';
 import 'package:order_app/components/skeleton_widget.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
+import 'package:order_app/utils/modal_utils.dart';
 import 'package:lib_base/lib_base.dart';
 import 'package:lib_base/utils/navigation_manager.dart';
 import 'package:order_app/pages/nav/screen_nav_page.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
+import 'package:order_app/utils/image_cache_manager.dart';
 
 class OrderDishTab extends BaseListPageWidget {
   const OrderDishTab({super.key});
@@ -77,7 +79,26 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
 
   @override
   Future<void> onRefresh() async {
+    // 保存搜索框状态
+    final currentSearchText = _searchController.text;
+    final hasFocus = _searchFocusNode.hasFocus;
+    
     await controller.refreshData();
+    
+    // 恢复搜索框状态
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && currentSearchText.isNotEmpty) {
+          _searchController.text = currentSearchText;
+          controller.searchKeyword.value = currentSearchText;
+          
+          // 如果之前有焦点，尝试恢复焦点
+          if (hasFocus) {
+            _searchFocusNode.requestFocus();
+          }
+        }
+      });
+    }
   }
 
   @override
@@ -177,6 +198,17 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
       _categoryPositionsCalculated = false;
       _calculateCategoryPositions();
     });
+  }
+
+  /// 执行搜索功能 - 外卖页面专用
+  void _performSearch() {
+    // 强制释放焦点，确保光标消失
+    _searchFocusNode.unfocus();
+    FocusScope.of(context).unfocus();
+    // 强制隐藏键盘
+    SystemChannels.textInput.invokeMethod('TextInput.hide');
+    // 搜索提交时才计算位置
+    _calculateCategoryPositions();
   }
 
   /// 计算每个类目在列表中的位置 - 优化版本，使用防抖
@@ -291,7 +323,19 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
 
     if (controller.selectedCategory.value != calculatedIndex) {
       controller.selectedCategory.value = calculatedIndex;
+      
+      // 预加载当前分类附近的图片
+      _preloadNearbyImages(calculatedIndex);
     }
+  }
+
+  /// 预加载附近分类的图片
+  void _preloadNearbyImages(int currentIndex) {
+    if (controller.dishes.isEmpty) return;
+    
+    // 预加载当前分类前后2个分类的图片
+    const int range = 2;
+    ImageCacheManager().preloadNearbyImages(controller.dishes, currentIndex, range);
   }
 
   /// 滚动到指定类目
@@ -419,18 +463,61 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
     );
   }
 
+  /// 构建桌台信息文本，支持动态字号调整
+  Widget _buildTableInfoText() {
+    final tableName = controller.table.value?.tableName ?? 'null';
+    final adultCount = controller.adultCount.value;
+    final childCount = controller.childCount.value;
+    
+    final tableText = '${context.l10n.table}:$tableName';
+    final adultText = '${context.l10n.adults}:$adultCount';
+    final childText = '${context.l10n.children}:$childCount';
+    final fullText = '$tableText | $adultText $childText';
+    
+    // 根据文本长度动态调整字号
+    double fontSize = 12.0;
+    if (fullText.length > 30) {
+      fontSize = 10.0;
+    } else if (fullText.length > 20) {
+      fontSize = 11.0;
+    }
+    
+    return Text(
+      fullText,
+      style: TextStyle(
+        fontSize: fontSize,
+        color: Color(0xff666666),
+        fontWeight: FontWeight.w400,
+      ),
+      overflow: TextOverflow.ellipsis,
+      maxLines: 1,
+    );
+  }
+
   /// 构建搜索和筛选区域
   Widget _buildSearchAndFilter() {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Obx(() {
-        // 如果是外卖页面，直接显示搜索框
+        // 如果是外卖页面，显示搜索框和搜索按钮
         if (controller.source.value == 'takeaway') {
           return Row(
             children: [
               Expanded(
-                child: _buildSearchField(showClearIcon: true),
+                child: _buildSearchField(showClearIcon: true, showSearchIcon: false),
+              ),
+              SizedBox(width: 10),
+              // 搜索按钮
+              GestureDetector(
+                onTap: () {
+                  // 执行搜索功能
+                  _performSearch();
+                },
+                child: Image(
+                  image: AssetImage("assets/order_allergen_search.webp"),
+                  width: 20,
+                ),
               ),
               SizedBox(width: 15),
               // 敏感物筛选图标
@@ -453,15 +540,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                       alignment: Alignment.centerLeft,
                       height: 30,
                       child: !_showSearchField 
-                        ? Text(
-                            '${context.l10n.table}:${controller.table.value?.tableName ?? 'null'} | ${context.l10n.adults}:${controller.adultCount.value} ${context.l10n.children}:${controller.childCount.value}',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xff666666),
-                              fontWeight: FontWeight.w400,
-                            ),
-                            overflow: TextOverflow.ellipsis,
-                          )
+                        ? _buildTableInfoText()
                         : _buildSearchField(showClearIcon: true, showSearchIcon: false),
                     ),
                   ),
@@ -579,7 +658,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                                     : Color(0xff666666),
                                     fontSize: 12,
                                 fontWeight: isSelected 
-                                    ? FontWeight.bold 
+                                    ? FontWeight.w500 
                                     : FontWeight.normal,
                               ),
                             ),
@@ -888,6 +967,18 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   Future<void> _handleSubmitOrder() async {
     if (!mounted) return;
     
+    // 显示确认下单弹窗 - 与退出登录弹窗保持完全一致
+    final confirm = await ModalUtils.showConfirmDialog(
+      context: context,
+      message: context.l10n.confirmOrder,  // 使用message参数，不使用title
+      confirmText: context.l10n.confirm,
+      cancelText: context.l10n.cancel,
+      confirmColor: Color(0xFFFF9027), // 使用橙色确认按钮，与退出登录一致
+    );
+    
+    // 如果用户取消，直接返回
+    if (confirm != true) return;
+    
     // 根据订单来源判断处理方式
     if (controller.source.value == 'takeaway') {
       // 外卖订单：直接提交订单（不跳转到备注页面）
@@ -1085,8 +1176,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                         fontSize: 12,
                         height: 1,
                         color: Color(0xFFFF1010),
-                        fontWeight: FontWeight.bold,
-                      ),
+                       ),
                     ),
                     Text(
                       totalCount > 0 ? '$totalPrice' : '0',
@@ -1094,7 +1184,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                         fontSize: 24,
                         height: 1,
                         color: Color(0xFFFF1010),
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ],
@@ -1104,7 +1194,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
               GestureDetector(
                 onTap: _handleSubmitOrder,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                   decoration: BoxDecoration(
                     color: const Color(0xFFFF9027),
                     borderRadius: BorderRadius.circular(15),
@@ -1113,9 +1203,8 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                     context.l10n.placeOrder,
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
+                      fontSize: 14,
+                     ),
                   ),
                 ),
               ),
@@ -1256,14 +1345,16 @@ class _UnifiedStickyHeaderDelegate extends SliverPersistentHeaderDelegate {
     
     return Container(
       height: height,
-      padding: EdgeInsets.symmetric(horizontal: 16),
+      padding: EdgeInsets.symmetric(horizontal: 16).copyWith(left: 0),
       margin: EdgeInsets.only(left: 10),
       alignment: Alignment.centerLeft,
       child: Text(
-        categoryName,
+        categoryName,maxLines: 2,
+        overflow: TextOverflow.ellipsis,
         style: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w600,
+          
+          fontWeight: FontWeight.w500,
           color: Color(0xFF000000),
         ),
       ),

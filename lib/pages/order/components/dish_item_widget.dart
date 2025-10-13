@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
 import 'package:order_app/utils/l10n_utils.dart';
+import 'package:order_app/widgets/robust_image_widget.dart';
 
 /// 菜品列表项组件
 class DishItemWidget extends StatelessWidget {
@@ -128,38 +128,20 @@ class DishItemWidget extends StatelessWidget {
       return SizedBox.shrink();
     }
     
-    return CachedNetworkImage(
+    return DishImageWidget(
       imageUrl: dish.image,
       width: 100,
       height: 100,
       fit: BoxFit.contain,
-      imageBuilder: (context, imageProvider) => ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: Image(
-          image: imageProvider,
-          fit: BoxFit.contain,
-          width: 100,
-          height: 100,
-        ),
-      ),
-      placeholder: (context, url) => Container(
-        width: 100,
-        height: 100,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(Icons.image, color: Colors.grey),
-      ),
-      errorWidget: (context, url, error) => Container(
-        width: 100,
-        height: 100,
-        decoration: BoxDecoration(
-          color: Colors.grey.shade200,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(Icons.broken_image, color: Colors.grey),
-      ),
+      borderRadius: BorderRadius.circular(8),
+      onImageLoaded: () {
+        // 图片加载成功，可以在这里添加统计或日志
+        // print('✅ 菜品图片加载成功: ${dish.name}');
+      },
+      onImageError: () {
+        // 图片加载失败，可以在这里添加统计或日志
+        // print('❌ 菜品图片加载失败: ${dish.name}');
+      },
     );
   }
 
@@ -180,24 +162,27 @@ class DishItemWidget extends StatelessWidget {
             spacing: 4,
             runSpacing: 2,
             children: validAllergens.map((allergen) {
-              return CachedNetworkImage(
-                  imageUrl: allergen.icon!,
+              return RobustImageWidget(
+                imageUrl: allergen.icon!,
+                width: 12,
+                height: 12,
+                fit: BoxFit.contain,
+                maxRetries: 2,
+                retryDelay: const Duration(milliseconds: 500),
+                enableRetry: true,
+                placeholder: Image.asset(
+                  'assets/order_minganwu_place.webp',
                   width: 12,
                   height: 12,
                   fit: BoxFit.contain,
-                  placeholder: (context, url) => Image.asset(
-                    'assets/order_minganwu_place.webp',
-                    width: 12,
-                    height: 12,
-                    fit: BoxFit.contain,
-                  ),
-                  errorWidget: (context, url, error) => Image.asset(
-                    'assets/order_minganwu_place.webp',
-                    width: 12,
-                    height: 12,
-                    fit: BoxFit.contain,
-                  ),
-                );
+                ),
+                errorWidget: Image.asset(
+                  'assets/order_minganwu_place.webp',
+                  width: 12,
+                  height: 12,
+                  fit: BoxFit.contain,
+                ),
+              );
             }).toList(),
           ),
         );
@@ -260,7 +245,7 @@ class DishItemWidget extends StatelessWidget {
           textBaseline: TextBaseline.alphabetic,
           children: [
             Text(
-              "￥",
+              "€",
               style: TextStyle(
                 fontSize: 8,
                 color: Color(0xFF000000),

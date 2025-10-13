@@ -114,7 +114,7 @@ class MineController extends GetxController {
         message: Get.context!.l10n.areYouSureToLogout,
         confirmText:  Get.context!.l10n.confirm,
         cancelText: Get.context!.l10n.cancel,
-        confirmColor: Colors.red,
+        confirmColor: Color(0xFFFF9027),
       );
       
       if (confirm != true) return;

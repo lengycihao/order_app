@@ -59,15 +59,9 @@ class TakeawayOrderDetailResponse {
 
   Map<String, dynamic> toJson() => _$TakeawayOrderDetailResponseToJson(this);
 
-  /// 获取格式化的订单时间
+  /// 获取订单时间（直接返回接口原始数据，不进行二次处理）
   String get formattedOrderTime {
-    if (orderTime == null || orderTime!.isEmpty) return '';
-    try {
-      final dateTime = DateTime.parse(orderTime!);
-      return '${dateTime.month.toString().padLeft(2, '0')}/${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
-    } catch (e) {
-      return orderTime!;
-    }
+    return orderTime ?? '';
   }
 
   /// 获取格式化的总金额

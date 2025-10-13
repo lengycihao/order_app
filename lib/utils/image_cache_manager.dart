@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:lib_base/logging/logging.dart';
+import 'package:order_app/pages/order/model/dish.dart';
 
 /// 图片缓存管理器
 class ImageCacheManager {
@@ -13,6 +14,12 @@ class ImageCacheManager {
   
   /// 最大预加载数量
   static const int maxPreloadCount = 20;
+  
+  /// 预加载队列
+  final List<String> _preloadQueue = [];
+  
+  /// 是否正在预加载
+  bool _isPreloading = false;
 
   /// 预加载图片
   Future<void> preloadImages(List<String> urls) async {
@@ -31,10 +38,64 @@ class ImageCacheManager {
           _preloadUrls.add(url);
           logDebug('预加载图片成功: $url', tag: 'ImageCacheManager');
         } catch (e) {
-          logError('预加载图片失败: $url, 错误: $e', tag: 'ImageCacheManager');
+          // logError('预加载图片失败: $url, 错误: $e', tag: 'ImageCacheManager');
         }
       }
     }
+  }
+
+  /// 预加载菜品图片
+  Future<void> preloadDishImages(List<Dish> dishes) async {
+    if (dishes.isEmpty) return;
+    
+    // 提取图片URL
+    final imageUrls = dishes
+        .where((dish) => dish.image.isNotEmpty)
+        .map((dish) => dish.image)
+        .toList();
+    
+    // 提取敏感物图标URL
+    final allergenUrls = dishes
+        .where((dish) => dish.allergens != null && dish.allergens!.isNotEmpty)
+        .expand((dish) => dish.allergens!)
+        .where((allergen) => allergen.icon != null && allergen.icon!.isNotEmpty)
+        .map((allergen) => allergen.icon!)
+        .toList();
+    
+    // 合并所有URL
+    final allUrls = [...imageUrls, ...allergenUrls];
+    
+    await preloadImages(allUrls);
+  }
+
+  /// 异步预加载图片（不阻塞UI）
+  void preloadImagesAsync(List<String> urls) {
+    if (_isPreloading) {
+      // 如果正在预加载，将URL添加到队列
+      _preloadQueue.addAll(urls);
+      return;
+    }
+    
+    _isPreloading = true;
+    preloadImages(urls).then((_) {
+      _isPreloading = false;
+      
+      // 处理队列中的URL
+      if (_preloadQueue.isNotEmpty) {
+        final queuedUrls = List<String>.from(_preloadQueue);
+        _preloadQueue.clear();
+        preloadImagesAsync(queuedUrls);
+      }
+    });
+  }
+
+  /// 预加载可见区域附近的图片
+  void preloadNearbyImages(List<Dish> allDishes, int currentIndex, int range) {
+    final startIndex = (currentIndex - range).clamp(0, allDishes.length - 1);
+    final endIndex = (currentIndex + range).clamp(0, allDishes.length - 1);
+    
+    final nearbyDishes = allDishes.sublist(startIndex, endIndex + 1);
+    preloadImagesAsync(nearbyDishes.map((dish) => dish.image).where((url) => url.isNotEmpty).toList());
   }
 
   /// 清理所有缓存

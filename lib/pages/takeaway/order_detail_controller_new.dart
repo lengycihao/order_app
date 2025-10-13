@@ -147,7 +147,7 @@ class OrderDetailControllerNew extends GetxController {
   }
 
   /// 获取商品总价（直接使用接口返回的总金额）
-  double get subtotal {
+  String get subtotal {
     return totalAmount;
   }
 
@@ -163,16 +163,12 @@ class OrderDetailControllerNew extends GetxController {
     return 2.00;
   }
 
-  /// 获取总金额（直接使用接口返回的数据）
-  double get totalAmount {
+  /// 获取总金额（直接使用接口返回的数据，保持原始格式）
+  String get totalAmount {
     if (orderDetail.value?.totalAmount != null && orderDetail.value!.totalAmount!.isNotEmpty) {
-      try {
-        return double.parse(orderDetail.value!.totalAmount!);
-      } catch (e) {
-        return 0.0;
-      }
+      return orderDetail.value!.totalAmount!;
     }
-    return 0.0;
+    return '0';
   }
 
   /// 获取配送信息（模拟数据，实际应该从API获取）

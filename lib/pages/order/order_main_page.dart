@@ -189,6 +189,12 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
                 ),
               ),
             ),
+          ] else ...[
+            // 外卖页面右侧添加占位元素，确保标题居中
+            Container(
+              width: 32,
+              height: 32,
+            ),
           ],
         ],
       ),
@@ -209,12 +215,12 @@ class _OrderMainPageState extends State<OrderMainPage> with TickerProviderStateM
             text,
             style: TextStyle(
               color: isTakeawaySource 
-                ? Colors.black  // 外卖来源：黑色
+                ? Color(0xFF000000)  // 外卖来源：#000000
                 : (isSelected ? Colors.orange : Color(0xFF666666)), // 其他来源：保持原样
               fontSize: isTakeawaySource ? 24 : 16, // 外卖来源：24pt，其他来源：16pt
               fontWeight: isTakeawaySource 
-                ? FontWeight.bold  // 外卖来源：加粗
-                : (isSelected ? FontWeight.bold : FontWeight.normal), // 其他来源：保持原样
+                ? FontWeight.w500  // 外卖来源：加粗
+                : (isSelected ? FontWeight.w500 : FontWeight.normal), // 其他来源：保持原样
             ),
           ),
           // 外卖来源不显示状态条，其他来源保持原样

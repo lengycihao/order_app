@@ -366,7 +366,7 @@ class TableCard extends StatelessWidget {
               child: Container(
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: Color(0xffFF9027), width: 2),
+                  border: Border.all(color: Color(0xffFF9027), width: 1),
                 ),
               ),
             ),

@@ -395,9 +395,24 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
           enablePullUp: hasMore,
           onRefresh: () async {
             logDebug('开始刷新标签页 $tabIndex', tag: 'TakeawayPage');
+            
+            // 保存搜索框状态
+            final currentSearchText = controller.searchController.text;
+            
             try {
               await controller.refreshData(tabIndex);
               logDebug('刷新完成标签页 $tabIndex', tag: 'TakeawayPage');
+              
+              // 恢复搜索框状态
+              if (mounted && currentSearchText.isNotEmpty) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (mounted) {
+                    controller.searchController.text = currentSearchText;
+                    controller.preserveSearchState();
+                  }
+                });
+              }
+              
               // 通知刷新完成
               refreshController.refreshCompleted();
             } catch (e) {
@@ -684,7 +699,7 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
     
     return Draggable(
       feedback: Material(
-        elevation: 12.0,
+        elevation: 0,
         shape: const CircleBorder(),
         color: Colors.transparent,
         child: Container(
@@ -693,13 +708,6 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
           decoration: BoxDecoration(
             color: Color(0xFFFF9027),
             shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: Offset(0, 6),
-              ),
-            ],
           ),
           child: Icon(
             Icons.add,
@@ -747,10 +755,9 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
     }
     
     final opacity = isDragging ? 0.9 : 1.0;
-    final elevation = isDragging ? 8.0 : 4.0;
     
     return Material(
-      elevation: elevation,
+      elevation: 0,
       shape: const CircleBorder(),
       color: Colors.transparent,
       child: Container(
@@ -759,13 +766,6 @@ class _DraggableFabState extends State<_DraggableFab> with SingleTickerProviderS
         decoration: BoxDecoration(
           color: Color(0xFFFF9027).withValues(alpha: opacity),
           shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: elevation,
-              offset: Offset(0, elevation / 2),
-            ),
-          ],
         ),
         child: widget.isLoading 
           ? RestaurantLoadingWidget(
