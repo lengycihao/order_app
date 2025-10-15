@@ -191,11 +191,11 @@ class WebSocketManager {
 
       final success = await connection.sendRawMessage(message);
       if (success) {
-        logDebug('📤 发送添加菜品消息: 桌台$tableId, 菜品$dishId, 数量$quantity', tag: 'WebSocketManager');
+        // logDebug('📤 发送添加菜品消息: 桌台$tableId, 菜品$dishId, 数量$quantity', tag: 'WebSocketManager');
       }
       return success;
     } catch (e) {
-      logDebug('❌ 发送添加菜品消息失败: $e', tag: 'WebSocketManager');
+      // logDebug('❌ 发送添加菜品消息失败: $e', tag: 'WebSocketManager');
       return false;
     }
   }
@@ -231,11 +231,11 @@ class WebSocketManager {
 
       final success = await connection.sendRawMessage(message);
       if (success) {
-        logDebug('📤 发送添加菜品消息: 桌台$tableId, 菜品$dishId, 数量$quantity, 消息ID$messageId', tag: 'WebSocketManager');
+        // logDebug('📤 发送添加菜品消息: 桌台$tableId, 菜品$dishId, 数量$quantity, 消息ID$messageId', tag: 'WebSocketManager');
       }
       return success;
     } catch (e) {
-      logDebug('❌ 发送添加菜品消息失败: $e', tag: 'WebSocketManager');
+      // logDebug('❌ 发送添加菜品消息失败: $e', tag: 'WebSocketManager');
       return false;
     }
   }
@@ -501,7 +501,7 @@ class WebSocketManager {
       // 验证消息中的table_id是否匹配当前桌台
       final messageTableId = messageData['table_id']?.toString();
       if (messageTableId != null && messageTableId != tableId) {
-        logDebug('⚠️ 收到其他桌台($messageTableId)的消息，当前桌台($tableId),消息类型(${messageData['type']})，跳过处理', tag: 'WebSocketManager');
+        // logDebug('⚠️ 收到其他桌台($messageTableId)的消息，当前桌台($tableId),消息类型(${messageData['type']})，跳过处理', tag: 'WebSocketManager');
         return;
       }
       

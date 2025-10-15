@@ -130,13 +130,13 @@ class NavigationManager {
         await tableController.fetchDataForTab(finalTabIndex);
       }
       
-      // 启动轮询功能
-      try {
-        tableController.startPolling();
-        print('🔄 轮询已启动');
-      } catch (e) {
-        print('⚠️ 启动轮询失败: $e');
-      }
+      // 启动轮询功能 - 已关闭
+      // try {
+      //   tableController.startPolling();
+      //   print('🔄 轮询已启动');
+      // } catch (e) {
+      //   print('⚠️ 启动轮询失败: $e');
+      // }
       
       print('✅ 桌台数据隐式刷新完成 - Tab: $finalTabIndex');
     } catch (e) {

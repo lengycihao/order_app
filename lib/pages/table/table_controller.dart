@@ -55,13 +55,15 @@ class TableControllerRefactored extends GetxController {
     _pollingManager = TablePollingManager();
     _wsManager = TableWebSocketManager(wsManager: wsManager);
     
-    // 启动轮询功能
-    _pollingManager.startPolling(onPolling: _performPollingRefresh);
+    // 启动轮询功能 - 已关闭
+    // _pollingManager.startPolling(onPolling: _performPollingRefresh);
+    // 强制停止轮询，确保轮询完全关闭
+    _pollingManager.stopPolling();
     
     // 初始化WebSocket状态监控
     _wsManager.initializeStatusMonitoring();
     
-    logDebug('✅ 服务模块初始化完成（轮询已启动）', tag: _logTag);
+    logDebug('✅ 服务模块初始化完成（轮询已关闭）', tag: _logTag);
   }
 
   /// 加载初始数据
@@ -220,13 +222,13 @@ class TableControllerRefactored extends GetxController {
       await fetchDataForTab(currentTabIndex);
     }
     
-    // 确保轮询已启动
-    try {
-      startPolling();
-      logDebug('🔄 轮询已启动', tag: _logTag);
-    } catch (e) {
-      logError('⚠️ 启动轮询失败: $e', tag: _logTag);
-    }
+    // 确保轮询已启动 - 已关闭
+    // try {
+    //   startPolling();
+    //   logDebug('🔄 轮询已启动', tag: _logTag);
+    // } catch (e) {
+    //   logError('⚠️ 启动轮询失败: $e', tag: _logTag);
+    // }
     
     logDebug('✅ TableController: 智能重置数据完成', tag: _logTag);
   }
@@ -439,44 +441,45 @@ class TableControllerRefactored extends GetxController {
     }
   }
 
-  /// 执行轮询刷新
-  Future<void> _performPollingRefresh() async {
-    // 如果当前正在加载，跳过本次轮询
-    if (isLoading.value) return;
-    
-    // 检查大厅数据是否有效
-    if (lobbyListModel.value.halls == null || 
-        lobbyListModel.value.halls!.isEmpty) {
-      logDebug('⚠️ 轮询刷新跳过: 大厅数据无效', tag: _logTag);
-      return;
-    }
-    
-    // 确保选中的tab索引有效
-    final currentTabIndex = selectedTab.value.clamp(0, lobbyListModel.value.halls!.length - 1);
-    if (currentTabIndex != selectedTab.value) {
-      selectedTab.value = currentTabIndex;
-      logDebug('🔄 轮询刷新: 调整选中tab索引为 $currentTabIndex', tag: _logTag);
-    }
-    
-    // 刷新当前选中的tab数据
-    await refreshDataForTab(currentTabIndex);
-    
-    // 同时刷新已预加载的相邻tab数据
-    _preloadManager.refreshPreloadedTabs(
-      currentIndex: currentTabIndex,
-      totalTabs: lobbyListModel.value.halls!.length,
-      lobbyListModel: lobbyListModel.value,
-      tabDataList: tabDataList,
-      onDataLoaded: (loadedIndex) {
-        logDebug('✅ Tab $loadedIndex 轮询刷新完成', tag: _logTag);
-      },
-    );
-  }
+  /// 执行轮询刷新 - 已关闭
+  // Future<void> _performPollingRefresh() async {
+  //   // 如果当前正在加载，跳过本次轮询
+  //   if (isLoading.value) return;
+  //   
+  //   // 检查大厅数据是否有效
+  //   if (lobbyListModel.value.halls == null || 
+  //       lobbyListModel.value.halls!.isEmpty) {
+  //     logDebug('⚠️ 轮询刷新跳过: 大厅数据无效', tag: _logTag);
+  //     return;
+  //   }
+  //   
+  //   // 确保选中的tab索引有效
+  //   final currentTabIndex = selectedTab.value.clamp(0, lobbyListModel.value.halls!.length - 1);
+  //   if (currentTabIndex != selectedTab.value) {
+  //     selectedTab.value = currentTabIndex;
+  //     logDebug('🔄 轮询刷新: 调整选中tab索引为 $currentTabIndex', tag: _logTag);
+  //   }
+  //   
+  //   // 刷新当前选中的tab数据
+  //   await refreshDataForTab(currentTabIndex);
+  //   
+  //   // 同时刷新已预加载的相邻tab数据
+  //   _preloadManager.refreshPreloadedTabs(
+  //     currentIndex: currentTabIndex,
+  //     totalTabs: lobbyListModel.value.halls!.length,
+  //     lobbyListModel: lobbyListModel.value,
+  //     tabDataList: tabDataList,
+  //     onDataLoaded: (loadedIndex) {
+  //       logDebug('✅ Tab $loadedIndex 轮询刷新完成', tag: _logTag);
+  //     },
+  //   );
+  // }
 
-  /// 启动轮询
+  /// 启动轮询 - 已关闭
   void startPolling() {
-    _pollingManager.resumePolling(onPolling: _performPollingRefresh);
-    logDebug('🔄 轮询已启动', tag: _logTag);
+    // _pollingManager.resumePolling(onPolling: _performPollingRefresh);
+    // logDebug('🔄 轮询已启动', tag: _logTag);
+    logDebug('🔄 轮询功能已关闭', tag: _logTag);
   }
 
   /// 停止轮询
@@ -489,10 +492,11 @@ class TableControllerRefactored extends GetxController {
     _pollingManager.pausePolling();
   }
 
-  /// 恢复轮询（页面可见时调用）
+  /// 恢复轮询（页面可见时调用） - 已关闭
   void resumePolling() {
-    _pollingManager.resumePolling(onPolling: _performPollingRefresh);
-    logDebug('▶️ 轮询已恢复', tag: _logTag);
+    // _pollingManager.resumePolling(onPolling: _performPollingRefresh);
+    // logDebug('▶️ 轮询已恢复', tag: _logTag);
+    logDebug('▶️ 轮询功能已关闭', tag: _logTag);
   }
 
   /// 获取WebSocket连接统计信息

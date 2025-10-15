@@ -37,8 +37,25 @@ class MineController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    _loadUserInfo();
-    _loadWaiterInfo(); // 加载服务员详细信息
+    // 延迟初始化，确保AuthService完全准备好
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeUserData();
+    });
+  }
+
+  /// 初始化用户数据
+  Future<void> _initializeUserData() async {
+    try {
+      // 等待一小段时间确保AuthService完全初始化
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      _loadUserInfo();
+      await _loadWaiterInfo(); // 加载服务员详细信息
+      
+      logDebug('✅ MineController 用户数据初始化完成', tag: 'MineController');
+    } catch (e) {
+      logError('❌ MineController 用户数据初始化失败: $e', tag: 'MineController');
+    }
   }
 
   /// 加载用户信息（兼容性保持）
@@ -73,6 +90,12 @@ class MineController extends GetxController {
     try {
       isLoading.value = true;
       
+      // 确保AuthService已准备好
+      if (!_authService.isLoggedIn) {
+        logDebug('⚠️ 用户未登录，跳过服务员信息加载', tag: 'MineController');
+        return;
+      }
+      
       final result = await _baseApi.getWaiterInfo();
       
       if (result.isSuccess && result.data != null) {
@@ -88,21 +111,53 @@ class MineController extends GetxController {
         logDebug('✅ 服务员信息加载成功: ${waiterInfo.name}', tag: 'MineController');
       } else {
         logDebug('❌ 服务员信息加载失败: ${result.msg}', tag: 'MineController');
-        // 保持现有信息，不显示错误
+        // 如果API失败，至少保持从AuthService获取的基本信息
+        _ensureBasicUserInfo();
       }
     } catch (e) {
       logDebug('❌ 服务员信息加载异常: $e', tag: 'MineController');
-      // 保持现有信息，不显示错误
+      // 如果API异常，至少保持从AuthService获取的基本信息
+      _ensureBasicUserInfo();
     } finally {
       isLoading.value = false;
     }
   }
 
+  /// 确保基本用户信息不为空
+  void _ensureBasicUserInfo() {
+    final user = _authService.currentUser;
+    if (user != null) {
+      // 如果昵称为空，使用AuthService中的信息
+      if (nickname.value.isEmpty) {
+        nickname.value = user.waiterName ?? '未知用户';
+      }
+      if (account.value.isEmpty) {
+        account.value = user.waiterId?.toString() ?? '未知ID';
+      }
+      logDebug('✅ 已确保基本用户信息: ${nickname.value}', tag: 'MineController');
+    }
+  }
+
   /// 刷新用户信息
   Future<void> refreshUserInfo() async {
-    await _authService.refreshUserInfo();
-    _loadUserInfo();
-    await _loadWaiterInfo(); // 同时刷新服务员信息
+    try {
+      logDebug('🔄 开始刷新用户信息...', tag: 'MineController');
+      
+      // 先刷新AuthService中的用户信息
+      await _authService.refreshUserInfo();
+      
+      // 重新加载用户信息
+      _loadUserInfo();
+      
+      // 重新加载服务员详细信息
+      await _loadWaiterInfo();
+      
+      logDebug('✅ 用户信息刷新完成', tag: 'MineController');
+    } catch (e) {
+      logError('❌ 刷新用户信息失败: $e', tag: 'MineController');
+      // 即使刷新失败，也确保基本信息不为空
+      _ensureBasicUserInfo();
+    }
   }
 
   // 处理点击事件的业务逻辑

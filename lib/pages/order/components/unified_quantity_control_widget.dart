@@ -5,6 +5,7 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/pages/order/order_element/models.dart';
 import 'package:order_app/pages/order/components/specification_modal_widget.dart';
 import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
+import 'package:order_app/utils/cart_animation_registry.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 
 /// 统一的数量控制组件
@@ -64,7 +65,7 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
       children: [
         // 减号按钮
         Obx(() => GestureDetector(
-          onTap: orderController.isCartOperationLoading.value ? null : (onRemoveTap ?? () {
+          onTap: orderController.isDishLoading(dish.id) ? null : (onRemoveTap ?? () {
             // 找到对应的购物车项进行删除
             CartItem? targetCartItem;
             for (var entry in orderController.cart.entries) {
@@ -80,13 +81,10 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
           behavior: HitTestBehavior.opaque, // 阻止事件穿透
           child: Container(
             padding: EdgeInsets.all(8), // 增大点击区域
-            child: Opacity(
-              opacity: orderController.isCartOperationLoading.value ? 0.5 : 1.0,
-              child: Image(
-                image: AssetImage('assets/order_reduce_num.webp'),
-                width: 22,
-                height: 22,
-              ),
+            child: Image(
+              image: AssetImage('assets/order_reduce_num.webp'),
+              width: 22,
+              height: 22,
             ),
           ),
         )),
@@ -102,33 +100,43 @@ class UnifiedQuantityControlWidget extends StatelessWidget {
         ),
         const SizedBox(width: 7),
         // 加号按钮
-        Obx(() => GestureDetector(
-          key: _addButtonKey,
-          onTap: orderController.isCartOperationLoading.value ? null : (onAddTap ?? () {
-            // 触发抛物线动画（如果有购物车按钮key）
-            if (cartButtonKey != null) {
-              ParabolicAnimationManager.triggerAddToCartAnimation(
-                context: Get.context!,
-                addButtonKey: _addButtonKey,
-                cartButtonKey: cartButtonKey!,
-              );
-            }
-            
-            orderController.addToCart(dish);
-          }),
-          behavior: HitTestBehavior.opaque, // 阻止事件穿透
-          child: Container(
-            padding: EdgeInsets.all(8), // 增大点击区域
-            child: Opacity(
-              opacity: orderController.isCartOperationLoading.value ? 0.5 : 1.0,
-              child: Image(
-                image: AssetImage('assets/order_add_num.webp'),
-                width: 22,
-                height: 22,
+        Obx(() {
+          final isLoading = orderController.isDishLoading(dish.id);
+          final isAddDisabled = orderController.isDishAddDisabled(dish.id);
+          final isDisabled = isLoading || isAddDisabled;
+          
+          return GestureDetector(
+            key: _addButtonKey,
+            onTap: isDisabled ? null : (onAddTap ?? () {
+              // 计算并登记动画坐标（不立即播放）
+              if (cartButtonKey != null) {
+                try {
+                  final RenderBox? addBox = _addButtonKey.currentContext?.findRenderObject() as RenderBox?;
+                  final RenderBox? cartBox = cartButtonKey!.currentContext?.findRenderObject() as RenderBox?;
+                  if (addBox != null && cartBox != null) {
+                    final addPos = addBox.localToGlobal(Offset.zero) + Offset(addBox.size.width * 0.2, addBox.size.height * 0.2);
+                    final cartPos = cartBox.localToGlobal(Offset.zero) + Offset(cartBox.size.width / 2, cartBox.size.height / 2);
+                    CartAnimationRegistry.enqueue(addPos, cartPos);
+                  }
+                } catch (_) {}
+              }
+
+              orderController.addToCart(dish);
+            }),
+            behavior: HitTestBehavior.opaque, // 阻止事件穿透
+            child: Container(
+              padding: EdgeInsets.all(8), // 增大点击区域
+              child: Opacity(
+                opacity: isAddDisabled ? 0.3 : 1.0, // 14005错误时置灰
+                child: Image(
+                  image: AssetImage('assets/order_add_num.webp'),
+                  width: 22,
+                  height: 22,
+                ),
               ),
             ),
-          ),
-        )),
+          );
+        }),
       ],
     );
   }

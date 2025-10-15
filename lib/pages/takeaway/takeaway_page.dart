@@ -161,7 +161,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
       child: Obx(() {
       // 优先显示网络错误状态，避免在重新加载时闪烁
       if (hasNetworkError && !hasData) {
-        return buildNetworkErrorState();
+        return _buildContentWithEmptyState(isNetworkError: true);
       }
 
       // 如果应该显示骨架图且正在加载且没有数据，显示带搜索框的骨架图
@@ -174,9 +174,9 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
         return buildLoadingWidget();
       }
 
-      // 如果没有数据且没在加载，显示空状态
+      // 如果没有数据且没在加载，显示带搜索框的空状态
       if (!hasData) {
-        return buildEmptyState();
+        return _buildContentWithEmptyState(isNetworkError: false);
       }
 
       // 有数据时显示内容
@@ -196,6 +196,63 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
           child: Container(
             color: Colors.transparent,
             child: const TakeawayListSkeleton(), // 使用新的列表骨架图
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// 构建带搜索框的空状态内容
+  Widget _buildContentWithEmptyState({required bool isNetworkError}) {
+    return Column(
+      children: [
+        // 显示真实的搜索框
+        _buildSearchBar(),
+        // 列表区域显示空状态
+        Expanded(
+          child: Container(
+            color: Colors.transparent,
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Image.asset(
+                    isNetworkError ? 'assets/order_nonet.webp' : 'assets/order_empty.webp',
+                    width: 180,
+                    height: 100,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    isNetworkError ? context.l10n.networkErrorPleaseTryAgain : context.l10n.noData,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFFFF9027),
+                    ),
+                  ),
+                  if (isNetworkError) ...[
+                    const SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: () async {
+                        // 重新加载当前tab的数据
+                        await controller.refreshData(_currentTabIndex);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF9027),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: Text(
+                        context.l10n.loadAgain,
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -361,7 +418,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
           );
         } else {
           logDebug('❌ 桌台数据无效，tableId: ${tableData?.tableId}', tag: 'TakeawayPage');
-          GlobalToast.error('开桌失败：桌台数据无效');
+          // GlobalToast.error('开桌失败：桌台数据无效');
         }
       } else {
         // 开桌失败，不跳转页面

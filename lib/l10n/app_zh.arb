@@ -1,4 +1,5 @@
 {
+  "@@locale": "zh",
   "appTitle": "欧华餐饮系统(服务员)",
   "@appTitle": {
     "description": "应用程序标题"
@@ -43,9 +44,9 @@
   "@accountLoggedInOnAnotherDevice": {
     "description": "账号已在其他设备登录"
   },
-  "table": "桌子",
+  "table": "桌台",
   "@table": {
-    "description": "桌子"
+    "description": "桌台"
   },
   "more": "更多",
   "@more": {
@@ -71,9 +72,9 @@
   "@includingTables": {
     "description": "包含桌台"
   },
-  "selectTable": "选择桌子",
+  "selectTable": "选择桌台",
   "@selectTable": {
-    "description": "选择桌子"
+    "description": "选择桌台"
   },
   "reason": "原因",
   "@reason": {
@@ -107,9 +108,9 @@
   "@currentTableUnavailable": {
     "description": "当前桌台不可用"
   },
-  "onlyOneNonFreeTableCanBeSelected": "仅可选择一张以下非空闲状态桌子",
+  "onlyOneNonFreeTableCanBeSelected": "仅可选择一张以下非空闲状态桌台",
   "@onlyOneNonFreeTableCanBeSelected": {
-    "description": "仅可选择一张以下非空闲状态桌子"
+    "description": "仅可选择一张以下非空闲状态桌台"
   },
   "pleaseSelectNumberOfDiners": "请选择就餐人数",
   "@pleaseSelectNumberOfDiners": {
@@ -135,9 +136,9 @@
   "@mergeFailedPleaseRetry": {
     "description": "合并失败，请重试"
   },
-  "oneTableMustRemainWhenRemoving": "撤桌必须留下一张桌子",
+  "oneTableMustRemainWhenRemoving": "撤桌必须留下一张桌台",
   "@oneTableMustRemainWhenRemoving": {
-    "description": "撤桌必须留下一张桌子"
+    "description": "撤桌必须留下一张桌台"
   },
   "tableRemovalSuccessful": "撤桌成功",
   "@tableRemovalSuccessful": {
@@ -215,9 +216,9 @@
   "@cart": {
     "description": "购物车"
   },
-  "changeTable": "更换桌子",
+  "changeTable": "更换桌台",   
   "@changeTable": {
-    "description": "更换桌子"
+    "description": "更换桌台"
   },
   "changeMenu": "更换菜单",
   "@changeMenu": {
@@ -586,5 +587,9 @@
   "pleaseEnter": "请输入",
   "@pleaseEnter": {
     "description": "请输入"
+  },
+  "logining": "登录中...",
+  "@logining": {
+    "description": "登录中..."
   }
 }

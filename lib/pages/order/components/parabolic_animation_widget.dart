@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 /// 抛物线动画组件
 /// 实现从起始点到目标点的抛物线飞行动画，模拟主流点餐应用的加购动画效果
@@ -183,8 +184,37 @@ class ParabolicAnimationManager {
       ),
     );
 
-    // 获取overlay
-    final overlay = Overlay.of(context, rootOverlay: true);
+    // 检查context是否仍然有效，以及是否能找到Overlay
+    if (!context.mounted) {
+      print('⚠️ [ParabolicAnimation] Context已失效，跳过动画');
+      onComplete?.call();
+      return;
+    }
+    
+    // 获取overlay - 优先使用GetX的overlayContext
+    OverlayState? overlay;
+    try {
+      // 首先尝试使用GetX的overlayContext
+      final overlayContext = Get.overlayContext;
+      if (overlayContext != null) {
+        overlay = Overlay.maybeOf(overlayContext, rootOverlay: true);
+        print('🎯 [ParabolicAnimation] 使用GetX overlayContext');
+      }
+      
+      // 如果GetX的overlayContext不可用，尝试传入的context
+      if (overlay == null) {
+        overlay = Overlay.maybeOf(context, rootOverlay: true);
+        print('🎯 [ParabolicAnimation] 使用传入的context');
+      }
+    } catch (e) {
+      print('⚠️ [ParabolicAnimation] 获取Overlay时异常: $e');
+    }
+    
+    if (overlay == null) {
+      print('⚠️ [ParabolicAnimation] 未找到Overlay widget，跳过动画');
+      onComplete?.call();
+      return;
+    }
     late OverlayEntry overlayEntry;
 
     overlayEntry = OverlayEntry(
@@ -225,5 +255,82 @@ class ParabolicAnimationManager {
     // 这里可以实现从widget树中查找购物车按钮的逻辑
     // 暂时返回null，实际使用时需要传入正确的key
     return null;
+  }
+
+  /// 触发加购抛物线动画（使用事先计算的起点与终点坐标）
+  static void triggerAddToCartAnimationWithOffsets({
+    required BuildContext context,
+    required Offset startOffset,
+    required Offset targetOffset,
+    Duration duration = const Duration(milliseconds: 800),
+    VoidCallback? onComplete,
+  }) {
+    // 检查context是否仍然有效，以及是否能找到Overlay
+    if (!context.mounted) {
+      print('⚠️ [ParabolicAnimation] Context已失效，跳过动画');
+      onComplete?.call();
+      return;
+    }
+    
+    // 获取overlay - 优先使用GetX的overlayContext
+    OverlayState? overlay;
+    try {
+      // 首先尝试使用GetX的overlayContext
+      final overlayContext = Get.overlayContext;
+      if (overlayContext != null) {
+        overlay = Overlay.maybeOf(overlayContext, rootOverlay: true);
+        debugPrint('🎯 [ParabolicAnimation] 使用GetX overlayContext');  
+      }
+      
+      // 如果GetX的overlayContext不可用，尝试传入的context
+      if (overlay == null) {
+        overlay = Overlay.maybeOf(context, rootOverlay: true);
+        debugPrint('🎯 [ParabolicAnimation] 使用传入的context');
+      }
+    } catch (e) {
+      debugPrint('⚠️ [ParabolicAnimation] 获取Overlay时异常: $e');
+    }
+    
+    if (overlay == null) {
+       onComplete?.call();
+      return;
+    }
+    late OverlayEntry overlayEntry;
+
+    final flyingWidget = Container(
+      width: 22,
+      height: 22,
+      decoration: BoxDecoration(
+        color: Colors.orange,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.orange.withOpacity(0.3),
+            blurRadius: 8,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.add,
+        color: Colors.white,
+        size: 14,
+      ),
+    );
+
+    overlayEntry = OverlayEntry(
+      builder: (context) => ParabolicAnimationWidget(
+        startPosition: startOffset,
+        targetPosition: targetOffset,
+        duration: duration,
+        onAnimationComplete: () {
+          overlayEntry.remove();
+          onComplete?.call();
+        },
+        child: flyingWidget,
+      ),
+    );
+
+    overlay.insert(overlayEntry);
   }
 }

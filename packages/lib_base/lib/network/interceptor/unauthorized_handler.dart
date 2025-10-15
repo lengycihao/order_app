@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:get/get.dart' as gg;
 import 'package:order_app/utils/toast_utils.dart';
 
@@ -17,25 +16,19 @@ class UnauthorizedHandler {
 
   // 配置参数
   String _loginRoute = '/login';
-  String _defaultTitle = '认证失败';
   String _defaultMessage = '登录已过期，请重新登录';
-  Duration _snackbarDuration = const Duration(seconds: 2);
   List<String> _fallbackRoutes = ['/login', '/auth', '/signin'];
 
   /// 配置401处理器
   void configure({
     String? loginRoute,
-    String? defaultTitle,
     String? defaultMessage,
     Duration? cooldownDuration,
-    Duration? snackbarDuration,
     List<String>? fallbackRoutes,
   }) {
     if (loginRoute != null) _loginRoute = loginRoute;
-    if (defaultTitle != null) _defaultTitle = defaultTitle;
     if (defaultMessage != null) _defaultMessage = defaultMessage;
     if (cooldownDuration != null) _cooldownDuration = cooldownDuration;
-    if (snackbarDuration != null) _snackbarDuration = snackbarDuration;
     if (fallbackRoutes != null) _fallbackRoutes = fallbackRoutes;
   }
 
@@ -57,6 +50,12 @@ class UnauthorizedHandler {
       return false;
     }
 
+    // 检查当前是否已经在登录页
+    if (_isCurrentlyOnLoginPage()) {
+      print('🔒 当前已在登录页，跳过401处理');
+      return false;
+    }
+
     // 开始处理
     _isHandling = true;
     _lastHandleTime = now;
@@ -64,11 +63,13 @@ class UnauthorizedHandler {
     try {
       print('🔐 开始处理401错误');
       
-      // 显示提示消息
-      _showMessage(message);
-      
-      // 跳转到登录页
+      // 先跳转到登录页
       _navigateToLogin();
+      
+      // 延迟显示提示消息，确保在登录页显示
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _showMessage(message);
+      });
       
       print('✅ 401错误处理完成');
       return true;
@@ -144,29 +145,23 @@ class UnauthorizedHandler {
     }
   }
 
-  /// 获取错误背景色
-  Color _getErrorBackgroundColor() {
-    try {
-      return gg.Get.theme.colorScheme.error.withOpacity(0.1);
-    } catch (e) {
-      return Colors.red.withOpacity(0.1);
-    }
-  }
-
-  /// 获取错误文本色
-  Color _getErrorTextColor() {
-    try {
-      return gg.Get.theme.colorScheme.onError;
-    } catch (e) {
-      return Colors.red;
-    }
-  }
 
   /// 重置处理状态（用于测试或手动重置）
   void resetState() {
     _isHandling = false;
     _lastHandleTime = null;
     print('🔄 已重置401处理状态');
+  }
+
+  /// 检查当前是否在登录页
+  bool _isCurrentlyOnLoginPage() {
+    try {
+      final currentRoute = gg.Get.currentRoute;
+      return _fallbackRoutes.contains(currentRoute) || currentRoute == _loginRoute;
+    } catch (e) {
+      print('❌ 检查当前路由失败: $e');
+      return false;
+    }
   }
 
   /// 获取当前状态信息
@@ -176,6 +171,7 @@ class UnauthorizedHandler {
       'lastHandleTime': _lastHandleTime?.toIso8601String(),
       'cooldownDuration': _cooldownDuration.inSeconds,
       'loginRoute': _loginRoute,
+      'currentRoute': gg.Get.currentRoute,
     };
   }
 }

@@ -51,9 +51,6 @@ class OrderedDishItemWidget extends StatelessWidget {
                 height: 70,
                 fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(8),
-                maxRetries: 3,
-                retryDelay: Duration(seconds: 2),
-                enableRetry: true,
                 onImageLoaded: () {
                   // print('✅ 已点菜品图片加载成功: ${dish.name}');
                 },
@@ -62,11 +59,17 @@ class OrderedDishItemWidget extends StatelessWidget {
                 },
               )
             : Container(
-                color: Colors.grey[200],
-                child: Icon(
-                  Icons.restaurant,
-                  color: Colors.grey[400],
-                  size: 24,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: Image.asset(
+                    'assets/order_menu_placeholder.webp',
+                    width: 70,
+                    height: 70,
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
       ),
@@ -153,9 +156,6 @@ class OrderedDishItemWidget extends StatelessWidget {
             width: 16,
             height: 16,
             fit: BoxFit.contain,
-            maxRetries: 2,
-            retryDelay: Duration(seconds: 1),
-            enableRetry: true,
             placeholder: Image.asset(
               'assets/order_minganwu_place.webp',
               width: 16,

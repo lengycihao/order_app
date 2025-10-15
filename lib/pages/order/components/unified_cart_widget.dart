@@ -306,9 +306,6 @@ class _CartItem extends StatelessWidget {
                 height: 46,
                 fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(8),
-                maxRetries: 3,
-                retryDelay: Duration(seconds: 2),
-                enableRetry: true,
                 onImageLoaded: () {
                   // print('✅ 购物车菜品图片加载成功: ${cartItem.dish.name}');
                 },
@@ -396,7 +393,7 @@ class _CartItem extends StatelessWidget {
             SizedBox(width: 12),
             Align(
               alignment: Alignment.bottomCenter,
-              child: Row(
+              child: Obx(() => Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   GestureDetector(
@@ -418,15 +415,20 @@ class _CartItem extends StatelessWidget {
                   ),
                   SizedBox(width: 12),
                   GestureDetector(
-                    onTap: () => controller.addCartItemQuantity(cartItem),
-                    child: Icon(
-                      Icons.add_circle,
-                      color: Colors.orange,
-                      size: 22,
+                    onTap: controller.isDishAddDisabled(cartItem.dish.id) 
+                        ? null 
+                        : () => controller.addCartItemQuantity(cartItem),
+                    child: Opacity(
+                      opacity: controller.isDishAddDisabled(cartItem.dish.id) ? 0.3 : 1.0,
+                      child: Icon(
+                        Icons.add_circle,
+                        color: Colors.orange,
+                        size: 22,
+                      ),
                     ),
                   ),
                 ],
-              ),
+              )),
             ),
           ],
         ),

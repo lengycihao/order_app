@@ -289,9 +289,10 @@ class GlobalToast {
       },
     );
 
-    final OverlayState? overlay = Overlay.of(ctx, rootOverlay: true);
+    final OverlayState? overlay = Overlay.maybeOf(ctx, rootOverlay: true);
     if (overlay == null) {
-      throw Exception('No overlay state');
+      print('⚠️ [ToastUtils] 未找到Overlay widget，无法显示Toast');
+      return;
     }
     overlay.insert(entry);
     _currentEntry = entry;

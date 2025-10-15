@@ -12,7 +12,10 @@ import 'package:order_app/pages/order/components/specification_modal_widget.dart
 import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
 import 'package:order_app/utils/image_cache_config.dart';
 import 'package:order_app/utils/toast_utils.dart';
-import 'package:order_app/pages/takeaway/takeaway_order_success_page.dart';
+import 'package:order_app/utils/modal_utils.dart';
+import 'package:lib_base/lib_base.dart';
+import 'package:lib_base/utils/navigation_manager.dart';
+import 'package:order_app/pages/nav/screen_nav_page.dart';
 import 'dish_detail_controller.dart';
 import 'package:lib_base/logging/logging.dart';
 
@@ -210,13 +213,11 @@ class _DishDetailPageState extends State<DishDetailPage> {
                           ),
                         ),
                       if (allergen.icon != null) const SizedBox(width: 4),
-                      Flexible(
-                        child: Text(
-                          allergen.label ?? '',
-                          style: const TextStyle(fontSize: 12, color: Color(0xFF3D3D3D)),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      Text(
+                        allergen.label ?? '',
+                        style: const TextStyle(fontSize: 12, color: Color(0xFF3D3D3D)),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   );
@@ -353,35 +354,44 @@ class _DishDetailPageState extends State<DishDetailPage> {
           ),
           const SizedBox(width: 5),
         ],
-        // 加号按钮 - 添加动画效果
-        GestureDetector(
-          key: addButtonKey,
-          onTap: () {
-            // 触发抛物线动画
-            try {
-              ParabolicAnimationManager.triggerAddToCartAnimation(
-                context: context,
-                addButtonKey: addButtonKey,
-                cartButtonKey: _cartButtonKey,
-              );
-            } catch (e) {
-              print('❌ 抛物线动画错误: $e');
-              // 动画失败不影响添加功能
-            }
-            
-            // 添加到购物车
-            orderController.addToCart(dish);
-          },
-          behavior: HitTestBehavior.opaque, // 阻止事件穿透
-          child: Container(
-            padding: EdgeInsets.all(8), // 增大点击区域
-            child: Image(
-              image: AssetImage('assets/order_add_num.webp'),
-              width: 22,
-              height: 22,
+        // 加号按钮 - 添加动画效果和14005错误状态检查
+        Obx(() {
+          final isLoading = orderController.isDishLoading(dish.id);
+          final isAddDisabled = orderController.isDishAddDisabled(dish.id);
+          final isDisabled = isLoading || isAddDisabled;
+          
+          return GestureDetector(
+            key: addButtonKey,
+            onTap: isDisabled ? null : () {
+              // 触发抛物线动画
+              try {
+                ParabolicAnimationManager.triggerAddToCartAnimation(
+                  context: context,
+                  addButtonKey: addButtonKey,
+                  cartButtonKey: _cartButtonKey,
+                );
+              } catch (e) {
+                print('❌ 抛物线动画错误: $e');
+                // 动画失败不影响添加功能
+              }
+              
+              // 添加到购物车
+              orderController.addToCart(dish);
+            },
+            behavior: HitTestBehavior.opaque, // 阻止事件穿透
+            child: Container(
+              padding: EdgeInsets.all(8), // 增大点击区域
+              child: Opacity(
+                opacity: isAddDisabled ? 0.3 : 1.0, // 14005错误时置灰
+                child: Image(
+                  image: AssetImage('assets/order_add_num.webp'),
+                  width: 22,
+                  height: 22,
+                ),
+              ),
             ),
-          ),
-        ),
+          );
+        }),
       ],
     );
   }
@@ -580,31 +590,90 @@ class _DishDetailPageState extends State<DishDetailPage> {
     
     final controller = Get.find<OrderController>();
     
+    // 根据服务员设置决定是否显示确认弹窗
+    if (controller.waiterSetting.value.confirmOrderBeforeSubmit) {
+      // 显示确认下单弹窗 - 与退出登录弹窗保持完全一致
+      final confirm = await ModalUtils.showConfirmDialog(
+        context: context,
+        message: context.l10n.confirmOrder,  // 使用message参数，不使用title
+        confirmText: context.l10n.confirm,
+        cancelText: context.l10n.cancel,
+        confirmColor: Color(0xFFFF9027), // 使用橙色确认按钮，与退出登录一致
+      );
+      
+      // 如果用户取消，直接返回
+      if (confirm != true) return;
+    }
+    
     // 根据订单来源判断处理方式
     if (controller.source.value == 'takeaway') {
-      // 外卖订单：跳转到预约时间页面
-      _navigateToAppointmentPage(controller);
+      // 外卖订单：直接提交订单（不跳转到备注页面）
+      _submitTakeawayOrder(controller);
     } else {
       // 桌台订单：直接提交订单
       _submitTableOrder(controller);
     }
   }
 
-  /// 跳转到预约时间页面
-  void _navigateToAppointmentPage(OrderController controller) {
+  /// 提交外卖订单（直接提交，不跳转到备注页面）
+  Future<void> _submitTakeawayOrder(OrderController controller) async {
     if (!mounted) return;
     
     try {
-      // 跳转到预约时间页面，传递桌台ID
-      Get.to(
-        () => TakeawayOrderSuccessPage(),
-        arguments: {
-          'tableId': controller.table.value?.tableId,
-        },
+      // 显示纯动画加载弹窗（无文字）
+      OrderSubmitDialog.showLoadingOnly(context);
+      
+      // 获取桌台ID
+      final tableId = controller.table.value?.tableId;
+      if (tableId == null || tableId <= 0) {
+        if (mounted) {
+          Navigator.of(context).pop();
+          ToastUtils.showError(context, context.l10n.operationTooFrequentPleaseTryAgainLater);
+        }
+        return;
+      }
+      
+      // 准备提交参数（包含备注）
+      final params = {
+        'table_id': tableId,
+        'remark': controller.remark.value, // 提交备注
+      };
+      
+      // 调用外卖订单提交API
+      final result = await HttpManagerN.instance.executePost(
+        '/api/waiter/cart/submit_takeout_order',
+        jsonParam: params,
       );
+      
+      if (!mounted) return;
+      
+      // 关闭加载弹窗
+      Navigator.of(context).pop();
+      
+      if (result.isSuccess) {
+        // 下单成功，清空备注
+        controller.clearRemark();
+        // 显示成功提示
+        ToastUtils.showSuccess(context, '订单提交成功');
+        // 跳转到主页面并切换到外卖标签页，同时刷新桌台数据
+        Get.offAll(() => ScreenNavPage(initialIndex: 1));
+        // 延迟刷新桌台数据，确保页面切换完成
+        Future.delayed(Duration(milliseconds: 500), () {
+          NavigationManager.refreshTableData();
+        });
+      } else {
+        // 下单失败，显示错误提示
+        final errorMessage = result.msg ?? '订单提交失败';
+        ToastUtils.showError(context, errorMessage);
+      }
     } catch (e) {
-      logError('跳转预约时间页面失败: $e', tag: 'DishDetailPage');
-      GlobalToast.error(context.l10n.operationTooFrequentPleaseTryAgainLater);
+      logError('❌ 提交外卖订单异常: $e', tag: 'DishDetailPage');
+      if (mounted) {
+        // 关闭加载弹窗
+        Navigator.of(context).pop();
+        // 显示错误提示
+        ToastUtils.showError(context, '${context.l10n.networkErrorPleaseTryAgain}');
+      }
     }
   }
 

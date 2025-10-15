@@ -586,5 +586,9 @@
   "pleaseEnter": "Please enter",
   "@pleaseEnter": {
     "description": "Please enter"
+  },
+  "logining": "Logging in...",
+  "@logining": {
+    "description": "Logging in..."
   }
 }

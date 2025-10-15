@@ -7,6 +7,15 @@ import '../model/dish.dart';
 import 'order_constants.dart';
 import 'models.dart';
 
+/// 购物车数据处理中异常（210状态码）
+class CartProcessingException implements Exception {
+  final String message;
+  CartProcessingException(this.message);
+  
+  @override
+  String toString() => 'CartProcessingException: $message';
+}
+
 /// 购物车管理器
 class CartManager {
   final CartApi _cartApi = CartApi();
@@ -40,9 +49,19 @@ class CartManager {
       if (result.isSuccess && result.data != null) {
         return result.data;
       } else {
+        // 检查是否是210状态码（数据处理中）
+        if (result.code == 210) {
+          logDebug('⏳ 购物车数据处理中(210)，保留本地数据', tag: _logTag);
+          // 返回特殊标记，表示数据处理中，不应清空本地购物车
+          throw CartProcessingException('数据处理中，请稍后重试');
+        }
         return null;
       }
     } catch (e) {
+      if (e is CartProcessingException) {
+        rethrow; // 重新抛出210状态码异常
+      }
+      logError('❌ 加载购物车数据异常: $e', tag: _logTag);
       return null;
     }
   }
@@ -121,13 +140,13 @@ class CartManager {
       final quantity = apiCartItem.quantity ?? 1;
       newCart[localCartItem] = quantity;
       validItemCount++;
-      logDebug('✅ 添加到新购物车: ${existingDish.name} x$quantity', tag: _logTag);
+      // logDebug('✅ 添加到新购物车: ${existingDish.name} x$quantity', tag: _logTag);
     }
     
     // 计算总数量用于调试
     int totalQuantity = newCart.values.fold(0, (sum, quantity) => sum + quantity);
-    logDebug('🔢 购物车数据统计 - 有效商品种类: $validItemCount, 无效商品: $invalidItemCount', tag: _logTag);
-    logDebug('🔢 购物车数据转换完成: ${newCart.length} 种商品，总数量: $totalQuantity 个', tag: _logTag);
+    // logDebug('🔢 购物车数据统计 - 有效商品种类: $validItemCount, 无效商品: $invalidItemCount', tag: _logTag);
+    // logDebug('🔢 购物车数据转换完成: ${newCart.length} 种商品，总数量: $totalQuantity 个', tag: _logTag);
     
     return newCart;
   }
@@ -142,22 +161,22 @@ class CartManager {
           final correctCategoryId = categories.indexWhere((cat) => cat == tempCategoryName);
           if (correctCategoryId == -1) {
             // 如果找不到匹配的分类，使用第一个分类
-            logDebug('⚠️ 未找到匹配的分类名称: $tempCategoryName，使用第一个分类', tag: _logTag);
+            // logDebug('⚠️ 未找到匹配的分类名称: $tempCategoryName，使用第一个分类', tag: _logTag);
             return 0;
           } else {
-            logDebug('✅ 找到匹配的分类: $tempCategoryName (索引: $correctCategoryId)', tag: _logTag);
+            // logDebug('✅ 找到匹配的分类: $tempCategoryName (索引: $correctCategoryId)', tag: _logTag);
             return correctCategoryId;
           }
         } catch (e) {
-          logDebug('⚠️ 分类匹配异常: $e，使用第一个分类', tag: _logTag);
+          // logDebug('⚠️ 分类匹配异常: $e，使用第一个分类', tag: _logTag);
           return 0;
         }
       } else {
-        logDebug('⚠️ 临时菜品信息中没有分类名称，使用第一个分类', tag: _logTag);
+        // logDebug('⚠️ 临时菜品信息中没有分类名称，使用第一个分类', tag: _logTag);
         return 0;
       }
     } else {
-      logDebug('⚠️ 临时菜品信息中没有分类ID，使用第一个分类', tag: _logTag);
+      // logDebug('⚠️ 临时菜品信息中没有分类ID，使用第一个分类', tag: _logTag);
       return 0;
     }
   }
@@ -174,7 +193,7 @@ class CartManager {
           selectedOptions[spec.specificationName!]!.add(spec.optionName!);
         }
       }
-      logDebug('🏷️ 规格选项: $selectedOptions', tag: _logTag);
+      // logDebug('🏷️ 规格选项: $selectedOptions', tag: _logTag);
     }
     return selectedOptions;
   }
@@ -182,18 +201,18 @@ class CartManager {
   /// 从服务器刷新购物车数据（带防抖）
   void refreshCartFromServer(VoidCallback refreshCallback) {
     try {
-      logDebug('🔄 准备从服务器刷新购物车数据', tag: _logTag);
+      // logDebug('🔄 准备从服务器刷新购物车数据', tag: _logTag);
       
       // 取消之前的刷新计时器
       _cartRefreshTimer?.cancel();
       
       // 设置防抖延迟，给服务器更多时间同步数据
       _cartRefreshTimer = Timer(Duration(milliseconds: OrderConstants.cartRefreshDelayMs), () {
-        logDebug('🔄 执行购物车数据刷新', tag: _logTag);
+        // logDebug('🔄 执行购物车数据刷新', tag: _logTag);
         refreshCallback();
       });
     } catch (e) {
-      logDebug('❌ 从服务器刷新购物车数据失败: $e', tag: _logTag);
+      // logDebug('❌ 从服务器刷新购物车数据失败: $e', tag: _logTag);
     }
   }
 

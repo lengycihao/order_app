@@ -228,7 +228,12 @@ class KeyboardInputManager with WidgetsBindingObserver {
       ),
     );
 
-    Overlay.of(context).insert(_overlayEntry!);
+    final overlay = Overlay.maybeOf(context);
+    if (overlay != null) {
+      overlay.insert(_overlayEntry!);
+    } else {
+      print('⚠️ [KeyboardInput] 未找到Overlay widget，无法显示键盘输入框');
+    }
   }
 
   /// 隐藏键盘输入框

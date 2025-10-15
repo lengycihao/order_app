@@ -92,13 +92,16 @@ class _RobustImageWidgetState extends State<RobustImageWidget> {
       width: widget.width,
       height: widget.height,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
         borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
       ),
-      child: Icon(
-        Icons.image,
-        color: Colors.grey.shade400,
-        size: 24,
+      child: ClipRRect(
+        borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+        child: Image.asset(
+          'assets/order_menu_placeholder.webp',
+          width: widget.width,
+          height: widget.height,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
@@ -115,32 +118,16 @@ class _RobustImageWidgetState extends State<RobustImageWidget> {
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
           borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.grey.shade300,
-            width: 1,
-          ),
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.broken_image,
-              color: Colors.grey.shade400,
-              size: 24,
-            ),
-            if (widget.enableRetry && _retryCount < widget.maxRetries) ...[
-              const SizedBox(height: 4),
-              Text(
-                '点击重试',
-                style: TextStyle(
-                  color: Colors.grey.shade500,
-                  fontSize: 10,
-                ),
-              ),
-            ],
-          ],
+        child: ClipRRect(
+          borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/order_menu_placeholder.webp',
+            width: widget.width,
+            height: widget.height,
+            fit: BoxFit.cover,
+          ),
         ),
       ),
     );
@@ -155,26 +142,15 @@ class _RobustImageWidgetState extends State<RobustImageWidget> {
         color: Colors.grey.shade200,
         borderRadius: widget.borderRadius ?? BorderRadius.circular(8),
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade400),
-            ),
+      child: Center(
+        child: SizedBox(
+          width: (widget.width != null && widget.width! < 20) ? widget.width! * 0.6 : 20,
+          height: (widget.height != null && widget.height! < 20) ? widget.height! * 0.6 : 20,
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.grey.shade400),
           ),
-          const SizedBox(height: 4),
-          Text(
-            '重试中...',
-            style: TextStyle(
-              color: Colors.grey.shade500,
-              fontSize: 10,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -201,7 +177,7 @@ class _RobustImageWidgetState extends State<RobustImageWidget> {
         placeholder: (context, url) => _buildPlaceholder(),
         errorWidget: (context, url, error) {
           // 记录错误日志
-          logError('图片加载失败: $url, 错误: $error', tag: 'RobustImageWidget');
+          // logError('图片加载失败: $url, 错误: $error', tag: 'RobustImageWidget');
           
           // 触发错误回调
           widget.onImageError?.call();
@@ -274,28 +250,35 @@ class DishImageWidget extends StatelessWidget {
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
           borderRadius: borderRadius ?? BorderRadius.circular(8),
         ),
-        child: Icon(
-          Icons.image,
-          color: Colors.grey.shade400,
-          size: 24,
+        child: ClipRRect(
+          borderRadius: borderRadius ?? BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/order_menu_placeholder.webp',
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+          ),
         ),
       ),
       errorWidget: Container(
         width: width,
         height: height,
         decoration: BoxDecoration(
-          color: Colors.grey.shade200,
           borderRadius: borderRadius ?? BorderRadius.circular(8),
         ),
-        child: Icon(
-          Icons.broken_image,
-          color: Colors.grey.shade400,
-          size: 24,
+        child: ClipRRect(
+          borderRadius: borderRadius ?? BorderRadius.circular(8),
+          child: Image.asset(
+            'assets/order_menu_placeholder.webp',
+            width: width,
+            height: height,
+            fit: BoxFit.cover,
+          ),
         ),
       ),
     );
   }
 }
+

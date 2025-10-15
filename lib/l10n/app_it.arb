@@ -586,5 +586,9 @@
   "pleaseEnter": "Per favore inserisci",
   "@pleaseEnter": {
     "description": "Per favore inserisci"
+  },
+  "logining": "Accesso in corso...",
+  "@logining": {
+    "description": "Accesso in corso..."
   }
 }

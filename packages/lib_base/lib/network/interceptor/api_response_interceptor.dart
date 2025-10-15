@@ -47,13 +47,14 @@ class ApiResponseInterceptor extends Interceptor {
     // 添加语言头
     try {
       final languageService = getIt<LanguageService>();
-      final languageCode = languageService.currentLocale.languageCode;
-      options.headers['Language'] = languageCode;
-      print('🌐 添加语言头: $languageCode');
+      final serverLanguageCode = languageService.getNetworkLanguageCode();
+      
+      options.headers['Language'] = serverLanguageCode;
+      print('🌐 添加语言头: ${languageService.currentLocale.languageCode} -> $serverLanguageCode');
     } catch (e) {
       // 如果无法获取LanguageService，使用默认语言
-      options.headers['Language'] = 'zh';
-      print('🌐 无法获取LanguageService，使用默认语言: zh, 错误: $e');
+      options.headers['Language'] = 'cn';
+      print('🌐 无法获取LanguageService，使用默认语言: cn, 错误: $e');
     }
 
     super.onRequest(options, handler);

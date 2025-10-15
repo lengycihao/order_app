@@ -1,11 +1,10 @@
 /// 订单控制器相关常量
 class OrderConstants {
-  // 防抖时间配置
-  static const int debounceTimeMs = 300; // 恢复到300ms
-  static const int cartDebounceTimeMs = 300; // 恢复到300ms
-  static const int addDebounceTimeMs = 300; // 恢复到300ms
-  static const int websocketBatchDebounceMs = 300; // 恢复到300ms
-  static const int localCartDebounceMs = 300; // 本地购物车防抖时间恢复到300ms
+  // 防抖时间配置 - 优化防抖策略，避免210状态码
+  static const int debounceTimeMs = 500; // 增加到500ms，减少频繁请求
+  static const int cartDebounceTimeMs = 500; // 增加到500ms
+  static const int addDebounceTimeMs = 500; // 增加到500ms
+  static const int websocketBatchDebounceMs = 800; // WebSocket防抖增加到800ms，给服务器更多处理时间
   
   // 超时配置
   static const int dishLoadingTimeoutSeconds = 5;

@@ -186,8 +186,8 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
         controller.tabDataList, 
         controller.selectedTab.value
       );
-      // 恢复轮询
-      controller.resumePolling();
+      // 恢复轮询 - 已关闭
+      // controller.resumePolling();
     } else if (state == AppLifecycleState.paused) {
       // 应用进入后台时暂停轮询
       logDebug('⏸️ 应用进入后台，暂停轮询', tag: 'TablePage');
@@ -381,8 +381,8 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
             }
             // 通知刷新完成
             refreshController.refreshCompleted();
-            // 刷新完成后重新启动轮询
-            controller.startPolling();
+            // 刷新完成后重新启动轮询 - 已关闭
+            // controller.startPolling();
           } catch (e) {
             logError('❌ 刷新失败: $e', tag: 'TablePage');
             // 刷新失败也要通知完成
@@ -405,7 +405,7 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 13,
-                        childAspectRatio: 1.33, // 根据UI设计稿调整：165/124 = 1.33
+                        childAspectRatio: 1.4, // 调整宽高比以避免越界
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) => TableCard(

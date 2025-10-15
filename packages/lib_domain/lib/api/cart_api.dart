@@ -17,13 +17,14 @@ class CartApi {
       queryParam: params,
     );
     
-    // 处理状态码210（数据处理中）的特殊情况
+    // 检查是否是210状态码（数据处理中）
     if (result.code == 210) {
-      print('⚠️ CartAPI 返回状态码210，数据处理中，返回null保留本地数据');
+      print('⏳ CartAPI 遇到210状态码，数据处理中');
+      // 210状态码时返回失败结果，让上层处理异常
       return HttpResultN<CartInfoModel>(
         isSuccess: false,
         code: 210,
-        msg: '数据处理中',
+        msg: '数据处理中...',
         data: null,
       );
     }
@@ -65,6 +66,8 @@ class CartApi {
         return result.convert(); // 返回没有data的结果
       }
     } else {
+      // 重要：210状态码等错误情况，直接返回失败结果，不要转换为空购物车
+      print('❌ CartAPI 请求失败: code=${result.code}, msg=${result.msg}');
       return result.convert();
     }
   }

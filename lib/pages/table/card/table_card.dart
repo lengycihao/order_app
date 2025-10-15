@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:order_app/cons/table_status.dart';
-import 'package:order_app/pages/table/card/animate_hour.dart';
+import 'package:order_app/pages/table/card/static_hourglass.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:marquee/marquee.dart';
 import 'package:order_app/pages/table/sub_page/select_menu_page.dart';
@@ -340,21 +340,11 @@ class TableCard extends StatelessWidget {
                   ),
                 ),
                 // 金额显示在正中间
-                // Expanded(
-                //   child: Center(
-                //     child: table.businessStatus == 3
-                //         ? Text(
-                //             '€ ${table.orderAmount}',
-                //             style: TextStyle(
-                //               color: Colors.black,
-                //               fontSize: 16,
-                //               fontWeight: FontWeight.bold,
-                //             ),
-                //           )
-                //         : SizedBox(),
-                //   ),
-                // ),
-                Spacer(),
+                Expanded(
+                  child: Center(
+                    child: _buildAmountDisplay(),
+                  ),
+                ),
                 // 状态 & 时间
                 _getStatusLabel(context, status),
               ],
@@ -386,6 +376,24 @@ class TableCard extends StatelessWidget {
     );
   }
 
+  /// 构建金额显示组件
+  Widget _buildAmountDisplay() {
+    // 只要有订单金额就显示
+    if (table.orderAmount > 0) {
+      return Text(
+        '€ ${table.orderAmount.toStringAsFixed(2)}',
+        style: TextStyle(
+          color: Colors.black,
+          fontSize: 16,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+    
+    // 没有订单金额时显示空内容
+    return SizedBox();
+  }
+
   Widget _getStatusLabel(BuildContext context, TableStatus status) {
     return // 状态 & 时间
     Container(
@@ -409,14 +417,15 @@ class TableCard extends StatelessWidget {
               // "文字过长文字过长文字过长文字过长",
             ),
           ),
-          SizedBox(width: 20),
           if (table.businessStatus == 1 ||
               table.businessStatus == 2 ||
-              table.businessStatus == 3)
-            AnimatedHourglass(
+              table.businessStatus == 3) ...[
+            SizedBox(width: 8),
+            StaticHourglass(
               initialDuration: table.openDuration,
               tableId: table.tableId.toString(),
             ),
+          ],
         ],
       ),
     );

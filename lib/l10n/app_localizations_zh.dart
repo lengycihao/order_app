@@ -42,7 +42,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get accountLoggedInOnAnotherDevice => '账号已在其他设备登录';
 
   @override
-  String get table => '桌子';
+  String get table => '桌台';
 
   @override
   String get more => '更多';
@@ -63,7 +63,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get includingTables => '包含桌台';
 
   @override
-  String get selectTable => '选择桌子';
+  String get selectTable => '选择桌台';
 
   @override
   String get reason => '原因';
@@ -90,7 +90,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get currentTableUnavailable => '当前桌台不可用';
 
   @override
-  String get onlyOneNonFreeTableCanBeSelected => '仅可选择一张以下非空闲状态桌子';
+  String get onlyOneNonFreeTableCanBeSelected => '仅可选择一张以下非空闲状态桌台';
 
   @override
   String get pleaseSelectNumberOfDiners => '请选择就餐人数';
@@ -111,7 +111,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get mergeFailedPleaseRetry => '合并失败，请重试';
 
   @override
-  String get oneTableMustRemainWhenRemoving => '撤桌必须留下一张桌子';
+  String get oneTableMustRemainWhenRemoving => '撤桌必须留下一张桌台';
 
   @override
   String get tableRemovalSuccessful => '撤桌成功';
@@ -171,7 +171,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get cart => '购物车';
 
   @override
-  String get changeTable => '更换桌子';
+  String get changeTable => '更换桌台';
 
   @override
   String get changeMenu => '更换菜单';
@@ -448,4 +448,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get pleaseEnter => '请输入';
+
+  @override
+  String get logining => '登录中...';
 }

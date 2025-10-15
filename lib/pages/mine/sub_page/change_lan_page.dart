@@ -63,6 +63,8 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
         final mineController = Get.find<MineController>();
         await mineController.refreshUserInfo();
         logDebug('✅ 个人中心页面数据刷新完成', tag: 'ChangeLanPage');
+      } else {
+        logDebug('⚠️ MineController 未注册，将在页面创建时自动初始化', tag: 'ChangeLanPage');
       }
       
       logDebug('✅ 所有首页数据刷新完成', tag: 'ChangeLanPage');
@@ -162,6 +164,9 @@ class _ChangeLanPageState extends State<ChangeLanPage> {
                         
                         // 刷新所有首页数据
                         await _refreshAllHomeData();
+                        
+                        // 等待一小段时间确保数据刷新完成
+                        await Future.delayed(const Duration(milliseconds: 200));
                         
                         // 回到首页
                         Get.offAll(() => ScreenNavPage());

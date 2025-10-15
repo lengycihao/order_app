@@ -171,7 +171,7 @@ class _MoreOptionItem extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: 44,
-        // padding: EdgeInsets.symmetric( horizontal: 20),
+        padding: EdgeInsets.symmetric( horizontal: 12),
         margin: EdgeInsets.symmetric(horizontal: 25),
         alignment: Alignment.center,
         decoration: BoxDecoration(
@@ -179,13 +179,17 @@ class _MoreOptionItem extends StatelessWidget {
           borderRadius: BorderRadius.circular(22),
           border: Border.all(color: Colors.grey.shade300, width: 1),
         ),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 20,
-            color: Color(0xff666666),
-            fontWeight: FontWeight.w500,
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 20,
+              color: Color(0xff666666),
+              fontWeight: FontWeight.w500,
+            ),
           ),
         ),
       ),

@@ -201,7 +201,7 @@ class _QuantityInputWidgetState extends State<QuantityInputWidget> {
   void _updateQuantity(int newQuantity) {
     final controller = Get.find<OrderController>();
     
-    // 直接设置目标数量，使用本地购物车管理器的优化逻辑
+    // 直接设置目标数量
     controller.updateCartItemQuantity(
       cartItem: widget.cartItem,
       newQuantity: newQuantity,

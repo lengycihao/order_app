@@ -11,6 +11,7 @@ import 'package:lib_base/network/interceptor/network_loading_interceptor.dart';
 import 'package:dio/dio.dart';
 import 'package:order_app/service/service_locator.dart';
 import 'package:order_app/l10n/app_localizations.dart';
+import 'package:order_app/services/language_service.dart';
 import 'package:toast/toast.dart';
 
 void main() async {
@@ -60,7 +61,13 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GetMaterialApp(
+    // 获取LanguageService实例
+    final languageService = getIt<LanguageService>();
+    
+    return AnimatedBuilder(
+      animation: languageService,
+      builder: (context, child) {
+        return GetMaterialApp(
       navigatorKey: navigatorKey, // 添加Navigator key
       // 使用 GetMaterialApp 替换 MaterialApp
       title: 'Flutter Demo',
@@ -88,7 +95,7 @@ class MyApp extends StatelessWidget {
       // 添加国际化配置
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      locale: const Locale('zh'), // 默认中文
+      locale: languageService.currentLocale, // 使用LanguageService中的语言设置
       
       getPages: [
         GetPage(name: '/login', page: () => LoginPage()), // 登录页面路由
@@ -109,6 +116,8 @@ class MyApp extends StatelessWidget {
           }
         });
         return child ?? const SizedBox.shrink();
+      },
+        );
       },
     );
   }
@@ -133,10 +142,8 @@ Future _syncInit() async {
   // 配置401错误处理器
   UnauthorizedHandler.instance.configure(
     loginRoute: '/login',
-    defaultTitle: '认证失败',
     defaultMessage: '登录已过期，请重新登录',
     cooldownDuration: const Duration(seconds: 3),
-    snackbarDuration: const Duration(seconds: 2),
     fallbackRoutes: ['/login', '/auth'],
   );
 

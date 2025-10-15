@@ -54,9 +54,8 @@ class TableDataService {
           }
         }
       } else {
-        // 检查是否是状态码210（数据处理中），需要重试
-        if ((result.code == 210 || result.msg?.contains('数据处理中') == true) 
-            && retryCount < maxRetries) {
+        // 检查是否是数据处理中，需要重试
+        if (result.msg?.contains('数据处理中') == true && retryCount < maxRetries) {
           logDebug('⚠️ 数据可能还在处理中，2秒后重试... (${retryCount + 1}/$maxRetries)', tag: _logTag);
           
           // 延迟2秒后重试

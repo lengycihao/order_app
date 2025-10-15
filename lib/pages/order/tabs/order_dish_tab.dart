@@ -588,6 +588,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   Widget _buildCategoryList() {
     return Container(
       width: 72,
+      color: Color(0xffF4F4F4),
       child: Obx(() {
         if (controller.categories.isEmpty) {
           return const OrderPageSkeleton();
@@ -613,86 +614,113 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                 
                 return GestureDetector(
                     onTap: () => _scrollToCategory(index),
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 14,
-                        horizontal: 0,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? Colors.white
-                            : Color(0xfff4f4f4),
-                        borderRadius: (isAboveSelected || isBelowSelected) ? BorderRadius.only(
-                          topRight: isBelowSelected ? Radius.circular(8) : Radius.zero,
-                          bottomRight: isAboveSelected ? Radius.circular(8) : Radius.zero,
-                        ) : null,
-                      ),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          if (isSelected)
-                            Positioned(
-                              left: 0,
-                              top: 0,
-                              bottom: 0,
-                              child: Container(
-                                width: 4,
-                                height: 16,
-                                decoration: BoxDecoration(
-                                  color: Colors.orange,
-                                  borderRadius: BorderRadius.only(
-                                    topRight: Radius.elliptical(5, 5),
-                                    bottomRight: Radius.elliptical(5, 5),
+                    child: Stack(
+                      children: [
+                        // 主容器
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 0,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? Colors.white
+                                : Color(0xffF4F4F4),
+                          ),
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              if (isSelected)
+                                Positioned(
+                                  left: 0,
+                                  top: 0,
+                                  bottom: 0,
+                                  child: Container(
+                                    width: 4,
+                                    height: 16,
+                                    decoration: BoxDecoration(
+                                      color: Colors.orange,
+                                      borderRadius: BorderRadius.only(
+                                        topRight: Radius.elliptical(5, 5),
+                                        bottomRight: Radius.elliptical(5, 5),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              Align(
+                                alignment: Alignment.center,
+                                child: Text(
+                                  controller.categories[index],
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: isSelected
+                                        ? Colors.black
+                                        : Color(0xff666666),
+                                        fontSize: 12,
+                                    fontWeight: isSelected 
+                                        ? FontWeight.w500 
+                                        : FontWeight.normal,
                                   ),
                                 ),
                               ),
-                            ),
-                          Align(
-                            alignment: Alignment.center,
-                            child: Text(
-                              controller.categories[index],
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: isSelected
-                                    ? Colors.black
-                                    : Color(0xff666666),
-                                    fontSize: 12,
-                                fontWeight: isSelected 
-                                    ? FontWeight.w500 
-                                    : FontWeight.normal,
+                              if (categoryCount > 0)
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: Container(
+                                    width: 18,
+                                    height: 18,
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        categoryCount > 99 ? '99+' : '$categoryCount',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        // 向外扩散的圆角效果 - 在选中item的上下边缘
+                        if (isSelected)
+                          Positioned(
+                            right: 0,
+                            top: -12,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Color(0xffF4F4F4),
+                                borderRadius: BorderRadius.only(
+                                  bottomRight: Radius.circular(12),
+                                ),
                               ),
                             ),
                           ),
-                          if (categoryCount > 0)
-                            Positioned(
-                              right: 0,
-                              top: -12,
-                              child: Container(
-                                constraints: BoxConstraints(
-                                  minWidth: 15,
-                                  minHeight: 15
-                                ),
-                                padding: EdgeInsets.symmetric(horizontal: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.red,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    categoryCount > 99 ? "99+" : "$categoryCount",
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 10,
-                                      height: 1,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    textAlign: TextAlign.center,
-                                  ),
+                        if (isSelected)
+                          Positioned(
+                            right: 0,
+                            bottom: -12,
+                            child: Container(
+                              width: 12,
+                              height: 12,
+                              decoration: BoxDecoration(
+                                color: Color(0xffF4F4F4),
+                                borderRadius: BorderRadius.only(
+                                  topRight: Radius.circular(12),
                                 ),
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                      ],
                     ),
                   );
               },
@@ -967,17 +995,20 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   Future<void> _handleSubmitOrder() async {
     if (!mounted) return;
     
-    // 显示确认下单弹窗 - 与退出登录弹窗保持完全一致
-    final confirm = await ModalUtils.showConfirmDialog(
-      context: context,
-      message: context.l10n.confirmOrder,  // 使用message参数，不使用title
-      confirmText: context.l10n.confirm,
-      cancelText: context.l10n.cancel,
-      confirmColor: Color(0xFFFF9027), // 使用橙色确认按钮，与退出登录一致
-    );
-    
-    // 如果用户取消，直接返回
-    if (confirm != true) return;
+    // 根据服务员设置决定是否显示确认弹窗
+    if (controller.waiterSetting.value.confirmOrderBeforeSubmit) {
+      // 显示确认下单弹窗 - 与退出登录弹窗保持完全一致
+      final confirm = await ModalUtils.showConfirmDialog(
+        context: context,
+        message: context.l10n.confirmOrder,  // 使用message参数，不使用title
+        confirmText: context.l10n.confirm,
+        cancelText: context.l10n.cancel,
+        confirmColor: Color(0xFFFF9027), // 使用橙色确认按钮，与退出登录一致
+      );
+      
+      // 如果用户取消，直接返回
+      if (confirm != true) return;
+    }
     
     // 根据订单来源判断处理方式
     if (controller.source.value == 'takeaway') {

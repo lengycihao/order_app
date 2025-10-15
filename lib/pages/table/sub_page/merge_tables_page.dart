@@ -677,7 +677,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                         crossAxisCount: 2,
                         mainAxisSpacing: 10,
                         crossAxisSpacing: 13,
-                        childAspectRatio: 1.33, // 根据UI设计稿调整：165/124 = 1.33
+                        childAspectRatio: 1.4, // 调整宽高比以避免越界
                       ),
                       delegate: SliverChildBuilderDelegate(
                         (context, index) {

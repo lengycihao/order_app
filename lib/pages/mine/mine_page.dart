@@ -5,7 +5,7 @@ import 'package:order_app/pages/mine/sub_page/change_lan_page.dart';
 import 'package:order_app/pages/mine/sub_page/change_psw_page.dart';
 import 'package:order_app/utils/l10n_utils.dart';
  
-class MinePage extends StatelessWidget {
+ class MinePage extends StatelessWidget {
   final MineController c = Get.put(MineController());
 
   @override

@@ -268,14 +268,14 @@ class _LoginPageState extends State<LoginPage> {
                         // 账号下拉列表占位（不显示内容，只占位）
                         SizedBox.shrink(),
                         SizedBox(height: context.adaptSpacing(30)),
-                        // 密码输入框（带可见切换）
+                        // 密码输入框（带临时可见功能）
                         Obx(
                           () => SizedBox(
                             width: context.adaptWidth(253),
                             height: context.adaptHeight(40),
                             child: TextField(
                               controller: controller.passwordController,
-                              obscureText: controller.obscurePassword.value,
+                              obscureText: !controller.tempShowPassword.value,
                               cursorHeight: 16,
                               cursorColor: Colors.black54,
                               showCursor: true,
@@ -294,7 +294,16 @@ class _LoginPageState extends State<LoginPage> {
                                     ),
                                   ),
                                 ),
-                                suffixIcon: null,
+                                suffixIcon: IconButton(
+                                  padding: EdgeInsets.zero,
+                                  icon: Image.asset(
+                                    'assets/order_login_eye.webp',
+                                    width: 20,
+                                    height: 20,
+                                    fit: BoxFit.contain,
+                                  ),
+                                  onPressed: controller.showPasswordTemporarily,
+                                ),
                                 contentPadding: EdgeInsets.symmetric(
                                   vertical: 0,
                                   horizontal: 16,
@@ -321,26 +330,51 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         SizedBox(height: context.adaptSpacing(30)),
                         // 登录按钮
-                        GestureDetector(
-                          onTap: controller.login,
+                        Obx(() => GestureDetector(
+                          onTap: controller.isLoggingIn.value ? null : controller.login,
                           child: Container(
                             width: context.adaptWidth(253),
                             height: context.adaptHeight(40),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(20),
-                              color: const Color(0xFF7FA1F6),
+                              color: controller.isLoggingIn.value 
+                                  ? const Color(0xFF7FA1F6).withOpacity(0.6)
+                                  : const Color(0xFF7FA1F6),
                             ),
                             alignment: Alignment.center,
-                            child: Text(
-                              context.l10n.login,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: context.adaptFontSize(16),
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            child: controller.isLoggingIn.value
+                                ? Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      SizedBox(
+                                        width: context.adaptWidth(16),
+                                        height: context.adaptWidth(16),
+                                        child: const CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      ),
+                                      SizedBox(width: context.adaptSpacing(8)),
+                                      Text(
+                                        context.l10n.logining,
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: context.adaptFontSize(16),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    context.l10n.login,
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: context.adaptFontSize(16),
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
-                        ),
+                        )),
                       ],
                     ),
                   ),

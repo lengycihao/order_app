@@ -184,7 +184,7 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
           const SizedBox(height: 8),
           _buildInfoRow('${Get.context!.l10n.orderNo}:', order.orderNo ?? ''),
           const SizedBox(height: 8),
-          _buildInfoRow('${Get.context!.l10n.orderSourceNew}:', order.sourceName ?? ''),
+          _buildInfoRow('${Get.context!.l10n.orderSource}:', order.sourceName ?? ''),
           const SizedBox(height: 8),
           _buildInfoRow(
             '${Get.context!.l10n.orderPlacementTime}:',
@@ -247,10 +247,10 @@ class _OrderDetailPageState extends BaseDetailPageState<OrderDetailPageNew> {
                               retryDelay: Duration(seconds: 2),
                               enableRetry: true,
                               onImageLoaded: () {
-                                print('✅ 外卖订单商品图片加载成功: ${item.name}');
+                                // print('✅ 外卖订单商品图片加载成功: ${item.name}');
                               },
                               onImageError: () {
-                                print('❌ 外卖订单商品图片加载失败: ${item.name}');
+                                // print('❌ 外卖订单商品图片加载失败: ${item.name}');
                               },
                             )
                           : Container(

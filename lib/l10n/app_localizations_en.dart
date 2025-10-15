@@ -469,4 +469,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get pleaseEnter => 'Please enter';
+
+  @override
+  String get logining => 'Logging in...';
 }

@@ -19,6 +19,10 @@ class WebSocketDebounceManager {
   // 失败回调函数
   Function(CartItem, int)? _onWebSocketFailed;
   
+  // 操作频率统计 - 用于智能防抖
+  final Map<String, List<DateTime>> _operationHistory = {};
+  final Map<String, int> _operationCounts = {};
+  
   WebSocketDebounceManager({
     required WebSocketHandler wsHandler,
     required String logTag,
@@ -29,12 +33,44 @@ class WebSocketDebounceManager {
     _onWebSocketFailed = onWebSocketFailed;
   }
   
+  /// 获取智能防抖时间 - 根据操作频率动态调整
+  int _getSmartDebounceTime(String key) {
+    final now = DateTime.now();
+    final history = _operationHistory[key] ?? [];
+    
+    // 清理1分钟前的历史记录
+    history.removeWhere((time) => now.difference(time).inMinutes > 1);
+    _operationHistory[key] = history;
+    
+    // 记录当前操作
+    history.add(now);
+    _operationCounts[key] = (history.length);
+    
+    // 根据操作频率调整防抖时间
+    if (history.length >= 10) {
+      // 非常频繁操作，使用最长防抖时间
+      return OrderConstants.websocketBatchDebounceMs + 500;
+    } else if (history.length >= 5) {
+      // 频繁操作，增加防抖时间
+      return OrderConstants.websocketBatchDebounceMs + 200;
+    } else {
+      // 正常操作，使用标准防抖时间
+      return OrderConstants.websocketBatchDebounceMs;
+    }
+  }
+  
   /// 防抖发送更新数量操作
   void debounceUpdateQuantity({
     required CartItem cartItem,
     required int quantity,
   }) {
     final key = 'update_${cartItem.cartId}_${cartItem.cartSpecificationId}';
+    
+    // 检查是否有必要的ID，如果没有则跳过防抖
+    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+      logDebug('⚠️ 新菜品缺少ID，跳过WebSocket防抖: ${cartItem.dish.name}', tag: _logTag);
+      return;
+    }
     
     // 保存最新的操作参数
     _pendingOperations[key] = PendingOperation(
@@ -46,13 +82,13 @@ class WebSocketDebounceManager {
     // 取消之前的定时器
     _debounceTimers[key]?.cancel();
     
-    // 设置新的防抖定时器
+    // 设置新的防抖定时器 - 使用更长的防抖时间
     _debounceTimers[key] = Timer(
       Duration(milliseconds: OrderConstants.websocketBatchDebounceMs),
       () => _executePendingOperation(key),
     );
     
-    logDebug('🔄 WebSocket防抖: 更新数量 ${cartItem.dish.name} -> $quantity', tag: _logTag);
+    logDebug('🔄 WebSocket防抖: 更新数量 ${cartItem.dish.name} -> $quantity (防抖${OrderConstants.websocketBatchDebounceMs}ms)', tag: _logTag);
   }
   
   /// 防抖发送减少数量操作
@@ -61,6 +97,12 @@ class WebSocketDebounceManager {
     required int incrQuantity,
   }) {
     final key = 'decrease_${cartItem.cartId}_${cartItem.cartSpecificationId}';
+    
+    // 检查是否有必要的ID，如果没有则跳过防抖
+    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+      logDebug('⚠️ 新菜品缺少ID，跳过WebSocket防抖: ${cartItem.dish.name}', tag: _logTag);
+      return;
+    }
     
     // 保存最新的操作参数
     _pendingOperations[key] = PendingOperation(
@@ -72,13 +114,13 @@ class WebSocketDebounceManager {
     // 取消之前的定时器
     _debounceTimers[key]?.cancel();
     
-    // 设置新的防抖定时器
+    // 设置新的防抖定时器 - 使用更长的防抖时间
     _debounceTimers[key] = Timer(
       Duration(milliseconds: OrderConstants.websocketBatchDebounceMs),
       () => _executePendingOperation(key),
     );
     
-    logDebug('🔄 WebSocket防抖: 减少数量 ${cartItem.dish.name} 增量$incrQuantity', tag: _logTag);
+    logDebug('🔄 WebSocket防抖: 减少数量 ${cartItem.dish.name} 增量$incrQuantity (防抖${OrderConstants.websocketBatchDebounceMs}ms)', tag: _logTag);
   }
   
   /// 立即发送操作（不防抖）

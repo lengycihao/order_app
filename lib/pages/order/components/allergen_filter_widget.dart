@@ -184,7 +184,7 @@ class _AllergenModalContent extends StatelessWidget {
                     '${context.l10n.selected} ${controller.tempSelectedAllergens.map((id) {
                       final allergen = controller.allAllergens.firstWhereOrNull((a) => a.id == id);
                       return allergen?.label ?? '';
-                    }).where((name) => name.isNotEmpty).join('、')}',
+                    }).where((name) => name.isNotEmpty).join(', ')}',
                     style: TextStyle(fontSize: 12, color: Color(0xff333333)),
                   ),
                 ),

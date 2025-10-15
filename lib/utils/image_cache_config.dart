@@ -110,13 +110,16 @@ class ImageCacheConfig {
       width: width ?? 100,
       height: height ?? 100,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(
-        Icons.image,
-        color: Colors.grey.shade400,
-        size: 24,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.asset(
+          'assets/order_menu_placeholder.webp',
+          width: width ?? 100,
+          height: height ?? 100,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
@@ -130,13 +133,16 @@ class ImageCacheConfig {
       width: width ?? 100,
       height: height ?? 100,
       decoration: BoxDecoration(
-        color: Colors.grey.shade200,
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Icon(
-        Icons.broken_image,
-        color: Colors.grey.shade400,
-        size: 24,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.asset(
+          'assets/order_menu_placeholder.webp',
+          width: width ?? 100,
+          height: height ?? 100,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }
@@ -151,3 +157,4 @@ class ImageCacheConfig {
     await CachedNetworkImage.evictFromCache(url);
   }
 }
+

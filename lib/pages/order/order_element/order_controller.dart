@@ -11,6 +11,7 @@ import 'package:lib_domain/api/base_api.dart';
 import 'package:lib_domain/entrity/cart/cart_info_model.dart';
 import 'package:lib_domain/entrity/order/current_order_model.dart';
 import 'package:lib_domain/api/order_api.dart';
+import 'package:lib_domain/entrity/waiter/waiter_setting_model.dart';
 import 'package:lib_base/utils/websocket_manager.dart';
 import 'package:lib_base/logging/logging.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
@@ -24,12 +25,12 @@ import 'order_constants.dart';
 import 'websocket_handler.dart';
 import 'websocket_debounce_manager.dart';
 import 'cart_manager.dart';
-// import 'local_cart_manager.dart'; // 现在由CartController统一管理
 import 'error_handler.dart';
 import 'data_converter.dart';
 import 'models.dart';
 import '../services/cart_controller.dart';
 import 'package:order_app/utils/image_cache_manager.dart';
+import 'package:order_app/utils/cart_animation_registry.dart';
 
 enum SortType { none, priceAsc, priceDesc }
 
@@ -48,8 +49,18 @@ class OrderController extends GetxController {
   final isSearchVisible = false.obs;
   final isLoadingDishes = false.obs;
   final isLoadingCart = false.obs;
-  final isCartOperationLoading = false.obs; // 购物车操作loading状态
+  final isCartOperationLoading = false.obs; // 购物车操作loading状态（兼容性保留）
   final justSubmittedOrder = false.obs; // 标记是否刚刚提交了订单
+  
+  /// 检查指定菜品是否正在loading
+  bool isDishLoading(String dishId) {
+    return _cartController.isDishLoading(dishId);
+  }
+  
+  /// 检查指定菜品是否因14005错误而禁用增加按钮
+  bool isDishAddDisabled(String dishId) {
+    return _cartController.isDishAddDisabled(dishId);
+  }
   final isInitialized = false.obs; // 标记是否已完成初始化
 
   // 从路由传递的数据
@@ -89,8 +100,6 @@ class OrderController extends GetxController {
   late final WebSocketHandler _wsHandler;
   late final WebSocketDebounceManager _wsDebounceManager;
   late final CartManager _cartManager;
-  // LocalCartManager现在由CartController统一管理
-  // late final LocalCartManager _localCartManager;
   late final ErrorHandler _errorHandler;
   
   // 购物车控制器组件
@@ -99,6 +108,9 @@ class OrderController extends GetxController {
   // API服务
   final BaseApi _api = BaseApi();
   final OrderApi _orderApi = OrderApi();
+  
+  // 服务员设置
+  final waiterSetting = WaiterSettingModel(confirmOrderBeforeSubmit: true).obs;
   
 
   @override
@@ -121,8 +133,6 @@ class OrderController extends GetxController {
   /// 初始化管理器
   void _initializeManagers() {
     _cartManager = CartManager(logTag: OrderConstants.logTag);
-    // 移除OrderController中的LocalCartManager，统一由CartController管理
-    // _localCartManager = LocalCartManager(logTag: OrderConstants.logTag);
     _errorHandler = ErrorHandler(logTag: OrderConstants.logTag);
     
     // 初始化购物车控制器组件（不注册到Get）
@@ -136,15 +146,9 @@ class OrderController extends GetxController {
       cart.addAll(newCart);
       cart.refresh();
       update();
-      logDebug('🔄 同步CartController购物车状态到OrderController: ${newCart.length}项', tag: OrderConstants.logTag);
+      // logDebug('🔄 同步CartController购物车状态到OrderController: ${newCart.length}项', tag: OrderConstants.logTag);
     });
     
-    // 本地购物车管理器的回调现在由CartController统一处理
-    // _localCartManager.setCallbacks(
-    //   onQuantityChanged: _onLocalQuantityChanged,
-    //   onWebSocketSend: _onLocalWebSocketSend,
-    //   onWebSocketFailed: _onLocalWebSocketFailed,
-    // );
     
     // WebSocket处理器将在有tableId后初始化
   }
@@ -161,7 +165,8 @@ class OrderController extends GetxController {
       _processSource(args);
     }
     
-    // 参数处理完成后，直接加载菜品和购物车数据
+    // 参数处理完成后，加载设置、菜品和购物车数据
+    _loadWaiterSetting();
     _loadDishesAndCart();
   }
 
@@ -286,6 +291,9 @@ class OrderController extends GetxController {
         onMenuChange: _handleMenuChange,
         onTableChange: _handleTableChange,
         onForceUpdateRequired: _handleForceUpdateRequired,
+        onOperationFailed: _handleOperationFailed,
+        onCartOperationSuccess: _handleCartOperationSuccess,
+        onDish14005Error: _handleDish14005Error,
       );
 
       final success = await _wsHandler.initialize(token);
@@ -387,6 +395,25 @@ class OrderController extends GetxController {
     }
   }
 
+  /// 加载服务员设置
+  Future<void> _loadWaiterSetting() async {
+    try {
+      logDebug('🔄 开始加载服务员设置...', tag: OrderConstants.logTag);
+      final result = await _api.getWaiterSetting();
+      
+      if (result.isSuccess && result.data != null) {
+        waiterSetting.value = result.data!;
+        logDebug('✅ 服务员设置加载成功: confirmOrderBeforeSubmit=${result.data!.confirmOrderBeforeSubmit}', tag: OrderConstants.logTag);
+      } else {
+        logDebug('⚠️ 服务员设置加载失败，使用默认值: ${result.msg}', tag: OrderConstants.logTag);
+        // 保持默认值 true
+      }
+    } catch (e) {
+      logDebug('❌ 加载服务员设置异常: $e', tag: OrderConstants.logTag);
+      // 保持默认值 true
+    }
+  }
+
   /// 按顺序加载菜品数据和购物车数据
   Future<void> _loadDishesAndCart() async {
     logDebug('🔄 开始按顺序加载菜品和购物车数据', tag: OrderConstants.logTag);
@@ -419,34 +446,34 @@ class OrderController extends GetxController {
   }
 
   /// 从API加载购物车数据
-  Future<void> _loadCartFromApi({int retryCount = 0, bool silent = false}) async {
+  Future<void> _loadCartFromApi({bool silent = false}) async {
     if (table.value?.tableId == null) {
       logDebug('❌ 桌台ID为空，无法加载购物车数据', tag: OrderConstants.logTag);
       return;
     }
     
-    // 委托给CartController处理
-    await _cartController.loadCartFromApi(
-      tableId: table.value!.tableId.toString(),
-      retryCount: retryCount,
-      silent: silent,
-    );
-    
-    // 同步数据回到OrderController
-    _syncCartFromController();
+    try {
+      // 委托给CartController处理
+      await _cartController.loadCartFromApi(
+        tableId: table.value!.tableId.toString(),
+        silent: silent,
+      );
+      
+      // 同步数据回到OrderController
+      _syncCartFromController();
+    } catch (e) {
+      // 检查是否是210状态码异常（数据处理中）
+      if (e.runtimeType.toString().contains('CartProcessingException')) {
+        logDebug('⏳ 购物车数据处理中(210)，保留现有数据不清空', tag: OrderConstants.logTag);
+        // 210状态码时不做任何操作，保留现有购物车数据
+        return;
+      }
+      logError('❌ 加载购物车数据异常: $e', tag: OrderConstants.logTag);
+      // 其他异常也不清空购物车，保持现有状态
+    }
     
     // 预加载购物车图片
     _preloadCartImages();
-    
-    // 如果购物车为空但本地有数据，可能是状态码210，延迟重试
-    if ((cartInfo.value?.items == null || cartInfo.value!.items!.isEmpty) && cart.isNotEmpty && retryCount < 2) {
-      logDebug('⚠️ 购物车数据可能不稳定，2秒后重试 (${retryCount + 1}/2)', tag: OrderConstants.logTag);
-      Future.delayed(Duration(seconds: 2), () {
-        if (isLoadingCart.value == false) {
-          _loadCartFromApi(retryCount: retryCount + 1, silent: silent);
-        }
-      });
-    }
   }
 
   /// 预加载购物车图片
@@ -478,7 +505,7 @@ class OrderController extends GetxController {
     // 异步预加载图片
     if (imageUrls.isNotEmpty || allergenUrls.isNotEmpty) {
       ImageCacheManager().preloadImagesAsync([...imageUrls, ...allergenUrls]);
-      logDebug('🖼️ 购物车预加载图片: ${imageUrls.length} 个菜品图片, ${allergenUrls.length} 个敏感物图标', tag: OrderConstants.logTag);
+      // logDebug('🖼️ 购物车预加载图片: ${imageUrls.length} 个菜品图片, ${allergenUrls.length} 个敏感物图标', tag: OrderConstants.logTag);
     }
   }
 
@@ -539,7 +566,7 @@ class OrderController extends GetxController {
     if (dishes.isNotEmpty) {
       // 异步预加载，不阻塞UI
       ImageCacheManager().preloadDishImages(dishes);
-      logDebug('🖼️ 开始预加载菜品图片: ${dishes.length}个菜品', tag: OrderConstants.logTag);
+      // logDebug('🖼️ 开始预加载菜品图片: ${dishes.length}个菜品', tag: OrderConstants.logTag);
     }
   }
 
@@ -574,7 +601,7 @@ class OrderController extends GetxController {
     if (savedOperationCartItem != null && savedOperationQuantity != null) {
       _lastOperationCartItem = savedOperationCartItem;
       _lastOperationQuantity = savedOperationQuantity;
-      logDebug('✅ 在同步过程中保留了操作上下文: ${savedOperationCartItem.dish.name}, quantity=$savedOperationQuantity', tag: OrderConstants.logTag);
+      // logDebug('✅ 在同步过程中保留了操作上下文: ${savedOperationCartItem.dish.name}, quantity=$savedOperationQuantity', tag: OrderConstants.logTag);
     }
   }
 
@@ -611,12 +638,18 @@ class OrderController extends GetxController {
     logDebug('🧹 清空外卖订单备注', tag: OrderConstants.logTag);
   }
 
-  void addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) {
-    print('🛒 OrderController.addToCart 被调用: ${dish.name}');
+  Future<void> addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) async {
+    // print('🛒 OrderController.addToCart 被调用: ${dish.name}');
     logDebug('📤 委托添加菜品到购物车: ${dish.name}', tag: OrderConstants.logTag);
     
+    // 如果菜品有14005错误状态，则禁止添加
+    if (isDishAddDisabled(dish.id)) {
+      logDebug('⚠️ 菜品有14005错误状态，禁止添加: ${dish.name}', tag: OrderConstants.logTag);
+      return;
+    }
+    
     // 委托给CartController处理
-    _cartController.addToCart(dish, selectedOptions: selectedOptions);
+    await _cartController.addToCart(dish, selectedOptions: selectedOptions);
     
     // 同步状态回到OrderController
     _syncCartFromController();
@@ -627,12 +660,12 @@ class OrderController extends GetxController {
     
     // 注意：WebSocket消息发送由CartController负责，这里不需要重复发送
     
-    logDebug('🔄 同步操作上下文 (addToCart): ${_lastOperationCartItem?.dish.name}, quantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
+    // logDebug('🔄 同步操作上下文 (addToCart): ${_lastOperationCartItem?.dish.name}, quantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
   }
 
   /// 添加指定数量的菜品到购物车（用于选规格弹窗）
   void addToCartWithQuantity(Dish dish, {required int quantity, Map<String, List<String>>? selectedOptions}) {
-    logDebug('📤 委托添加指定数量菜品到购物车: ${dish.name} x$quantity', tag: OrderConstants.logTag);
+    // logDebug('📤 委托添加指定数量菜品到购物车: ${dish.name} x$quantity', tag: OrderConstants.logTag);
     
     // 委托给CartController处理
     _cartController.addToCartWithQuantity(dish, quantity: quantity, selectedOptions: selectedOptions);
@@ -719,16 +752,22 @@ class OrderController extends GetxController {
       return;
     }
 
+    // 如果是增加数量且菜品有14005错误状态，则禁止操作
+    if (newQuantity > oldQuantity && isDishAddDisabled(cartItem.dish.id)) {
+      onError(14005, '该菜品暂时无法增加数量，请稍后再试');
+      return;
+    }
+
     // 保存操作上下文，用于可能的409强制更新
     // 注意：对于手动更新数量，保存的是变化量而不是绝对数量
     _lastOperationCartItem = cartItem;
     _lastOperationQuantity = newQuantity - oldQuantity; // 保存变化量
     
-    // 使用CartController进行本地优先的数量设置
+    // 直接设置数量
     _cartController.setCartItemQuantity(cartItem, newQuantity);
     
     onSuccess();
-    logDebug('🔄 本地设置购物车项数量: ${cartItem.dish.name} -> $newQuantity', tag: OrderConstants.logTag);
+    logDebug('🔄 设置购物车项数量: ${cartItem.dish.name} -> $newQuantity', tag: OrderConstants.logTag);
   }
 
 
@@ -893,92 +932,74 @@ class OrderController extends GetxController {
   }
 
 
-  // ========== 本地购物车管理器回调（现在由CartController统一处理）==========
-  // 这些回调方法现在不再需要，因为LocalCartManager由CartController统一管理
-
-  // /// 本地数量变化回调
-  // void _onLocalQuantityChanged(CartItem cartItem, int quantity) {
-  //   logDebug('🔍 _onLocalQuantityChanged 调试信息:', tag: OrderConstants.logTag);
-  //   logDebug('  菜品: ${cartItem.dish.name}', tag: OrderConstants.logTag);
-  //   logDebug('  新数量: $quantity', tag: OrderConstants.logTag);
-  //   logDebug('  规格选项: ${cartItem.selectedOptions}', tag: OrderConstants.logTag);
-  //   logDebug('  更新前购物车项数: ${cart.length}', tag: OrderConstants.logTag);
-  //   
-  //   // 立即更新本地购物车状态
-  //   if (quantity > 0) {
-  //     cart[cartItem] = quantity;
-  //   } else {
-  //     cart.remove(cartItem);
-  //   }
-  //   cart.refresh();
-  //   update();
-  //   
-  //   logDebug('  更新后购物车项数: ${cart.length}', tag: OrderConstants.logTag);
-  //   logDebug('🔄 本地数量变化: ${cartItem.dish.name} -> $quantity', tag: OrderConstants.logTag);
-  // }
-
-  // /// 本地WebSocket发送回调
-  // void _onLocalWebSocketSend(CartItem cartItem, int quantity) {
-  //   // 检查是否有必要的ID
-  //   if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
-  //     logDebug('⚠️ 新菜品缺少ID，跳过WebSocket同步: ${cartItem.dish.name}', tag: OrderConstants.logTag);
-  //     // 对于新菜品，应该通过addToCart方法处理，这里不应该被调用
-  //     return;
-  //   }
-  //   
-  //   // 统一使用WebSocket防抖管理器发送更新消息，包括数量为0的情况
-  //   // 服务器应该能够处理数量为0的更新操作，而不需要单独的删除操作
-  //   _wsDebounceManager.debounceUpdateQuantity(
-  //     cartItem: cartItem,
-  //     quantity: quantity,
-  //   );
-  //   
-  //   logDebug('📤 本地WebSocket发送: ${cartItem.dish.name} -> $quantity', tag: OrderConstants.logTag);
-  // }
-
-  // /// 本地WebSocket失败回调
-  // void _onLocalWebSocketFailed(CartItem cartItem, int originalQuantity) {
-  //   // 本地购物车管理器已经处理了数量回滚，这里只需要记录日志
-  //   logDebug('❌ 本地WebSocket失败，已回滚: ${cartItem.dish.name} -> $originalQuantity', tag: OrderConstants.logTag);
-  // }
 
   /// WebSocket防抖失败回调
   void _onWebSocketDebounceFailed(CartItem cartItem, int quantity) {
     // 通知CartController处理失败
     _cartController.handleWebSocketFailure(cartItem);
-    logDebug('❌ WebSocket防抖失败，已回滚: ${cartItem.dish.name}', tag: OrderConstants.logTag);
+    logDebug('❌ WebSocket防抖失败: ${cartItem.dish.name}', tag: OrderConstants.logTag);
   }
 
   // ========== WebSocket消息处理 ==========
 
   void _handleCartRefresh() {
     logDebug('🔄 收到服务器刷新购物车消息', tag: OrderConstants.logTag);
-    _loadCartFromApi(silent: true);
+    // 收到refresh消息时，先尝试普通刷新，如果遇到210状态码则延迟重试
+    if (table.value?.tableId != null) {
+      _refreshCartWithRetry(table.value!.tableId.toString());
+    } else {
+      logDebug('❌ 桌台ID为空，无法刷新购物车', tag: OrderConstants.logTag);
+    }
+  }
+
+  /// 带重试机制的购物车刷新
+  Future<void> _refreshCartWithRetry(String tableId, {int retryCount = 0}) async {
+    const maxRetries = 3;
+    const retryDelay = Duration(milliseconds: 1000);
+    
+    try {
+      // 先尝试普通刷新（不强制清空）
+      await _cartController.refreshCartFromApi(
+        tableId: tableId,
+        forceRefresh: false,
+      );
+      logDebug('✅ 购物车刷新成功', tag: OrderConstants.logTag);
+    } catch (e) {
+      // 检查是否是210状态码异常
+      if (e.runtimeType.toString().contains('CartProcessingException')) {
+        if (retryCount < maxRetries) {
+          logDebug('⏳ 遇到210状态码，${retryDelay.inMilliseconds}ms后重试 (${retryCount + 1}/$maxRetries)', tag: OrderConstants.logTag);
+          Future.delayed(retryDelay, () {
+            _refreshCartWithRetry(tableId, retryCount: retryCount + 1);
+          });
+        } else {
+          logDebug('⚠️ 重试次数已达上限，保留本地购物车数据', tag: OrderConstants.logTag);
+        }
+      } else {
+        logError('❌ 购物车刷新异常: $e', tag: OrderConstants.logTag);
+      }
+    }
   }
 
   void _handleCartAdd() {
     logDebug('➕ 收到服务器购物车添加消息', tag: OrderConstants.logTag);
-    // 停止loading状态
-    isCartOperationLoading.value = false;
+    // loading状态由CartController管理，这里不需要手动设置
   }
 
   void _handleCartUpdate() {
     logDebug('🔄 收到服务器购物车更新消息', tag: OrderConstants.logTag);
-    // 停止loading状态
-    isCartOperationLoading.value = false;
+    // loading状态由CartController管理，这里不需要手动设置
   }
 
   void _handleCartDelete() {
     logDebug('🗑️ 收到服务器购物车删除消息', tag: OrderConstants.logTag);
-    // 停止loading状态
-    isCartOperationLoading.value = false;
+    // loading状态由CartController管理，这里不需要手动设置
     _cartManager.refreshCartFromServer(() => _loadCartFromApi(silent: true));
   }
 
   void _handleCartClear() {
     logDebug('🧹 收到服务器购物车清空消息', tag: OrderConstants.logTag);
-    // 停止loading状态
-    isCartOperationLoading.value = false;
+    // loading状态由CartController管理，这里不需要手动设置
     _cartManager.refreshCartFromServer(() => _loadCartFromApi(silent: true));
   }
 
@@ -987,6 +1008,43 @@ class OrderController extends GetxController {
     logDebug('🔄 当前loading状态: ${isLoadingOrdered.value}', tag: OrderConstants.logTag);
     // WebSocket刷新已点订单时，静默刷新（不显示loading）
     loadCurrentOrder(showLoading: false);
+  }
+
+  /// WebSocket确认成功后触发动画播放
+  void _handleCartOperationSuccess(String messageId) {
+    try {
+      logDebug('🎯 处理WebSocket操作成功: messageId=$messageId', tag: OrderConstants.logTag);
+      
+      // 检查是否是减少操作，如果是则清除14005错误状态
+      final operationContext = _cartController.getOperationContextByMessageId(messageId);
+      if (operationContext != null) {
+        final dishId = operationContext.cartItem.dish.id;
+        final quantity = operationContext.quantity;
+        
+        // 如果是减少操作（quantity < 0），清除该菜品的14005错误状态
+        if (quantity < 0) {
+          _cartController.setDish14005Error(dishId, false);
+          logDebug('✅ 减少操作成功，已清除菜品14005错误状态: ${operationContext.cartItem.dish.name}', tag: OrderConstants.logTag);
+        }
+      }
+      
+      // 通知CartController WebSocket操作成功
+      _cartController.handleWebSocketResponse(messageId, true);
+      
+      final context = Get.context;
+      if (context != null) {
+        // 延迟少许，确保UI overlay可用
+        Future.delayed(Duration(milliseconds: 0), () {
+          print('🎬 播放动画: messageId=$messageId');
+          // 通过注册表播放与该messageId绑定的动画
+          CartAnimationRegistry.playForMessageId(messageId, context);
+        });
+      } else {
+        print('❌ 无法获取context，跳过动画播放');
+      }
+    } catch (e) {
+      logDebug('❌ 处理操作成功动画时异常: $e', tag: OrderConstants.logTag);
+    }
   }
 
   void _handlePeopleCountChange(int adultCount, int childCount) {
@@ -1206,9 +1264,9 @@ class OrderController extends GetxController {
     }
   }
 
-  /// 回滚本地状态（用户取消409确认时）
+  /// 取消409确认时的处理
   void _rollbackLocalState() {
-    logDebug('🔙 回滚本地状态，用户取消了409确认', tag: OrderConstants.logTag);
+    logDebug('🔙 用户取消了409确认，清理操作上下文', tag: OrderConstants.logTag);
     
     try {
       // 清理操作上下文
@@ -1218,9 +1276,91 @@ class OrderController extends GetxController {
       // 刷新购物车数据，从服务器获取最新状态
       _loadCartFromApi(silent: true);
       
-      logDebug('✅ 本地状态回滚完成', tag: OrderConstants.logTag);
+      logDebug('✅ 操作上下文清理完成', tag: OrderConstants.logTag);
     } catch (e) {
-      logDebug('❌ 回滚本地状态异常: $e', tag: OrderConstants.logTag);
+      logDebug('❌ 清理操作上下文异常: $e', tag: OrderConstants.logTag);
+    }
+  }
+
+  /// 处理操作失败（非409错误）
+  void _handleOperationFailed(String? messageId, String errorMessage) {
+    logDebug('❌ 处理操作失败: messageId=$messageId, error=$errorMessage', tag: OrderConstants.logTag);
+    
+    try {
+      if (messageId != null) {
+        // 通知CartController WebSocket操作失败（但不回滚）
+        _cartController.handleWebSocketResponse(messageId, false, errorMessage: errorMessage);
+        logDebug('✅ 已通知操作失败，等待服务器数据同步', tag: OrderConstants.logTag);
+      } else {
+        logDebug('⚠️ 消息ID为空，尝试通过最近操作上下文处理', tag: OrderConstants.logTag);
+        
+        // 尝试通过最近的操作上下文来处理失败
+        if (_lastOperationCartItem != null) {
+          final dishId = _lastOperationCartItem!.dish.id;
+          _cartController.setDishLoading(dishId, false);
+          logDebug('🔄 通过最近操作上下文清理loading状态: ${_lastOperationCartItem!.dish.name}', tag: OrderConstants.logTag);
+          
+          // 尝试查找所有相关的操作上下文并处理
+          final allContexts = _cartController.getAllOperationContexts();
+          for (final entry in allContexts.entries) {
+            final context = entry.value;
+            if (context.cartItem.dish.id == dishId) {
+              logDebug('🎯 找到匹配的操作上下文: messageId=${entry.key}, dish=${context.cartItem.dish.name}', tag: OrderConstants.logTag);
+              _cartController.handleWebSocketResponse(entry.key, false, errorMessage: errorMessage);
+              break; // 只处理第一个匹配的
+            }
+          }
+        } else {
+          logDebug('⚠️ 无最近操作上下文，无法精确处理失败', tag: OrderConstants.logTag);
+        }
+      }
+      
+      // 显示错误提示
+      if (errorMessage.isNotEmpty) {
+        GlobalToast.error(errorMessage);
+      } else {
+        GlobalToast.error('操作失败，请重试');
+      }
+    } catch (e) {
+      logDebug('❌ 处理操作失败异常: $e', tag: OrderConstants.logTag);
+    }
+  }
+  
+  /// 处理14005错误（禁用增加按钮）
+  void _handleDish14005Error(String? messageId, String errorMessage) {
+    logDebug('🚫 处理14005错误: messageId=$messageId, error=$errorMessage', tag: OrderConstants.logTag);
+    
+    try {
+      String? dishId;
+      
+      // 尝试从操作上下文中获取菜品ID
+      if (messageId != null) {
+        final operationContext = _cartController.getOperationContextByMessageId(messageId);
+        if (operationContext != null) {
+          dishId = operationContext.cartItem.dish.id;
+          logDebug('🎯 从操作上下文获取菜品ID: $dishId (${operationContext.cartItem.dish.name})', tag: OrderConstants.logTag);
+        }
+      }
+      
+      // 如果没有找到，尝试从最近操作上下文获取
+      if (dishId == null && _lastOperationCartItem != null) {
+        dishId = _lastOperationCartItem!.dish.id;
+        logDebug('🔄 从最近操作上下文获取菜品ID: $dishId (${_lastOperationCartItem!.dish.name})', tag: OrderConstants.logTag);
+      }
+      
+      // 设置菜品的14005错误状态（禁用增加按钮）
+      if (dishId != null) {
+        _cartController.setDish14005Error(dishId, true);
+        logDebug('✅ 已设置菜品14005错误状态，增加按钮已禁用: $dishId', tag: OrderConstants.logTag);
+        
+        // 14005错误时，强制刷新购物车数据以确保数量显示正确
+        logDebug('🔄 14005错误，强制刷新购物车数据确保数量正确', tag: OrderConstants.logTag);
+        _cartController.refreshCartFromApi();
+      } else {
+        logDebug('⚠️ 无法确定菜品ID，无法设置14005错误状态', tag: OrderConstants.logTag);
+      }
+    } catch (e) {
+      logDebug('❌ 处理14005错误异常: $e', tag: OrderConstants.logTag);
     }
   }
 
@@ -1259,20 +1399,15 @@ class OrderController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    Future.delayed(Duration(milliseconds: 500), () {
-      if (table.value?.tableId != null) {
-        forceRefreshCart(silent: true).then((_) {
-          cart.refresh();
-          update();
-        });
-      }
-    });
+    // 移除初始化完成后的强制刷新，避免210状态码导致数据清空
+    // 购物车数据已经在初始化时加载完成，不需要再次强制刷新
+    logDebug('✅ OrderController onReady 完成，购物车数据已加载', tag: OrderConstants.logTag);
   }
 
   // ========== 已点订单相关方法 ==========
 
   /// 加载当前订单数据
-  Future<void> loadCurrentOrder({int retryCount = 0, int maxRetries = 3, bool showRetryDialog = false, bool showLoading = true}) async {
+  Future<void> loadCurrentOrder({bool showLoading = true}) async {
     if (table.value?.tableId == null) {
       logDebug('❌ 桌台ID为空，无法加载已点订单', tag: OrderConstants.logTag);
       return;
@@ -1281,14 +1416,9 @@ class OrderController extends GetxController {
     try {
       if (showLoading) {
         isLoadingOrdered.value = true;
-        logDebug('📋 设置loading状态为true', tag: OrderConstants.logTag);
-      } else {
-        logDebug('📋 静默刷新，不设置loading状态 (当前状态: ${isLoadingOrdered.value})', tag: OrderConstants.logTag);
       }
       
-      // 智能重置网络错误状态：记录之前的网络错误状态
-      final hadPreviousError = hasNetworkErrorOrdered.value;
-      logDebug('📋 开始加载已点订单数据... (重试次数: $retryCount, 显示loading: $showLoading)', tag: OrderConstants.logTag);
+      logDebug('📋 开始加载已点订单数据...', tag: OrderConstants.logTag);
 
       final result = await _orderApi.getCurrentOrder(
         tableId: table.value!.tableId.toString(),
@@ -1296,84 +1426,21 @@ class OrderController extends GetxController {
 
       if (result.isSuccess && result.data != null) {
         currentOrder.value = result.data;
-        // 只有确实获取到数据时才清除网络错误状态
         hasNetworkErrorOrdered.value = false;
         logDebug('✅ 已点订单数据加载成功: ${result.data?.details?.length ?? 0}个订单', tag: OrderConstants.logTag);
       } else {
-        // 检查是否是真正的空数据（没有订单）还是服务器处理中
-        if (result.msg == '响应数据为空' || (result.code == 0 && result.msg == 'success' && result.data == null)) {
-          // 这是真正的空数据，直接显示空状态，不重试
-          logDebug('📭 当前桌台没有已点订单，显示空状态', tag: OrderConstants.logTag);
-          currentOrder.value = null;
-          // 真正的空数据，清除网络错误状态
-          hasNetworkErrorOrdered.value = false;
-        } else if ((result.code == 210 || result.msg?.contains('数据处理中') == true) 
-            && retryCount < maxRetries) {
-          // 只有服务器明确表示数据处理中时才重试
-          logDebug('⚠️ 数据可能还在处理中，${2}秒后重试... (${retryCount + 1}/$maxRetries)', tag: OrderConstants.logTag);
-          
-          // 延迟2秒后重试
-          await Future.delayed(Duration(seconds: 2));
-          return loadCurrentOrder(retryCount: retryCount + 1, maxRetries: maxRetries, showRetryDialog: showRetryDialog);
-        } else {
-          logDebug('❌ 已点订单数据加载失败: ${result.msg} (状态码: ${result.code})', tag: OrderConstants.logTag);
-          currentOrder.value = null;
-          // 智能判断：如果之前有网络错误且现在返回空数据，保持网络错误状态
-          if (hadPreviousError) {
-            hasNetworkErrorOrdered.value = true;
-            logDebug('🔄 保持网络错误状态，因为之前有网络问题且现在仍无数据', tag: OrderConstants.logTag);
-          }
-        }
-      }
-    } catch (e, stackTrace) {
-      logDebug('❌ 已点订单数据加载异常: $e', tag: OrderConstants.logTag);
-      logDebug('❌ StackTrace: $stackTrace', tag: OrderConstants.logTag);
-      
-      // 判断是否是网络连接异常
-      bool isNetworkError = e.toString().contains('SocketException') || 
-                           e.toString().contains('Connection failed') ||
-                           e.toString().contains('Network is unreachable') ||
-                           e.toString().contains('DioException') ||
-                           e.toString().contains('connection error');
-      
-      // 添加调试信息
-      logDebug('🔍 异常类型检测: isNetworkError=$isNetworkError, 异常内容: ${e.toString()}', tag: OrderConstants.logTag);
-      
-      // 对于网络异常，直接设置网络错误状态，不再重试
-      if (isNetworkError) {
-        logDebug('🌐 检测到网络连接异常，设置网络错误状态', tag: OrderConstants.logTag);
-        hasNetworkErrorOrdered.value = true;
+        // API调用成功但无数据，显示空状态
+        logDebug('📭 当前桌台没有已点订单', tag: OrderConstants.logTag);
         currentOrder.value = null;
-        // 网络异常时立即停止loading并返回，不继续重试
-        isLoadingOrdered.value = false;
-        return;
-      } else if (retryCount < maxRetries && (e.toString().contains('null') || e.toString().contains('NoSuchMethodError'))) {
-        // 只对空指针异常进行重试
-        logDebug('⚠️ 检测到空指针异常，${2}秒后重试... (${retryCount + 1}/$maxRetries)', tag: OrderConstants.logTag);
-        await Future.delayed(Duration(seconds: 2));
-        return loadCurrentOrder(retryCount: retryCount + 1, maxRetries: maxRetries, showRetryDialog: showRetryDialog);
-      } else {
-        // 其他异常也设置网络错误状态
-        hasNetworkErrorOrdered.value = true;
-        currentOrder.value = null;
+        hasNetworkErrorOrdered.value = false;
       }
+    } catch (e) {
+      logDebug('❌ 已点订单数据加载失败: $e', tag: OrderConstants.logTag);
+      hasNetworkErrorOrdered.value = true;
+      currentOrder.value = null;
     } finally {
-      // 在以下情况下停止loading：
-      // 1. 达到最大重试次数
-      // 2. 有数据返回
-      // 3. 确认是空数据（不需要重试）
-      // 4. 有网络错误状态
-      bool shouldStopLoading = retryCount >= maxRetries || 
-                               currentOrder.value != null ||
-                               hasNetworkErrorOrdered.value ||
-                               (retryCount == 0); // 首次请求完成，无论结果如何都停止loading
-      
-      if (shouldStopLoading) {
-        // 无论showLoading参数如何，都要确保loading状态被正确重置
-        logDebug('📋 停止loading状态 (之前状态: ${isLoadingOrdered.value})', tag: OrderConstants.logTag);
+      if (showLoading) {
         isLoadingOrdered.value = false;
-      } else {
-        logDebug('📋 继续loading状态，不停止 (重试次数: $retryCount)', tag: OrderConstants.logTag);
       }
     }
   }
@@ -1405,7 +1472,7 @@ class OrderController extends GetxController {
         logDebug('⏳ 等待服务器处理订单数据...', tag: OrderConstants.logTag);
         await Future.delayed(Duration(seconds: 1));
         
-        // 提交成功后刷新已点订单数据，使用重试机制
+        // 提交成功后刷新已点订单数据
         await loadCurrentOrder(showLoading: false);
         
         // 刷新服务器购物车数据以确保同步
@@ -1448,6 +1515,10 @@ class OrderController extends GetxController {
     // 清理购物车数据
     cart.clear();
     cartInfo.value = null;
+    
+    // 🔧 修复：强制清理时也清除所有14005错误状态
+    _cartController.dish14005ErrorStates.clear();
+    logDebug('🧹 强制清理时已清除所有14005错误状态', tag: OrderConstants.logTag);
     
     // 清理订单数据
     currentOrder.value = null;

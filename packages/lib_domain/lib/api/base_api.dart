@@ -5,6 +5,7 @@ import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/entrity/order/dish_list_model/dish_list_model.dart';
 import 'package:lib_domain/entrity/waiter/waiter_info_model.dart';
+import 'package:lib_domain/entrity/waiter/waiter_setting_model.dart';
 
 class BaseApi {
   //大厅列表
@@ -318,6 +319,19 @@ class BaseApi {
     if (result.isSuccess) {
       return result.convert(
         data: WaiterInfoModel.fromJson(result.getDataJson()),
+      );
+    } else {
+      return result.convert();
+    }
+  }
+
+  // 获取服务员设置信息
+  Future<HttpResultN<WaiterSettingModel>> getWaiterSetting() async {
+    final result = await HttpManagerN.instance.executeGet(ApiRequest.waiterSetting);
+    
+    if (result.isSuccess) {
+      return result.convert(
+        data: WaiterSettingModel.fromJson(result.getDataJson()),
       );
     } else {
       return result.convert();

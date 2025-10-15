@@ -31,6 +31,11 @@ class WebSocketHandler {
   final Function(int)? onMenuChange;
   final Function(String)? onTableChange;
   final Function(String, Map<String, dynamic>?)? onForceUpdateRequired;
+  final Function(String?, String)? onOperationFailed; // 操作失败回调，传递消息ID和错误信息
+  // 新增：操作成功回调（返回原始消息ID，用于触发UI动画等）
+  final Function(String)? onCartOperationSuccess;
+  // 新增：14005错误回调（禁用增加按钮）
+  final Function(String?, String)? onDish14005Error;
 
   WebSocketHandler({
     required WebSocketManager wsManager,
@@ -46,6 +51,9 @@ class WebSocketHandler {
     this.onMenuChange,
     this.onTableChange,
     this.onForceUpdateRequired,
+    this.onOperationFailed,
+    this.onCartOperationSuccess,
+    this.onDish14005Error,
   }) : _wsManager = wsManager,
        _tableId = tableId,
        _logTag = logTag;
@@ -226,12 +234,16 @@ class WebSocketHandler {
       final code = data['code'] as int?;
       final message = data['message'] as String?;
       
-      // 从嵌套的data结构中提取message_id作为originalId
-      String? originalId;
-      final nestedData = data['data'] as Map<String, dynamic>?;
-      if (nestedData != null) {
-        originalId = nestedData['message_id'] as String?;
+      // 从data结构中提取message_id（作为originalId）
+      String? originalId = data['original_id'] as String?;
+      // 如果没有original_id，尝试从嵌套的data中提取message_id
+      if (originalId == null) {
+        final nestedData = data['data'] as Map<String, dynamic>?;
+        if (nestedData != null) {
+          originalId = nestedData['message_id'] as String?;
+        }
       }
+      logDebug('🔍 提取originalId: $originalId', tag: _logTag);
       
       if (code != null && message != null) {
         logDebug('📝 收到服务器二次确认消息: 代码$code, 消息$message, 原始ID$originalId', tag: _logTag);
@@ -240,6 +252,10 @@ class WebSocketHandler {
           // 操作成功 - 刷新购物车数据
           logDebug('✅ 操作成功，刷新购物车数据', tag: _logTag);
           onCartRefresh?.call();
+          // 通知操作成功（用于触发动画等），携带原始消息ID
+          if (originalId != null) {
+            onCartOperationSuccess?.call(originalId);
+          }
           // 停止loading状态
           _stopLoadingState();
         } else if (code == 409) {
@@ -251,12 +267,23 @@ class WebSocketHandler {
           // 404错误 - 显示具体错误信息
           logDebug('❌ 收到404错误: $message', tag: _logTag);
           _showErrorMessage('操作失败', message);
+          // 触发失败回调
+          onOperationFailed?.call(originalId, message);
           // 停止loading状态
           _stopLoadingState();
         } else {
           // 其他操作失败
-          logDebug('❌ 操作失败: $message', tag: _logTag);
+          logDebug('❌ 操作失败: $message (错误码: $code)', tag: _logTag);
           _showErrorMessage('操作失败', message);
+          
+          // 特殊处理14005错误：禁用增加按钮
+          if (code == 14005) {
+            logDebug('🚫 检测到14005错误，触发增加按钮禁用处理', tag: _logTag);
+            onDish14005Error?.call(originalId, message);
+          }
+          
+          // 触发失败回调
+          onOperationFailed?.call(originalId, message);
           // 停止loading状态
           _stopLoadingState();
         }
@@ -306,7 +333,7 @@ class WebSocketHandler {
       // 生成或使用自定义消息ID
       final messageId = customMessageId ?? _generateMessageId();
       
-      logDebug('📤 添加菜品参数: 桌台ID=$_tableId, 菜品ID=$dishId, 数量=$quantity, 消息ID=$messageId', tag: _logTag);
+      // logDebug('📤 添加菜品参数: 桌台ID=$_tableId, 菜品ID=$dishId, 数量=$quantity, 消息ID=$messageId', tag: _logTag);
       
       final success = await _wsManager.sendAddDishToCartWithId(
         tableId: _tableId,
@@ -389,6 +416,40 @@ class WebSocketHandler {
     } catch (e) {
       logDebug('❌ 同步减少菜品数量到WebSocket异常: $e', tag: _logTag);
       return false;
+    }
+  }
+
+  /// 发送减少菜品数量（返回消息ID，便于与回执关联）
+  Future<String?> sendDecreaseQuantityWithId({
+    required CartItem cartItem,
+    required int incrQuantity,
+    String? customMessageId,
+  }) async {
+    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
+      logDebug('⚠️ cartSpecificationId或cartId为空，跳过WebSocket同步', tag: _logTag);
+      return null;
+    }
+
+    try {
+      final messageId = customMessageId ?? _generateMessageId();
+      final success = await _wsManager.sendDecreaseDishQuantityWithId(
+        tableId: _tableId,
+        cartId: cartItem.cartId!,
+        cartSpecificationId: cartItem.cartSpecificationId!,
+        incrQuantity: incrQuantity,
+        messageId: messageId,
+      );
+
+      if (success) {
+        logDebug('📤 减少菜品数量已同步到WebSocket(带ID): ${cartItem.dish.name} 增量$incrQuantity, 消息ID=$messageId', tag: _logTag);
+        return messageId;
+      } else {
+        logDebug('❌ 减少菜品数量同步到WebSocket失败(带ID): ${cartItem.dish.name} 增量$incrQuantity', tag: _logTag);
+        return null;
+      }
+    } catch (e) {
+      logDebug('❌ 同步减少菜品数量到WebSocket异常(带ID): $e', tag: _logTag);
+      return null;
     }
   }
 

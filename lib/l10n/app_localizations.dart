@@ -166,10 +166,10 @@ abstract class AppLocalizations {
   /// **'账号已在其他设备登录'**
   String get accountLoggedInOnAnotherDevice;
 
-  /// 桌子
+  /// 桌台
   ///
   /// In zh, this message translates to:
-  /// **'桌子'**
+  /// **'桌台'**
   String get table;
 
   /// 更多
@@ -208,10 +208,10 @@ abstract class AppLocalizations {
   /// **'包含桌台'**
   String get includingTables;
 
-  /// 选择桌子
+  /// 选择桌台
   ///
   /// In zh, this message translates to:
-  /// **'选择桌子'**
+  /// **'选择桌台'**
   String get selectTable;
 
   /// 原因
@@ -262,10 +262,10 @@ abstract class AppLocalizations {
   /// **'当前桌台不可用'**
   String get currentTableUnavailable;
 
-  /// 仅可选择一张以下非空闲状态桌子
+  /// 仅可选择一张以下非空闲状态桌台
   ///
   /// In zh, this message translates to:
-  /// **'仅可选择一张以下非空闲状态桌子'**
+  /// **'仅可选择一张以下非空闲状态桌台'**
   String get onlyOneNonFreeTableCanBeSelected;
 
   /// 请选择就餐人数
@@ -304,10 +304,10 @@ abstract class AppLocalizations {
   /// **'合并失败，请重试'**
   String get mergeFailedPleaseRetry;
 
-  /// 撤桌必须留下一张桌子
+  /// 撤桌必须留下一张桌台
   ///
   /// In zh, this message translates to:
-  /// **'撤桌必须留下一张桌子'**
+  /// **'撤桌必须留下一张桌台'**
   String get oneTableMustRemainWhenRemoving;
 
   /// 撤桌成功
@@ -424,10 +424,10 @@ abstract class AppLocalizations {
   /// **'购物车'**
   String get cart;
 
-  /// 更换桌子
+  /// 更换桌台
   ///
   /// In zh, this message translates to:
-  /// **'更换桌子'**
+  /// **'更换桌台'**
   String get changeTable;
 
   /// 更换菜单
@@ -981,6 +981,12 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'请输入'**
   String get pleaseEnter;
+
+  /// 登录中...
+  ///
+  /// In zh, this message translates to:
+  /// **'登录中...'**
+  String get logining;
 }
 
 class _AppLocalizationsDelegate

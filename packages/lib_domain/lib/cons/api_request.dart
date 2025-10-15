@@ -42,4 +42,7 @@ class ApiRequest {
   
   // 服务员信息接口
   static const waiterInfo = '/api/waiter/info';
+  
+  // 服务员设置接口
+  static const waiterSetting = '/api/waiter/setting/info';
 }

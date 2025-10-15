@@ -475,4 +475,7 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get pleaseEnter => 'Per favore inserisci';
+
+  @override
+  String get logining => 'Accesso in corso...';
 }

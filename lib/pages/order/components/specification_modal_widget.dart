@@ -6,7 +6,8 @@ import 'package:order_app/pages/order/order_element/order_controller.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import 'package:lib_base/logging/logging.dart';
-import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
+// import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
+import 'package:order_app/utils/cart_animation_registry.dart';
 
 /// 规格选择弹窗组件
 class SpecificationModalWidget {
@@ -549,13 +550,17 @@ class _SpecificationModalContentState
       // 添加到购物车
       final controller = Get.find<OrderController>();
 
-      // 触发抛物线动画（如果有购物车按钮key）
+      // 计算并登记动画坐标（不立即播放）
       if (widget.cartButtonKey != null) {
-        ParabolicAnimationManager.triggerSpecificationAddAnimation(
-          context: context,
-          addButtonKey: _addToCartButtonKey,
-          cartButtonKey: widget.cartButtonKey!,
-        );
+        try {
+          final RenderBox? addBox = _addToCartButtonKey.currentContext?.findRenderObject() as RenderBox?;
+          final RenderBox? cartBox = widget.cartButtonKey!.currentContext?.findRenderObject() as RenderBox?;
+          if (addBox != null && cartBox != null) {
+            final addPos = addBox.localToGlobal(Offset.zero) + Offset(addBox.size.width * 0.2, addBox.size.height * 0.2);
+            final cartPos = cartBox.localToGlobal(Offset.zero) + Offset(cartBox.size.width / 2, cartBox.size.height / 2);
+            CartAnimationRegistry.enqueue(addPos, cartPos);
+          }
+        } catch (_) {}
       }
 
       // 构建选择的规格选项 - 直接传递optionId和itemIds

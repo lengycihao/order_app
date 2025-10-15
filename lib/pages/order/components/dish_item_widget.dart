@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/order/model/dish.dart';
 import 'package:order_app/pages/order/order_element/order_controller.dart';
-import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
+// import 'package:order_app/pages/order/components/parabolic_animation_widget.dart';
+import 'package:order_app/utils/cart_animation_registry.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/widgets/robust_image_widget.dart';
 
@@ -39,28 +40,30 @@ class DishItemWidget extends StatelessWidget {
     return count;
   }
 
-  // 处理添加到购物车的动画
+  // 处理添加到购物车：改为登记动画 + 发送WS
   void _handleAddToCart(BuildContext context) {
-    print('🔘 DishItemWidget: 加号按钮被点击 - ${dish.name}');
-    print('➕ DishItemWidget: 调用 onAddTap');
-    
-    // 先调用添加回调
-    onAddTap?.call();
-    
-    // 触发抛物线动画（如果有购物车按钮key）
+     
+    // 计算并登记动画坐标（不立即播放）
     if (cartButtonKey != null) {
-      print('🎬 DishItemWidget: 触发抛物线动画');
       try {
-        ParabolicAnimationManager.triggerAddToCartAnimation(
-          context: context,
-          addButtonKey: _addButtonKey,
-          cartButtonKey: cartButtonKey!,
-        );
+        final RenderBox? addBox = _addButtonKey.currentContext?.findRenderObject() as RenderBox?;
+        final RenderBox? cartBox = cartButtonKey!.currentContext?.findRenderObject() as RenderBox?;
+        if (addBox != null && cartBox != null) {
+          final addPos = addBox.localToGlobal(Offset.zero) + Offset(addBox.size.width * 0.2, addBox.size.height * 0.2);
+          final cartPos = cartBox.localToGlobal(Offset.zero) + Offset(cartBox.size.width / 2, cartBox.size.height / 2);
+           CartAnimationRegistry.enqueue(addPos, cartPos);
+        } else {
+          debugPrint('❌ 无法获取按钮位置: addBox=$addBox, cartBox=$cartBox');
+        }
       } catch (e) {
-        print('❌ 抛物线动画错误: $e');
-        // 动画失败不影响添加功能
+        debugPrint('❌ 登记动画坐标异常: $e');
       }
+    } else {
+      debugPrint('❌ cartButtonKey为空，无法登记动画');
     }
+
+    // 发送添加操作（由控制器WS发送），由回执触发展示动画
+    onAddTap?.call();
   }
 
   @override
@@ -72,50 +75,47 @@ class DishItemWidget extends StatelessWidget {
       // 优化：只监听该菜品的数量变化，而不是整个购物车
       int count = _getDishCount(controller);
       
-      return GestureDetector(
-        onTap: onDishTap,
-        child: Container(
-          color: Colors.white,
-          padding: EdgeInsets.only(left: 10, right: 15, top: 8, bottom: 8),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 菜品图片
-              _buildDishImage(),
-              SizedBox(width: 8),
-              // 菜品信息
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // 菜品名称和过敏图标
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 菜品名称
-                        Text(
-                          dish.name,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w400,
-                            
-                          ),
-                          maxLines: 5,
-                          overflow: TextOverflow.ellipsis,
+      return Container(
+        color: Colors.white,
+        padding: EdgeInsets.only(left: 10, right: 15, top: 8, bottom: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 菜品图片 - 只有这里可以点击进入详情
+            _buildDishImage(),
+            SizedBox(width: 8),
+            // 菜品信息
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // 菜品名称和过敏图标
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // 菜品名称
+                      Text(
+                        dish.name,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w400,
+                          
                         ),
-                        const SizedBox(height: 6),
-                        // 过敏图标
-                        _buildAllergenIcons(),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // 价格和操作按钮
-                    _buildPriceAndActions(count),
-                  ],
-                ),
+                        maxLines: 5,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      // 过敏图标
+                      _buildAllergenIcons(),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // 价格和操作按钮
+                  _buildPriceAndActions(count),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       );
     });
@@ -128,20 +128,24 @@ class DishItemWidget extends StatelessWidget {
       return SizedBox.shrink();
     }
     
-    return DishImageWidget(
-      imageUrl: dish.image,
-      width: 100,
-      height: 100,
-      fit: BoxFit.contain,
-      borderRadius: BorderRadius.circular(8),
-      onImageLoaded: () {
-        // 图片加载成功，可以在这里添加统计或日志
-        // print('✅ 菜品图片加载成功: ${dish.name}');
-      },
-      onImageError: () {
-        // 图片加载失败，可以在这里添加统计或日志
-        // print('❌ 菜品图片加载失败: ${dish.name}');
-      },
+    return GestureDetector(
+      onTap: onDishTap,
+      behavior: HitTestBehavior.opaque, // 确保点击区域覆盖整个图片
+      child: DishImageWidget(
+        imageUrl: dish.image,
+        width: 100,
+        height: 100,
+        fit: BoxFit.contain,
+        borderRadius: BorderRadius.circular(8),
+        onImageLoaded: () {
+          // 图片加载成功，可以在这里添加统计或日志
+          // print('✅ 菜品图片加载成功: ${dish.name}');
+        },
+        onImageError: () {
+          // 图片加载失败，可以在这里添加统计或日志
+          // print('❌ 菜品图片加载失败: ${dish.name}');
+        },
+      ),
     );
   }
 
@@ -167,9 +171,6 @@ class DishItemWidget extends StatelessWidget {
                 width: 12,
                 height: 12,
                 fit: BoxFit.contain,
-                maxRetries: 2,
-                retryDelay: const Duration(milliseconds: 500),
-                enableRetry: true,
                 placeholder: Image.asset(
                   'assets/order_minganwu_place.webp',
                   width: 12,
@@ -342,21 +343,24 @@ class DishItemWidget extends StatelessWidget {
       children: [
         // 减号按钮
         if (count > 0)
-          Obx(() => GestureDetector(
-            onTap: controller.isCartOperationLoading.value ? null : onRemoveTap,
-            behavior: HitTestBehavior.opaque, // 阻止事件穿透
-            child: Container(
-              padding: EdgeInsets.all(8), // 增大点击区域
-              child: Opacity(
-                opacity: controller.isCartOperationLoading.value ? 0.5 : 1.0,
-                child: Image(
-                  image: AssetImage('assets/order_reduce_num.webp'),
-                  width: 22,
-                  height: 22,
+          Obx(() {
+            final isLoading = controller.isDishLoading(dish.id);
+            return GestureDetector(
+              onTap: isLoading ? null : onRemoveTap,
+              behavior: HitTestBehavior.opaque, // 阻止事件穿透
+              child: Container(
+                padding: EdgeInsets.all(8), // 增大点击区域
+                child: Opacity(
+                  opacity: isLoading ? 0.3 : 1.0, // loading时置灰
+                  child: Image(
+                    image: AssetImage('assets/order_reduce_num.webp'),
+                    width: 22,
+                    height: 22,
+                  ),
                 ),
               ),
-            ),
-          )),
+            );
+          }),
         // if (count > 0) SizedBox(width: 5),
         // 数量显示
         if (count > 0)
@@ -369,18 +373,22 @@ class DishItemWidget extends StatelessWidget {
             ),
           ),
         // if (count > 0) SizedBox(width: 5),
-        // 加号按钮 - 添加loading状态检查
+        // 加号按钮 - 添加loading状态和14005错误状态检查
         Builder(
           builder: (BuildContext buttonContext) {
             return Obx(() {
+              final isLoading = controller.isDishLoading(dish.id);
+              final isAddDisabled = controller.isDishAddDisabled(dish.id);
+              final isDisabled = isLoading || isAddDisabled;
+              
               return GestureDetector(
                 key: _addButtonKey,
-                onTap: controller.isCartOperationLoading.value ? null : () => _handleAddToCart(buttonContext),
+                onTap: isDisabled ? null : () => _handleAddToCart(buttonContext),
                 behavior: HitTestBehavior.opaque, // 阻止事件穿透
                 child: Container(
                   padding: EdgeInsets.all(8), // 增大点击区域
                   child: Opacity(
-                    opacity: controller.isCartOperationLoading.value ? 0.5 : 1.0,
+                    opacity: isAddDisabled ? 0.3 : 1.0, // 14005错误时置灰
                     child: Image(
                       image: AssetImage('assets/order_add_num.webp'),
                       width: 22,

@@ -5,8 +5,8 @@ import 'package:lib_base/logging/logging.dart';
 import '../../../utils/toast_utils.dart';
 import '../model/dish.dart';
 import '../order_element/cart_manager.dart';
-import '../order_element/local_cart_manager.dart';
 import '../order_element/websocket_handler.dart';
+import 'package:order_app/utils/cart_animation_registry.dart';
 import '../order_element/websocket_debounce_manager.dart';
 import '../order_element/models.dart';
 
@@ -28,7 +28,34 @@ class CartController extends GetxController {
   final cart = <CartItem, int>{}.obs;
   var cartInfo = Rx<CartInfoModel?>(null);
   final isLoadingCart = false.obs;
-  final isCartOperationLoading = false.obs;
+  final isCartOperationLoading = false.obs; // 保留用于兼容性
+  
+  // 按菜品ID管理的loading状态
+  final dishLoadingStates = <String, bool>{}.obs;
+  
+  // 按菜品ID管理的14005错误状态（增加按钮禁用状态）
+  final dish14005ErrorStates = <String, bool>{}.obs;
+  
+  /// 检查指定菜品是否正在loading
+  bool isDishLoading(String dishId) {
+    return dishLoadingStates[dishId] ?? false;
+  }
+  
+  /// 设置指定菜品的loading状态
+  void setDishLoading(String dishId, bool isLoading) {
+    dishLoadingStates[dishId] = isLoading;
+  }
+  
+  /// 检查指定菜品是否因14005错误而禁用增加按钮
+  bool isDishAddDisabled(String dishId) {
+    return dish14005ErrorStates[dishId] ?? false;
+  }
+  
+  /// 设置指定菜品的14005错误状态（禁用增加按钮）
+  void setDish14005Error(String dishId, bool hasError) {
+    dish14005ErrorStates[dishId] = hasError;
+    logDebug('🚫 设置菜品14005错误状态: dishId=$dishId, hasError=$hasError', tag: _logTag);
+  }
   
   // 依赖数据（由外部提供）
   List<Dish> _dishes = [];
@@ -36,14 +63,12 @@ class CartController extends GetxController {
   
   // 管理器
   late final CartManager _cartManager;
-  late final LocalCartManager _localCartManager;
   WebSocketHandler? _wsHandler;
   WebSocketDebounceManager? _wsDebounceManager;
   
-  // UI防抖相关
+  // UI防抖相关（用于批量操作）
   Timer? _uiDebounceTimer;
-  final Map<String, PendingOperation> _pendingOperations = {}; // dishKey -> PendingOperation
-  static const Duration _uiDebounceDuration = Duration(milliseconds: 700);
+  final Map<String, PendingOperation> _pendingOperations = {};
   
   // 409强制更新相关
   CartItem? _lastOperationCartItem;
@@ -51,6 +76,11 @@ class CartController extends GetxController {
   
   // 消息ID与操作上下文的映射关系（用于409强制更新）
   final Map<String, _OperationContext> _operationContextMap = {};
+  
+  // 智能同步相关
+  Timer? _syncTimer;
+  bool _isStableSyncInProgress = false;
+  static const int _stabilityCheckDelayMs = 2000; // 2秒无操作后认为稳定
 
   @override
   void onInit() {
@@ -61,9 +91,10 @@ class CartController extends GetxController {
   @override
   void onClose() {
     _uiDebounceTimer?.cancel();
+    _syncTimer?.cancel(); // 清理同步定时器
     _cartManager.dispose();
-    _localCartManager.clearAllPendingOperations();
     _wsDebounceManager?.dispose();
+    _responseController.close();
     super.onClose();
   }
   
@@ -80,14 +111,6 @@ class CartController extends GetxController {
   /// 初始化管理器
   void _initializeManagers() {
     _cartManager = CartManager(logTag: _logTag);
-    _localCartManager = LocalCartManager(logTag: _logTag);
-    
-    // 设置本地购物车管理器的回调
-    _localCartManager.setCallbacks(
-      onQuantityChanged: _onLocalQuantityChanged,
-      onWebSocketSend: _onLocalWebSocketSend,
-      onWebSocketFailed: _onLocalWebSocketFailed,
-    );
   }
 
   /// 设置WebSocket处理器
@@ -111,7 +134,6 @@ class CartController extends GetxController {
   /// 从API加载购物车数据
   Future<void> loadCartFromApi({
     required String tableId,
-    int retryCount = 0,
     bool silent = false,
   }) async {
     if (isLoadingCart.value && !silent) {
@@ -140,7 +162,18 @@ class CartController extends GetxController {
         convertApiCartToLocalCart();
       }
     } catch (e) {
+      // 检查是否是210状态码异常（数据处理中）
+      if (e.runtimeType.toString().contains('CartProcessingException')) {
+        logDebug('⏳ 购物车数据处理中，保留本地数据不清空', tag: _logTag);
+        // 210状态码时不做任何操作，保留本地购物车数据
+        // 如果是静默刷新，重新抛出异常让调用方处理重试逻辑
+        if (silent) {
+          rethrow;
+        }
+        return; // 重要：直接返回，不执行任何清空操作
+      }
       logError('❌ 购物车数据加载异常: $e', tag: _logTag);
+      // 其他异常也不清空购物车，保持现有状态
     } finally {
       // 静默刷新时不重置loading状态
       if (!silent) {
@@ -150,8 +183,27 @@ class CartController extends GetxController {
   }
 
   /// 将API购物车数据转换为本地购物车格式
-  void convertApiCartToLocalCart() {
-    if (cartInfo.value?.items == null || cartInfo.value!.items!.isEmpty) {
+  void convertApiCartToLocalCart({bool forceRefresh = false}) {
+    // 重要：如果cartInfo.value为null，说明API请求失败，不应该清空购物车
+    if (cartInfo.value == null) {
+      logDebug('⚠️ cartInfo.value为null，API请求失败，保留本地购物车', tag: _logTag);
+      return; // 保留本地购物车，不执行任何操作
+    }
+    
+    if (cartInfo.value!.items == null || cartInfo.value!.items!.isEmpty) {
+      // 如果是强制刷新模式，直接清空本地购物车，不检查待处理操作
+      if (forceRefresh) {
+        logDebug('🔄 强制刷新模式：服务器购物车为空，清空本地购物车', tag: _logTag);
+        // 取消所有待执行的WebSocket防抖操作
+        _wsDebounceManager?.cancelAllPendingOperations();
+        // 🔧 修复：强制刷新时也清除所有14005错误状态
+        dish14005ErrorStates.clear();
+        cart.clear();
+        cart.refresh();
+        update();
+        return;
+      }
+      
       // 服务器购物车为空，检查是否有待处理的操作
       if (_pendingOperations.isNotEmpty) {
         logDebug('🛒 服务器购物车为空，但有待处理操作，保留本地购物车', tag: _logTag);
@@ -162,8 +214,8 @@ class CartController extends GetxController {
       logDebug('🛒 服务器购物车为空，清空本地购物车', tag: _logTag);
       // 取消所有待执行的WebSocket防抖操作
       _wsDebounceManager?.cancelAllPendingOperations();
-      // 取消所有待执行的本地购物车防抖操作
-      _localCartManager.clearAllPendingOperations();
+      // 🔧 修复：服务器购物车为空时也清除所有14005错误状态
+      dish14005ErrorStates.clear();
       cart.clear();
       cart.refresh();
       update();
@@ -192,7 +244,7 @@ class CartController extends GetxController {
     cart.addAll(newCart);
     cart.refresh();
     update();
-    logDebug('✅ 购物车数据已更新: ${cart.length} 种商品', tag: _logTag);
+    // logDebug('✅ 购物车数据已更新: ${cart.length} 种商品', tag: _logTag);
   }
 
   /// 清空购物车
@@ -200,138 +252,36 @@ class CartController extends GetxController {
     _cartManager.debounceOperation('clear_cart', () {
       // 取消所有待执行的WebSocket防抖操作
       _wsDebounceManager?.cancelAllPendingOperations();
-      // 取消所有待执行的本地购物车防抖操作
-      _localCartManager.clearAllPendingOperations();
+      
+      // 🔧 修复：清空购物车时清除所有14005错误状态
+      dish14005ErrorStates.clear();
+      logDebug('🧹 清空购物车时已清除所有14005错误状态', tag: _logTag);
+      
       cart.clear();
       update();
       if (_wsHandler != null) {
         _wsHandler!.sendClearCart();
       } else {
-        logDebug('⚠️ WebSocket处理器未初始化，跳过清空购物车同步', tag: _logTag);
+        // logDebug('⚠️ WebSocket处理器未初始化，跳过清空购物车同步', tag: _logTag);
       }
-      logDebug('🧹 购物车已清空', tag: _logTag);
+      logDebug('🧹 购物车已清空，所有菜品状态已重置', tag: _logTag);
     }, milliseconds: 300);
   }
 
-  /// 添加菜品到购物车（带防抖）
-  void addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) {
-    print('🛒 CartController.addToCart 被调用: ${dish.name}');
-    _addToCartWithDebounce(dish, selectedOptions: selectedOptions);
-  }
-
-  /// 移除购物车项（带防抖）
-  void removeFromCart(dynamic item) {
-    if (item is CartItem) {
-      _removeFromCartWithDebounce(item);
-    } else if (item is Dish) {
-      _removeFromCartWithDebounce(item);
-    }
-  }
-
-  /// 防抖添加菜品到购物车
-  void _addToCartWithDebounce(Dish dish, {Map<String, List<String>>? selectedOptions}) {
-    print('🔄 CartController._addToCartWithDebounce 被调用: ${dish.name}');
-    final dishKey = _getDishKey(dish, selectedOptions);
-    final cartItem = CartItem(dish: dish, selectedOptions: selectedOptions ?? {}, optionsStr: null, apiPrice: null);
-    
-    // 更新待处理操作
-    final existingOperation = _pendingOperations[dishKey];
-    if (existingOperation != null) {
-      _pendingOperations[dishKey] = PendingOperation(
-        cartItem: cartItem, 
-        quantityChange: existingOperation.quantityChange + 1
-      );
-    } else {
-      _pendingOperations[dishKey] = PendingOperation(
-        cartItem: cartItem, 
-        quantityChange: 1
-      );
+  /// 添加菜品到购物车（同步操作，无本地更新）
+  Future<bool> addToCart(Dish dish, {Map<String, List<String>>? selectedOptions}) async {
+    // 检查是否正在操作中
+    if (isDishLoading(dish.id)) {
+      logDebug('⚠️ 菜品操作进行中，忽略重复点击: ${dish.name}', tag: _logTag);
+      return false;
     }
     
-    // 立即更新UI
-    _updateLocalCartImmediately(dish, 1, selectedOptions);
+    // 立即设置loading状态，防止连续点击
+    setDishLoading(dish.id, true);
     
-    // 重置防抖计时器
-    _uiDebounceTimer?.cancel();
-    _uiDebounceTimer = Timer(_uiDebounceDuration, () {
-      _flushPendingOperations();
-    });
-    
-    logDebug('📤 防抖添加菜品: ${dish.name}, 待处理: ${_pendingOperations[dishKey]?.quantityChange}', tag: _logTag);
-  }
-
-  /// 防抖移除购物车项
-  void _removeFromCartWithDebounce(dynamic item) {
-    CartItem? cartItem;
-    String? dishKey;
-    
-    if (item is CartItem) {
-      cartItem = item;
-      dishKey = _getDishKey(cartItem.dish, cartItem.selectedOptions);
-    } else if (item is Dish) {
-      // 查找对应的CartItem
-      for (var entry in cart.entries) {
-        if (entry.key.dish.id == item.id) {
-          cartItem = entry.key;
-          dishKey = _getDishKey(item, cartItem.selectedOptions);
-          break;
-        }
-      }
-      if (cartItem == null || dishKey == null) return;
-    } else {
-      return;
-    }
-    
-    // 更新待处理操作
-    final existingOperation = _pendingOperations[dishKey];
-    if (existingOperation != null) {
-      _pendingOperations[dishKey] = PendingOperation(
-        cartItem: cartItem, 
-        quantityChange: existingOperation.quantityChange - 1
-      );
-    } else {
-      _pendingOperations[dishKey] = PendingOperation(
-        cartItem: cartItem, 
-        quantityChange: -1
-      );
-    }
-    
-    // 立即更新UI
-    _updateLocalCartImmediately(cartItem.dish, -1, cartItem.selectedOptions);
-    
-    // 重置防抖计时器
-    _uiDebounceTimer?.cancel();
-    _uiDebounceTimer = Timer(_uiDebounceDuration, () {
-      _flushPendingOperations();
-    });
-    
-    logDebug('📤 防抖移除菜品: ${cartItem.dish.name}, 待处理: ${_pendingOperations[dishKey]?.quantityChange}', tag: _logTag);
-  }
-
-  /// 立即更新本地购物车UI
-  void _updateLocalCartImmediately(Dish dish, int quantityChange, Map<String, List<String>>? selectedOptions) {
-    // 查找是否已存在相同的购物车项
-    CartItem? existingCartItem;
-    for (var entry in cart.entries) {
-      if (entry.key.dish.id == dish.id && 
-          _areOptionsEqual(entry.key.selectedOptions, selectedOptions ?? {})) {
-        existingCartItem = entry.key;
-        break;
-      }
-    }
-    
-    if (existingCartItem != null) {
-      final currentQuantity = cart[existingCartItem] ?? 0;
-      final newQuantity = (currentQuantity + quantityChange).clamp(0, 999);
-      
-      if (newQuantity <= 0) {
-        cart.remove(existingCartItem);
-      } else {
-        cart[existingCartItem] = newQuantity;
-      }
-    } else if (quantityChange > 0) {
-      // 创建新的购物车项
-      final newCartItem = CartItem(
+    try {
+      // 创建临时CartItem用于操作上下文
+      final tempCartItem = CartItem(
         dish: dish,
         selectedOptions: selectedOptions ?? {},
         cartSpecificationId: null,
@@ -340,84 +290,109 @@ class CartController extends GetxController {
         cartId: null,
         apiPrice: null,
       );
-      cart[newCartItem] = quantityChange;
+      
+      // 保存操作上下文
+      _lastOperationCartItem = tempCartItem;
+      _lastOperationQuantity = 1;
+      
+      // 发送WebSocket消息并等待结果
+      final success = await _sendAddDishWebSocket(dish, selectedOptions);
+      
+      if (success) {
+        logDebug('✅ 添加菜品成功: ${dish.name}', tag: _logTag);
+        // loading状态由handleWebSocketResponse重置，这里不需要重复重置
+        return true;
+      } else {
+        logDebug('❌ 添加菜品失败: ${dish.name}', tag: _logTag);
+        // loading状态由handleWebSocketResponse重置，这里不需要重复重置
+        return false;
+      }
+    } catch (e) {
+      logDebug('❌ 添加菜品异常: ${dish.name}, error: $e', tag: _logTag);
+      // 异常时重置loading状态
+      setDishLoading(dish.id, false);
+      return false;
     }
-    
-    cart.refresh();
-    update();
   }
 
-  /// 刷新待处理的操作到WebSocket
-  void _flushPendingOperations() {
-    if (_pendingOperations.isEmpty) return;
+  /// 减少菜品数量（同步操作，无本地更新）
+  Future<bool> removeFromCart(dynamic item) async {
+    // 获取菜品ID用于loading状态管理
+    String dishId;
+    if (item is CartItem) {
+      dishId = item.dish.id;
+    } else if (item is Dish) {
+      dishId = item.id;
+    } else {
+      logDebug('⚠️ 无效的item类型', tag: _logTag);
+      return false;
+    }
     
-    logDebug('🚀 刷新待处理操作到WebSocket: ${_pendingOperations.length} 个', tag: _logTag);
+    // 检查是否正在操作中
+    if (isDishLoading(dishId)) {
+      final itemName = item is CartItem ? item.dish.name : (item is Dish ? item.name : 'Unknown');
+      logDebug('⚠️ 菜品操作进行中，忽略重复点击: $itemName', tag: _logTag);
+      return false;
+    }
     
-    for (var entry in _pendingOperations.entries) {
-      final pendingOperation = entry.value;
-      final quantityChange = pendingOperation.quantityChange;
-      
-      if (quantityChange == 0) continue;
-      
-      if (quantityChange > 0) {
-        // 添加操作
-        _sendAddDishWebSocketWithQuantity(pendingOperation.cartItem.dish, quantityChange, null);
-      } else {
-        // 减少操作，直接使用保存的CartItem信息
-        _sendRemoveDishWebSocketWithQuantity(pendingOperation.cartItem, -quantityChange);
+    // 立即设置loading状态，防止连续点击
+    setDishLoading(dishId, true);
+    
+    CartItem? cartItem;
+    if (item is CartItem) {
+      cartItem = item;
+    } else if (item is Dish) {
+      // 查找对应的CartItem
+      try {
+        cartItem = cart.keys.firstWhere((ci) => ci.dish.id == item.id);
+      } catch (e) {
+        cartItem = null;
       }
     }
     
-    _pendingOperations.clear();
+    if (cartItem == null) {
+      logDebug('⚠️ 未找到对应的购物车项', tag: _logTag);
+      setDishLoading(dishId, false); // 重置loading状态
+      return false;
+    }
+    
+    try {
+      // 保存操作上下文
+      _lastOperationCartItem = cartItem;
+      final currentQuantity = cart[cartItem] ?? 0;
+      _lastOperationQuantity = currentQuantity - 1;
+      
+      // 发送WebSocket消息并等待结果
+      final success = await _sendReduceQuantityWebSocket(cartItem);
+      
+      if (success) {
+        logDebug('✅ 减少菜品成功: ${cartItem.dish.name}', tag: _logTag);
+        // loading状态由handleWebSocketResponse重置，这里不需要重复重置
+        return true;
+      } else {
+        logDebug('❌ 减少菜品失败: ${cartItem.dish.name}', tag: _logTag);
+        // loading状态由handleWebSocketResponse重置，这里不需要重复重置
+        return false;
+      }
+    } catch (e) {
+      logDebug('❌ 减少菜品异常: ${cartItem.dish.name}, error: $e', tag: _logTag);
+      // 异常时重置loading状态
+      setDishLoading(dishId, false);
+      return false;
+    }
   }
 
-  /// 生成菜品的唯一键
-  String _getDishKey(Dish dish, Map<String, List<String>>? selectedOptions) {
-    final optionsStr = selectedOptions?.entries
-        .map((e) => '${e.key}:${e.value.join(',')}')
-        .join('|') ?? '';
-    return '${dish.id}|$optionsStr';
-  }
+
+  // 已移除：本地即时更新方法（WS优先流程下不再使用）
+
 
   /// 添加指定数量的菜品到购物车
   void addToCartWithQuantity(Dish dish, {
     required int quantity,
     Map<String, List<String>>? selectedOptions,
   }) {
-    logDebug('📤 添加指定数量菜品到购物车: ${dish.name} x$quantity', tag: _logTag);
-    
-    // 查找是否已存在相同的购物车项
-    CartItem? existingCartItem;
-    for (var entry in cart.entries) {
-      if (entry.key.dish.id == dish.id && 
-          _areOptionsEqual(entry.key.selectedOptions, selectedOptions ?? {})) {
-        existingCartItem = entry.key;
-        break;
-      }
-    }
-    
-    if (existingCartItem != null) {
-      // 如果已存在，直接增加指定数量
-      final currentQuantity = cart[existingCartItem]!;
-      final newQuantity = currentQuantity + quantity;
-      
-      // 保存操作上下文，用于可能的409强制更新
-      // 注意：保存的是增加的数量，而不是总数量
-      _lastOperationCartItem = existingCartItem;
-      _lastOperationQuantity = quantity; // 保存增加的数量
-      
-      // 立即更新本地购物车状态
-      cart[existingCartItem] = newQuantity;
-      cart.refresh();
-      update();
-      
-      // 发送WebSocket消息
-      _sendAddDishWebSocketWithQuantity(dish, quantity, selectedOptions);
-      
-      logDebug('➕ 增加已存在菜品数量: ${dish.name} +$quantity = $newQuantity', tag: _logTag);
-    } else {
-      // 如果不存在，创建新的购物车项并添加到本地购物车
-      final newCartItem = CartItem(
+    // WS优先：不进行本地数量修改，直接发送WS并保存操作上下文
+    CartItem tempCartItem = CartItem(
         dish: dish,
         selectedOptions: selectedOptions ?? {},
         cartSpecificationId: null,
@@ -428,19 +403,13 @@ class CartController extends GetxController {
       );
       
       // 保存操作上下文，用于可能的409强制更新
-      _lastOperationCartItem = newCartItem;
+    _lastOperationCartItem = tempCartItem;
       _lastOperationQuantity = quantity;
-      
-      // 立即添加到本地购物车
-      cart[newCartItem] = quantity;
-      cart.refresh();
-      update();
       
       // 发送WebSocket消息
       _sendAddDishWebSocketWithQuantity(dish, quantity, selectedOptions);
       
-      logDebug('➕ 添加新菜品: ${dish.name} x$quantity', tag: _logTag);
-    }
+    logDebug('➕(WS优先) 添加菜品: ${dish.name} x$quantity', tag: _logTag);
   }
 
   /// 删除购物车项
@@ -448,14 +417,13 @@ class CartController extends GetxController {
     if (!cart.containsKey(cartItem)) return;
     
     // 开始loading状态
-    isCartOperationLoading.value = true;
+    setDishLoading(cartItem.dish.id, true);
     
-    // 保存操作上下文，用于可能的409强制更新和失败回滚
+    // 保存操作上下文，用于可能的409强制更新
     _lastOperationCartItem = cartItem;
     _lastOperationQuantity = 0; // 删除操作的目标数量为0
-    final originalQuantity = cart[cartItem]!; // 保存原始数量用于回滚
     
-    // 从本地购物车中移除
+    // 从购物车中移除
     cart.remove(cartItem);
     cart.refresh();
     update();
@@ -463,7 +431,7 @@ class CartController extends GetxController {
     // 检查是否有必要的ID
     if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
       logDebug('⚠️ 删除的菜品缺少ID，无法同步到WebSocket: ${cartItem.dish.name}', tag: _logTag);
-      isCartOperationLoading.value = false;
+      setDishLoading(cartItem.dish.id, false);
       return;
     }
     
@@ -474,62 +442,79 @@ class CartController extends GetxController {
           logDebug('✅ 删除菜品同步到WebSocket成功: ${cartItem.dish.name}', tag: _logTag);
         } else {
           logDebug('❌ 删除菜品同步到WebSocket失败', tag: _logTag);
-          // WebSocket失败，回滚本地购物车
-          _rollbackDeleteCartItem(cartItem, originalQuantity);
           GlobalToast.error('删除菜品失败，请重试');
         }
-        isCartOperationLoading.value = false;
+        setDishLoading(cartItem.dish.id, false);
       }).catchError((error) {
         logDebug('❌ 删除菜品同步到WebSocket异常: $error', tag: _logTag);
-        // 异常时也需要回滚本地购物车
-        _rollbackDeleteCartItem(cartItem, originalQuantity);
         GlobalToast.error('删除菜品异常，请重试');
-        isCartOperationLoading.value = false;
+        setDishLoading(cartItem.dish.id, false);
       });
     } else {
       logDebug('⚠️ WebSocket处理器未初始化，跳过删除菜品同步', tag: _logTag);
-      isCartOperationLoading.value = false;
+      setDishLoading(cartItem.dish.id, false);
     }
     
     logDebug('🗑️ 完全删除购物车项: ${cartItem.dish.name}', tag: _logTag);
   }
 
-  /// 增加购物车项数量
-  void addCartItemQuantity(CartItem cartItem) {
-    if (!cart.containsKey(cartItem)) return;
+  /// 增加购物车项数量（同步操作，无本地更新）
+  Future<bool> addCartItemQuantity(CartItem cartItem) async {
+    if (!cart.containsKey(cartItem)) {
+      logDebug('⚠️ 购物车中未找到该项: ${cartItem.dish.name}', tag: _logTag);
+      return false;
+    }
     
-    // 开始loading状态
-    isCartOperationLoading.value = true;
+    // 检查是否正在操作中
+    if (isDishLoading(cartItem.dish.id)) {
+      logDebug('⚠️ 菜品操作进行中，忽略重复点击: ${cartItem.dish.name}', tag: _logTag);
+      return false;
+    }
     
-    // 保存操作上下文，用于可能的409强制更新
-    // 注意：保存的是增加的数量(1)，而不是总数量
-    _lastOperationCartItem = cartItem;
-    _lastOperationQuantity = 1; // 每次点击只增加1个
+    // 设置操作状态
+    setDishLoading(cartItem.dish.id, true);
     
+    try {
+      // 保存操作上下文
+      _lastOperationCartItem = cartItem;
     final currentQuantity = cart[cartItem]!;
-    final newQuantity = currentQuantity + 1;
-    
-    // 立即更新本地购物车状态
-    cart[cartItem] = newQuantity;
-    cart.refresh();
-    update();
-    
-    logDebug('➕ 本地增加购物车项数量: ${cartItem.dish.name}', tag: _logTag);
-    
-    // 发送WebSocket消息 - 使用add操作而不是update操作
-    _sendAddDishWebSocketWithQuantity(cartItem.dish, 1, cartItem.selectedOptions);
-    
-    // 延迟结束loading状态
-    Future.delayed(Duration(milliseconds: 100), () {
-      isCartOperationLoading.value = false;
-    });
+      _lastOperationQuantity = currentQuantity + 1;
+      
+      // 发送WebSocket消息并等待结果
+      final success = await _sendAddDishWebSocketWithQuantity(cartItem.dish, 1, cartItem.selectedOptions);
+      
+        if (success) {
+        logDebug('✅ 增加菜品数量成功: ${cartItem.dish.name}', tag: _logTag);
+        // loading状态由handleWebSocketResponse重置，这里不需要重复重置
+        return true;
+        } else {
+        logDebug('❌ 增加菜品数量失败: ${cartItem.dish.name}', tag: _logTag);
+        // loading状态由handleWebSocketResponse重置，这里不需要重复重置
+        return false;
+      }
+    } catch (e) {
+      logDebug('❌ 增加菜品数量异常: ${cartItem.dish.name}, error: $e', tag: _logTag);
+      // 异常时重置loading状态
+      setDishLoading(cartItem.dish.id, false);
+      return false;
+    }
   }
 
-  /// 发送添加指定数量菜品的WebSocket消息
-  Future<void> _sendAddDishWebSocketWithQuantity(Dish dish, int quantity, Map<String, List<String>>? selectedOptions) async {
+  /// 发送添加单个菜品的WebSocket消息并等待响应
+  Future<bool> _sendAddDishWebSocket(Dish dish, Map<String, List<String>>? selectedOptions) async {
+    return await _sendAddDishWebSocketWithQuantity(dish, 1, selectedOptions);
+  }
+
+  /// 发送减少菜品数量的WebSocket消息并等待响应
+  Future<bool> _sendReduceQuantityWebSocket(CartItem cartItem) async {
+    return await _sendRemoveDishWebSocketWithQuantity(cartItem, 1);
+  }
+
+  /// 发送添加指定数量菜品的WebSocket消息并等待响应
+  Future<bool> _sendAddDishWebSocketWithQuantity(Dish dish, int quantity, Map<String, List<String>>? selectedOptions) async {
     if (_wsHandler == null) {
       logDebug('⚠️ WebSocket处理器未初始化，跳过发送添加指定数量菜品消息: ${dish.name} x$quantity', tag: _logTag);
-      return;
+      return false;
     }
     
     try {
@@ -549,118 +534,75 @@ class CartController extends GetxController {
           quantity: quantity,
           selectedOptions: selectedOptions,
         );
+        // 绑定登记的动画到该消息ID
+        CartAnimationRegistry.bindNextToMessageId(messageId, count: quantity);
         
-        logDebug('✅ WebSocket添加指定数量菜品成功: ${dish.name} x$quantity, 消息ID=$messageId', tag: _logTag);
         logDebug('💾 保存操作上下文映射: messageId=$messageId, dish=${dish.name}, quantity=$quantity', tag: _logTag);
         
         // 清理过期的映射（保留最近10分钟的）
         _cleanupExpiredContextMappings();
+        
+        // 等待WebSocket响应（设置超时时间）
+        return await _waitForWebSocketResponse(messageId, timeout: Duration(seconds: 10));
       } else {
-        logDebug('❌ WebSocket添加指定数量菜品失败: ${dish.name} x$quantity', tag: _logTag);
+        logDebug('❌ 发送WebSocket消息失败：未获得消息ID', tag: _logTag);
+        return false;
       }
     } catch (e) {
-      logError('❌ 发送WebSocket添加指定数量菜品异常: $e', tag: _logTag);
+      logDebug('❌ 发送WebSocket添加指定数量菜品异常: $e', tag: _logTag);
+      return false;
     }
   }
 
-  /// 发送移除指定数量菜品的WebSocket消息
-  Future<void> _sendRemoveDishWebSocketWithQuantity(CartItem cartItem, int quantity) async {
+  /// 发送移除指定数量菜品的WebSocket消息并等待响应
+  Future<bool> _sendRemoveDishWebSocketWithQuantity(CartItem cartItem, int quantity) async {
     if (_wsHandler == null) {
       logDebug('⚠️ WebSocket处理器未初始化，跳过发送移除指定数量菜品消息: ${cartItem.dish.name} x$quantity', tag: _logTag);
-      return;
+      return false;
     }
     
     // 检查是否有必要的ID
     if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
       logDebug('⚠️ 移除的菜品缺少ID，无法同步到WebSocket: ${cartItem.dish.name}', tag: _logTag);
-      return;
+      return false;
     }
     
     try {
       logDebug('🗑️ 发送WebSocket移除指定数量菜品: ${cartItem.dish.name} x$quantity', tag: _logTag);
       
       // 调用减少菜品数量来减少指定数量
-      // 注意：sendDecreaseQuantity期望负数表示减少，所以传入-quantity
-      final success = await _wsHandler!.sendDecreaseQuantity(
+      // 注意：sendDecreaseQuantityWithId期望负数表示减少，所以传入-quantity
+      final messageId = await _wsHandler!.sendDecreaseQuantityWithId(
         cartItem: cartItem,
         incrQuantity: -quantity,
       );
       
-      if (success) {
-        logDebug('✅ WebSocket移除指定数量菜品成功: ${cartItem.dish.name} x$quantity', tag: _logTag);
+      if (messageId != null) {
+        // 保存消息ID与操作上下文的映射（用于14005错误恢复）
+        _operationContextMap[messageId] = _OperationContext(
+          cartItem: cartItem,
+          quantity: -quantity, // 负数表示减少操作
+        );
+        logDebug('💾 保存操作上下文映射: messageId=$messageId, dish=${cartItem.dish.name}, quantity=-$quantity', tag: _logTag);
+        
+        // 等待WebSocket响应（设置超时时间）
+        return await _waitForWebSocketResponse(messageId, timeout: Duration(seconds: 10));
       } else {
-        logDebug('❌ WebSocket移除指定数量菜品失败: ${cartItem.dish.name} x$quantity', tag: _logTag);
+        logDebug('❌ 发送WebSocket消息失败：未获得消息ID', tag: _logTag);
+        return false;
       }
     } catch (e) {
-      logError('❌ 发送WebSocket移除指定数量菜品异常: $e', tag: _logTag);
+      logDebug('❌ 发送WebSocket移除指定数量菜品异常: $e', tag: _logTag);
+      return false;
     }
   }
 
-  /// 比较两个选项映射是否相等
-  bool _areOptionsEqual(Map<String, List<String>> options1, Map<String, List<String>> options2) {
-    if (options1.length != options2.length) return false;
-    
-    for (var key in options1.keys) {
-      if (!options2.containsKey(key)) return false;
-      
-      final list1 = options1[key]!;
-      final list2 = options2[key]!;
-      
-      if (list1.length != list2.length) return false;
-      
-      // 对列表进行排序后比较
-      final sortedList1 = List<String>.from(list1)..sort();
-      final sortedList2 = List<String>.from(list2)..sort();
-      
-      for (int i = 0; i < sortedList1.length; i++) {
-        if (sortedList1[i] != sortedList2[i]) return false;
-      }
-    }
-    
-    return true;
-  }
+  // 已移除：_areOptionsEqual（不再使用）
 
-  /// 本地数量变化回调
-  void _onLocalQuantityChanged(CartItem cartItem, int quantity) {
-    logDebug('🔍 本地数量变化: ${cartItem.dish.name} -> $quantity', tag: _logTag);
-    
-    // 立即更新本地购物车状态
-    if (quantity > 0) {
-      cart[cartItem] = quantity;
-    } else {
-      cart.remove(cartItem);
-    }
-    cart.refresh();
-    update();
-  }
-
-  /// 本地WebSocket发送回调
-  void _onLocalWebSocketSend(CartItem cartItem, int quantity) {
-    // 检查是否有必要的ID
-    if (cartItem.cartSpecificationId == null || cartItem.cartId == null) {
-      logDebug('⚠️ 新菜品缺少ID，跳过WebSocket同步: ${cartItem.dish.name}', tag: _logTag);
-      return;
-    }
-    
-    // 统一使用WebSocket防抖管理器发送更新消息
-      _wsDebounceManager?.debounceUpdateQuantity(
-      cartItem: cartItem,
-      quantity: quantity,
-    );
-    
-    logDebug('📤 本地WebSocket发送: ${cartItem.dish.name} -> $quantity', tag: _logTag);
-  }
-
-  /// 本地WebSocket失败回调
-  void _onLocalWebSocketFailed(CartItem cartItem, int originalQuantity) {
-    logDebug('❌ 本地WebSocket失败，已回滚: ${cartItem.dish.name} -> $originalQuantity', tag: _logTag);
-  }
 
   /// WebSocket防抖失败回调
   void _onWebSocketDebounceFailed(CartItem cartItem, int quantity) {
-    // 通知本地购物车管理器处理失败
-    _localCartManager.handleWebSocketFailure(cartItem);
-    logDebug('❌ WebSocket防抖失败，已回滚: ${cartItem.dish.name}', tag: _logTag);
+    logDebug('❌ WebSocket防抖失败: ${cartItem.dish.name}', tag: _logTag);
   }
 
   /// 处理强制更新需求（409状态码）
@@ -676,16 +618,49 @@ class CartController extends GetxController {
   void setCartItemQuantity(CartItem cartItem, int newQuantity) {
     if (!cart.containsKey(cartItem)) return;
     
-    // 直接使用本地购物车管理器设置数量
-    _localCartManager.setDishQuantity(cartItem, newQuantity);
+    // 直接设置数量
+    cart[cartItem] = newQuantity;
+    cart.refresh();
+    update();
     
     logDebug('🔄 设置购物车项数量: ${cartItem.dish.name} -> $newQuantity', tag: _logTag);
   }
 
   /// 处理WebSocket失败（用于OrderController调用）
   void handleWebSocketFailure(CartItem cartItem) {
-    _localCartManager.handleWebSocketFailure(cartItem);
-    logDebug('❌ 处理WebSocket失败，已回滚: ${cartItem.dish.name}', tag: _logTag);
+    logDebug('❌ 处理WebSocket失败: ${cartItem.dish.name}', tag: _logTag);
+  }
+
+  /// 处理WebSocket响应（成功或失败）
+  void handleWebSocketResponse(String messageId, bool success, {String? errorMessage}) {
+    logDebug('📨 处理WebSocket响应: messageId=$messageId, success=$success', tag: _logTag);
+    
+    // 通过操作上下文找到对应的菜品并重置loading状态
+    final context = _operationContextMap[messageId];
+    if (context != null) {
+      final dishId = context.cartItem.dish.id;
+      setDishLoading(dishId, false);
+      logDebug('✅ 重置菜品loading状态: ${context.cartItem.dish.name} (dishId=$dishId)', tag: _logTag);
+    } else {
+      logDebug('⚠️ 未找到messageId对应的操作上下文: $messageId', tag: _logTag);
+    }
+    
+    // 将响应推送到响应流中
+    _responseController.add({
+      'messageId': messageId,
+      'success': success,
+      'errorMessage': errorMessage,
+      'timestamp': DateTime.now().millisecondsSinceEpoch,
+    });
+    
+    if (!success && errorMessage != null) {
+      logDebug('❌ WebSocket操作失败: $errorMessage', tag: _logTag);
+    }
+    
+    // 操作完成后，启动延迟同步机制
+    if (success) {
+      _scheduleDelayedSync();
+    }
   }
 
   /// 强制刷新购物车UI
@@ -699,17 +674,60 @@ class CartController extends GetxController {
     });
   }
 
-  /// 回滚删除购物车项操作
-  void _rollbackDeleteCartItem(CartItem cartItem, int originalQuantity) {
-    logDebug('🔙 回滚删除购物车项操作: ${cartItem.dish.name}, 恢复数量: $originalQuantity', tag: _logTag);
+  /// 从API强制刷新购物车数据（忽略本地状态）
+  Future<void> refreshCartFromApi({String? tableId, bool forceRefresh = false}) async {
+    // 如果没有传入tableId，尝试从cartInfo中获取
+    String? currentTableId = tableId ?? cartInfo.value?.tableId?.toString();
     
-    // 将菜品重新添加到本地购物车，恢复原始数量
-    cart[cartItem] = originalQuantity;
-    cart.refresh();
-    update();
+    if (currentTableId == null) {
+      logDebug('❌ 桌台ID为空，无法刷新购物车数据', tag: _logTag);
+      return;
+    }
     
-    logDebug('✅ 回滚成功，已重新添加到本地购物车: ${cartItem.dish.name} x$originalQuantity', tag: _logTag);
+    logDebug('🔄 开始强制刷新购物车数据...', tag: _logTag);
+    
+    try {
+      // 强制刷新：直接获取数据，不重试
+      if (forceRefresh) {
+        try {
+          final cartData = await _cartManager.loadCartFromApi(currentTableId);
+          
+          if (cartData != null) {
+            // 获取到有效数据，更新购物车
+            cartInfo.value = cartData;
+            convertApiCartToLocalCart(forceRefresh: true);
+            logDebug('✅ 强制刷新购物车数据成功', tag: _logTag);
+          } else {
+            // API返回null，清空本地购物车
+            logDebug('📭 API返回空数据，清空本地购物车', tag: _logTag);
+            cartInfo.value = null;
+            convertApiCartToLocalCart(forceRefresh: true);
+          }
+        } catch (e) {
+          // 检查是否是210状态码异常（数据处理中）
+          if (e.runtimeType.toString().contains('CartProcessingException')) {
+            logDebug('⏳ 强制刷新时遇到210状态码，保留本地数据', tag: _logTag);
+            return; // 保留本地数据，不执行清空操作
+          }
+          logError('❌ 强制刷新购物车数据异常: $e', tag: _logTag);
+          // 其他异常也不清空本地购物车，保持现有状态
+          return;
+        }
+      } else {
+        // 普通刷新，调用原有逻辑，但需要捕获210异常并重新抛出
+        try {
+          await loadCartFromApi(tableId: currentTableId, silent: true);
+          logDebug('✅ 普通刷新购物车数据成功', tag: _logTag);
+        } catch (e) {
+          // 重新抛出异常，让调用方处理
+          rethrow;
+        }
+      }
+    } catch (e) {
+      logError('❌ 强制刷新购物车数据异常: $e', tag: _logTag);
+    }
   }
+
 
   /// 计算总数量
   int get totalCount => cart.values.fold(0, (sum, e) => sum + e);
@@ -819,6 +837,143 @@ class CartController extends GetxController {
   /// 清理指定消息ID的操作上下文（供OrderController调用）
   void clearOperationContext(String messageId) {
     _operationContextMap.remove(messageId);
+  }
+  
+  /// 获取所有操作上下文（供OrderController调用）
+  Map<String, _OperationContext> getAllOperationContexts() {
+    return Map.from(_operationContextMap);
+  }
+  
+  
+  /// 比较两个选项映射是否相等
+  // 移除重复的_equal方法，已存在 _areOptionsEqualForContext
+
+  /// 等待WebSocket响应的方法
+  Future<bool> _waitForWebSocketResponse(String messageId, {Duration timeout = const Duration(seconds: 10)}) async {
+    final completer = Completer<bool>();
+    Timer? timeoutTimer;
+    
+    // 设置超时定时器
+    timeoutTimer = Timer(timeout, () {
+      if (!completer.isCompleted) {
+        logDebug('⏰ WebSocket响应超时: messageId=$messageId', tag: _logTag);
+        
+        // 超时时也需要重置loading状态
+        final context = _operationContextMap[messageId];
+        if (context != null) {
+          final dishId = context.cartItem.dish.id;
+          setDishLoading(dishId, false);
+          logDebug('✅ 超时重置菜品loading状态: ${context.cartItem.dish.name} (dishId=$dishId)', tag: _logTag);
+        }
+        
+        completer.complete(false);
+      }
+    });
+    
+    // 创建一个监听器来等待响应
+    late StreamSubscription subscription;
+    subscription = _responseStream.listen((response) {
+      if (response['messageId'] == messageId) {
+        timeoutTimer?.cancel();
+        subscription.cancel();
+        
+        final success = response['success'] == true;
+        logDebug('📨 收到WebSocket响应: messageId=$messageId, success=$success', tag: _logTag);
+        
+        if (!completer.isCompleted) {
+          completer.complete(success);
+        }
+      }
+    });
+    
+    return completer.future;
+  }
+  
+  /// 响应流控制器
+  final StreamController<Map<String, dynamic>> _responseController = StreamController<Map<String, dynamic>>.broadcast();
+  Stream<Map<String, dynamic>> get _responseStream => _responseController.stream;
+  
+  /// 启动延迟同步机制
+  void _scheduleDelayedSync() {
+    // 取消之前的同步定时器
+    _syncTimer?.cancel();
+    
+    // 设置新的延迟同步定时器
+    _syncTimer = Timer(Duration(milliseconds: _stabilityCheckDelayMs), () {
+      _performStableSync();
+    });
+    
+    logDebug('⏰ 启动延迟同步机制，${_stabilityCheckDelayMs}ms后执行同步', tag: _logTag);
+  }
+  
+  /// 执行稳定同步
+  Future<void> _performStableSync() async {
+    // 检查是否有操作正在进行
+    if (_hasActiveOperations()) {
+      logDebug('⏳ 检测到活跃操作，延迟同步', tag: _logTag);
+      _scheduleDelayedSync(); // 重新调度
+      return;
+    }
+    
+    // 检查是否已经有同步在进行
+    if (_isStableSyncInProgress) {
+      logDebug('⏳ 稳定同步已在进行中，跳过', tag: _logTag);
+      return;
+    }
+    
+    _isStableSyncInProgress = true;
+    logDebug('🔄 开始执行稳定同步...', tag: _logTag);
+    
+    try {
+      // 获取当前桌台ID
+      final tableId = cartInfo.value?.tableId?.toString();
+      if (tableId == null) {
+        logDebug('❌ 桌台ID为空，无法执行稳定同步', tag: _logTag);
+        return;
+      }
+      
+      // 执行静默刷新，不显示loading状态
+      await loadCartFromApi(tableId: tableId, silent: true);
+      logDebug('✅ 稳定同步完成', tag: _logTag);
+      
+    } catch (e) {
+      // 检查是否是210状态码异常
+      if (e.runtimeType.toString().contains('CartProcessingException')) {
+        logDebug('⏳ 稳定同步遇到210状态码，稍后重试', tag: _logTag);
+        // 延迟重试
+        Future.delayed(Duration(milliseconds: 1000), () {
+          _performStableSync();
+        });
+      } else {
+        logError('❌ 稳定同步异常: $e', tag: _logTag);
+      }
+    } finally {
+      _isStableSyncInProgress = false;
+    }
+  }
+  
+  /// 检查是否有活跃的操作
+  bool _hasActiveOperations() {
+    // 检查是否有菜品正在loading
+    for (final loading in dishLoadingStates.values) {
+      if (loading) {
+        return true;
+      }
+    }
+    
+    // 检查是否有待处理的WebSocket操作
+    if ((_wsDebounceManager?.pendingOperationsCount ?? 0) > 0) {
+      return true;
+    }
+    
+    return false;
+  }
+  
+  /// 手动触发稳定同步（供外部调用）
+  void triggerStableSync() {
+    logDebug('🔧 手动触发稳定同步', tag: _logTag);
+    _syncTimer?.cancel();
+    _performStableSync();
   }
 }
 
