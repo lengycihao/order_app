@@ -217,8 +217,11 @@ class LoginController extends GetxController {
     final username = usernameController.text.trim();
     final password = passwordController.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
-      _showToast('账号或密码不能为空', isError: true);
+    if (username.isEmpty ) {
+      _showToast(Get.context!.l10n.loginNameCannotBeEmpty, isError: true);
+      return;
+    }if (  password.isEmpty) {
+      _showToast(Get.context!.l10n.passwordCannotBeEmpty, isError: true);
       return;
     }
     

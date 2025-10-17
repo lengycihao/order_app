@@ -286,23 +286,13 @@ class TableCard extends StatelessWidget {
                                 height: 8,
                               ),
                               SizedBox(width: 3),
-                              // 当桌台非空和不可用时，显示0/10格式
-                              (status != TableStatus.Empty &&
-                                      status != TableStatus.Unavailable)
-                                  ? Text(
-                                      '${table.currentAdult}/${table.standardAdult}',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    )
-                                  : Text(
-                                      table.standardAdult.toString(),
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
+                              Text(
+                                '${table.currentAdult}/${table.standardAdult}',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ],
                           ),
                           if (table.standardChild > 0)
@@ -315,23 +305,13 @@ class TableCard extends StatelessWidget {
                                   height: 8,
                                 ),
                                 SizedBox(width: 3),
-                                // 当桌台非空和不可用时，显示0/10格式
-                                (status != TableStatus.Empty &&
-                                        status != TableStatus.Unavailable)
-                                    ? Text(
-                                        '${table.currentChild}/${table.standardChild}',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      )
-                                    : Text(
-                                        table.standardChild.toString(),
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
+                                Text(
+                                  '${table.currentChild}/${table.standardChild}',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ],
                             ),
                         ],

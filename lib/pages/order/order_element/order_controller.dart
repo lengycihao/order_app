@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:order_app/utils/l10n_utils.dart';
+import 'package:order_app/services/language_service.dart';
 import '../model/dish.dart';
 import 'package:lib_domain/entrity/order/dish_list_model/dish_list_model.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
@@ -275,6 +276,9 @@ class OrderController extends GetxController {
 
       // 获取用户token
       String? token = _getUserToken();
+      
+      // 获取当前语言设置
+      String? language = _getCurrentLanguage();
 
       // 初始化WebSocket处理器
       _wsHandler = WebSocketHandler(
@@ -296,7 +300,7 @@ class OrderController extends GetxController {
         onDish14005Error: _handleDish14005Error,
       );
 
-      final success = await _wsHandler.initialize(token);
+      final success = await _wsHandler.initialize(token, language: language);
       isWebSocketConnected.value = success;
       
       if (success) {
@@ -356,12 +360,14 @@ class OrderController extends GetxController {
     try {
       final tableId = table.value!.tableId.toString();
       final token = _getUserToken();
+      final language = _getCurrentLanguage();
       
       logDebug('🔄 重新连接桌台 $tableId 的WebSocket...', tag: OrderConstants.logTag);
       
       final success = await _wsManager.initializeTableConnection(
         tableId: tableId,
         token: token,
+        language: language,
       );
       
       isWebSocketConnected.value = success;
@@ -392,6 +398,19 @@ class OrderController extends GetxController {
     } catch (e) {
       logDebug('❌ 获取用户token失败: $e', tag: OrderConstants.logTag);
       return null;
+    }
+  }
+
+  /// 获取当前语言设置
+  String? _getCurrentLanguage() {
+    try {
+      final languageService = getIt<LanguageService>();
+      final language = languageService.getNetworkLanguageCode();
+      logDebug('🌐 获取到当前语言: $language', tag: OrderConstants.logTag);
+      return language;
+    } catch (e) {
+      logDebug('❌ 获取当前语言失败: $e，使用默认语言 cn', tag: OrderConstants.logTag);
+      return 'cn'; // 默认使用中文
     }
   }
 
@@ -1031,6 +1050,12 @@ class OrderController extends GetxController {
       // 通知CartController WebSocket操作成功
       _cartController.handleWebSocketResponse(messageId, true);
       
+      // 如果这是当前处理的409强制更新操作，清理相关状态
+      if (_currentProcessingMessageId == messageId) {
+        logDebug('✅ 409强制更新操作成功完成，清理相关状态', tag: OrderConstants.logTag);
+        _currentProcessingMessageId = null;
+      }
+      
       final context = Get.context;
       if (context != null) {
         // 延迟少许，确保UI overlay可用
@@ -1240,16 +1265,15 @@ class OrderController extends GetxController {
           customMessageId: _currentProcessingMessageId,
         );
         
-        // 强制更新成功后清理数据
+        // 注意：不在这里清理操作上下文和停止loading状态
+        // 这些操作应该在WebSocket响应成功时由_handleCartOperationSuccess处理
+        // 或者在响应失败时由WebSocket错误处理逻辑处理
+        
+        // 只清理本地的临时数据
         _lastOperationCartItem = null;
         _lastOperationQuantity = null;
         
-        // 清理映射关系
-        if (_currentProcessingMessageId != null) {
-          _cartController.clearOperationContext(_currentProcessingMessageId!);
-          _currentProcessingMessageId = null;
-        }
-        logDebug('✅ 强制更新操作完成，已清理操作上下文', tag: OrderConstants.logTag);
+        logDebug('✅ 强制更新请求已发送，等待WebSocket响应', tag: OrderConstants.logTag);
       } else {
         logDebug('❌ 没有保存的操作上下文，无法执行强制更新', tag: OrderConstants.logTag);
         logDebug('💡 _lastOperationCartItem=$_lastOperationCartItem, _lastOperationQuantity=$_lastOperationQuantity', tag: OrderConstants.logTag);
@@ -1273,10 +1297,17 @@ class OrderController extends GetxController {
       _lastOperationCartItem = null;
       _lastOperationQuantity = null;
       
+      // 停止loading状态（重要：用户取消时必须停止loading）
+      if (_currentProcessingMessageId != null) {
+        _cartController.handleWebSocketResponse(_currentProcessingMessageId!, false);
+        _cartController.clearOperationContext(_currentProcessingMessageId!);
+        _currentProcessingMessageId = null;
+      }
+      
       // 刷新购物车数据，从服务器获取最新状态
       _loadCartFromApi(silent: true);
       
-      logDebug('✅ 操作上下文清理完成', tag: OrderConstants.logTag);
+      logDebug('✅ 操作上下文清理完成，已停止loading状态', tag: OrderConstants.logTag);
     } catch (e) {
       logDebug('❌ 清理操作上下文异常: $e', tag: OrderConstants.logTag);
     }
@@ -1290,6 +1321,13 @@ class OrderController extends GetxController {
       if (messageId != null) {
         // 通知CartController WebSocket操作失败（但不回滚）
         _cartController.handleWebSocketResponse(messageId, false, errorMessage: errorMessage);
+        
+        // 如果这是当前处理的409强制更新操作，清理相关状态
+        if (_currentProcessingMessageId == messageId) {
+          logDebug('❌ 409强制更新操作失败，清理相关状态', tag: OrderConstants.logTag);
+          _currentProcessingMessageId = null;
+        }
+        
         logDebug('✅ 已通知操作失败，等待服务器数据同步', tag: OrderConstants.logTag);
       } else {
         logDebug('⚠️ 消息ID为空，尝试通过最近操作上下文处理', tag: OrderConstants.logTag);

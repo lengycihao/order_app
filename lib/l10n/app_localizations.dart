@@ -130,10 +130,10 @@ abstract class AppLocalizations {
   /// **'©2025 欧华智创（杭州）科技有限公司'**
   String get copyright;
 
-  /// 登录名不能为空
+  /// 账号不能为空
   ///
   /// In zh, this message translates to:
-  /// **'登录名不能为空'**
+  /// **'账号不能为空'**
   String get loginNameCannotBeEmpty;
 
   /// 密码不能为空

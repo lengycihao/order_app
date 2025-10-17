@@ -14,6 +14,7 @@ class SpecificationModalWidget {
   /// 显示规格选择弹窗
   static void showSpecificationModal(
     BuildContext context,
+    
     Dish dish, {
     GlobalKey? cartButtonKey,
   }) {
@@ -59,6 +60,12 @@ class _SpecificationModalContentState
   void initState() {
     super.initState();
     totalPrice = widget.dish.price;
+    // 初始化默认选中每个规格的第一个选项
+    for (var option in widget.dish.options ?? []) {
+      if (option.items != null && option.items!.isNotEmpty) {
+        selectedOptions[option.id!] = [option.items!.first.id!];
+      }
+    }
     // 已移除：_quantityController 和 _quantityFocusNode 初始化（禁用手动输入数量）
   }
 
@@ -246,6 +253,10 @@ class _SpecificationModalContentState
                 selectedOptions[option.id!] = [];
               }
               if (isSelected) {
+                // 如果是必选且只剩一个选项，不允许取消
+                if (option.isRequired == true && selectedOptions[option.id]!.length == 1) {
+                  return;
+                }
                 selectedOptions[option.id]!.remove(item.id);
               } else {
                 selectedOptions[option.id]!.add(item.id!);
@@ -285,6 +296,7 @@ class _SpecificationModalContentState
         return GestureDetector(
           onTap: () {
             setState(() {
+              // 单选模式下，直接设置选中项
               selectedOptions[option.id!] = [item.id!];
             });
           },
@@ -540,6 +552,11 @@ class _SpecificationModalContentState
     for (var option in widget.dish.options ?? []) {
       if (option.isRequired == true) {
         if (selectedOptions[option.id]?.isEmpty ?? true) {
+          missingOptionName = option.name;
+          break;
+        }
+        // 对于必选的多选规格，至少要选一个
+        if (option.isMultiple == true && (selectedOptions[option.id]?.isEmpty ?? true)) {
           missingOptionName = option.name;
           break;
         }

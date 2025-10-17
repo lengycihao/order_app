@@ -10,7 +10,7 @@ import 'package:order_app/utils/toast_utils.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
 import 'package:order_app/utils/keyboard_utils.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
-import 'package:pull_to_refresh/pull_to_refresh.dart';
+import 'package:pull_to_refresh/pull_to_refresh.dart' hide RefreshIndicator;
 import 'package:lib_base/logging/logging.dart';
 
 class TakeawayPage extends BaseListPageWidget {
@@ -38,14 +38,45 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
   @override
   void initState() {
     super.initState();
+    logDebug('🚀 外卖页面初始化开始', tag: 'TakeawayPage');
+    
     // 使用 Get.put 但设置标签，方便管理
     controller = Get.put(TakeawayController(), tag: 'takeaway_page');
     _tabController = TabController(length: widget.tabs.length, vsync: this);
+    // 监听tab切换（包括滑动和点击）
     _tabController.addListener(() {
-      _currentTabIndex = _tabController.index;
-      // 通知控制器tab切换，触发已结账页面数据加载
-      controller.onTabChanged(_currentTabIndex);
+      // 使用animation来获取实时的tab位置，支持滑动切换
+      final animationValue = _tabController.animation?.value ?? _tabController.index.toDouble();
+      final newIndex = animationValue.round();
+      
+      // 只有当tab完全切换到新位置时才触发
+      if (newIndex != _currentTabIndex && !_tabController.indexIsChanging) {
+        logDebug('📱 Tab切换: $_currentTabIndex -> $newIndex (滑动: ${_tabController.indexIsChanging})', tag: 'TakeawayPage');
+        _currentTabIndex = newIndex;
+        // 通知控制器tab切换，触发数据加载
+        controller.onTabChanged(_currentTabIndex);
+      }
     });
+    
+    logDebug('✅ 外卖页面初始化完成', tag: 'TakeawayPage');
+    
+    // 延迟一帧后检查数据状态，确保初始化完成后数据能正确展示
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkInitialDataState();
+    });
+  }
+  
+  /// 检查初始数据状态
+  Future<void> _checkInitialDataState() async {
+    logDebug('🔍 检查初始数据状态 - 未结账: ${controller.unpaidOrders.length}, 已结账: ${controller.paidOrders.length}', tag: 'TakeawayPage');
+    logDebug('🔍 当前tab: $_currentTabIndex, 未结账加载状态: ${controller.isRefreshingUnpaid.value}, 已结账加载状态: ${controller.isRefreshingPaid.value}', tag: 'TakeawayPage');
+    
+    // 强制触发数据加载，确保页面有数据
+    logDebug('🔄 强制触发数据加载', tag: 'TakeawayPage');
+    await controller.refreshData(_currentTabIndex);
+    
+    // 再次检查数据状态
+    logDebug('🔍 数据加载后状态 - 未结账: ${controller.unpaidOrders.length}, 已结账: ${controller.paidOrders.length}', tag: 'TakeawayPage');
   }
 
   /// 初始化浮动按钮位置
@@ -98,9 +129,13 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
   @override
   bool get hasData {
     if (_currentTabIndex == 0) {
-      return controller.unpaidOrders.isNotEmpty;
+      final hasUnpaidData = controller.unpaidOrders.isNotEmpty;
+      logDebug('📊 未结账页面数据状态: $hasUnpaidData, 订单数量: ${controller.unpaidOrders.length}', tag: 'TakeawayPage');
+      return hasUnpaidData;
     } else {
-      return controller.paidOrders.isNotEmpty;
+      final hasPaidData = controller.paidOrders.isNotEmpty;
+      logDebug('📊 已结账页面数据状态: $hasPaidData, 订单数量: ${controller.paidOrders.length}', tag: 'TakeawayPage');
+      return hasPaidData;
     }
   }
   
@@ -109,19 +144,27 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
     // 只有在首次加载且没有数据时才显示骨架图
     // 参考桌台页面实现，避免在有数据时刷新出现骨架图
     final currentOrders = _currentTabIndex == 0 ? controller.unpaidOrders : controller.paidOrders;
+    final isCurrentTabLoading = _currentTabIndex == 0 ? controller.isRefreshingUnpaid.value : controller.isRefreshingPaid.value;
     
     // 如果已经有数据了，即使在刷新也不显示骨架图
     if (currentOrders.isNotEmpty) {
       return false;
     }
     
-    // 首次进入页面时显示骨架图
-    return _currentTabIndex == 0 && !hasData;
+    // 只有在正在加载且没有数据时才显示骨架图
+    return isCurrentTabLoading && currentOrders.isEmpty;
   }
 
   @override
   Future<void> onRefresh() async {
+    logDebug('🔄 用户手动刷新页面', tag: 'TakeawayPage');
     await controller.refreshData(_currentTabIndex);
+  }
+  
+  /// 强制刷新所有数据（用于订单状态变更后）
+  Future<void> forceRefreshAll() async {
+    logDebug('🔄 强制刷新所有外卖数据', tag: 'TakeawayPage');
+    await controller.forceRefresh();
   }
   
   @override
@@ -159,27 +202,29 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
     return Container(
       color: Colors.transparent, // 确保整个页面体的背景是透明
       child: Obx(() {
-      // 优先显示网络错误状态，避免在重新加载时闪烁
-      if (hasNetworkError && !hasData) {
+      // 添加调试信息
+      logDebug('🎨 页面渲染状态 - hasData: $hasData, isLoading: $isLoading, hasNetworkError: $hasNetworkError, shouldShowSkeleton: $shouldShowSkeleton', tag: 'TakeawayPage');
+      
+      // 优先显示网络错误状态
+      if (hasNetworkError) {
+        logDebug('🎨 显示网络错误状态', tag: 'TakeawayPage');
         return _buildContentWithEmptyState(isNetworkError: true);
       }
 
-      // 如果应该显示骨架图且正在加载且没有数据，显示带搜索框的骨架图
-      if (shouldShowSkeleton && isLoading && !hasData) {
+      // 如果应该显示骨架图且正在加载，显示带搜索框的骨架图
+      if (shouldShowSkeleton && isLoading) {
+        logDebug('🎨 显示骨架图', tag: 'TakeawayPage');
         return _buildContentWithSkeleton();
       }
 
       // 如果正在加载但没有数据（非骨架图情况），显示加载状态
       if (isLoading && !hasData) {
+        logDebug('🎨 显示加载状态', tag: 'TakeawayPage');
         return buildLoadingWidget();
       }
 
-      // 如果没有数据且没在加载，显示带搜索框的空状态
-      if (!hasData) {
-        return _buildContentWithEmptyState(isNetworkError: false);
-      }
-
-      // 有数据时显示内容
+      // 始终显示TabBarView内容，即使没有数据也要显示，这样才能横向滑动
+      logDebug('🎨 显示TabBarView内容', tag: 'TakeawayPage');
       return buildDataContent();
       }),
     );
@@ -281,7 +326,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
             child: TextField(
               controller: controller.searchController,
               textAlignVertical: TextAlignVertical.center,
-              textInputAction: TextInputAction.done,
+               textInputAction: TextInputAction.search,
               style: TextStyle(
                 fontSize: 14,
                 height: 1.0, // 设置行高为1.0确保文字垂直居中
@@ -309,18 +354,21 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
                 isDense: true, // 减少内部间距
                 
               ),
-              onChanged: (value) {
-                try {
-                  // 检查控制器是否仍然有效
-                  if (Get.isRegistered<TakeawayController>(tag: 'takeaway_page')) {
-                    if (value.isEmpty) {
-                      controller.clearSearch();
-                    }
-                  }
-                } catch (e) {
-                  logError('Controller disposed during onChanged: $e', tag: 'TakeawayPage');
-                }
-              },
+               onChanged: (value) {
+                 try {
+                   // 检查控制器是否仍然有效
+                   if (Get.isRegistered<TakeawayController>(tag: 'takeaway_page')) {
+                     // 使用防抖搜索，避免频繁请求
+                     if (value.isNotEmpty) {
+                       controller.debouncedSearch(value);
+                     } else {
+                       controller.clearSearch();
+                     }
+                   }
+                 } catch (e) {
+                   logError('Controller disposed during onChanged: $e', tag: 'TakeawayPage');
+                 }
+               },
               onSubmitted: (value) {
                 try {
                   // 检查控制器是否仍然有效
@@ -564,7 +612,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
           child: orders.isEmpty && !isRefreshing
               ? _buildTabEmptyState(hasNetworkError)
               : ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
+                  physics: const BouncingScrollPhysics(), // 使用弹性滚动，提供更好的用户体验
                   itemCount: orders.length + (hasMore ? 1 : 0),
                   itemBuilder: (context, index) {
                     if (index == orders.length) {
@@ -582,27 +630,31 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
     });
   }
 
-  /// 构建单个tab的空状态
+  /// 构建单个tab的空状态（在SmartRefresher中使用，自带下拉刷新功能）
   Widget _buildTabEmptyState(bool hasNetworkError) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(
-            hasNetworkError ? 'assets/order_nonet.webp' : 'assets/order_empty.webp',
-            width: 180,
-            height: 100,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            hasNetworkError ? context.l10n.networkErrorPleaseTryAgain : context.l10n.noData,
-            style: const TextStyle(
-              fontSize: 12,
-              color: Color(0xFFFF9027),
+    return SizedBox(
+      // 设置最小高度确保可以触发下拉刷新
+      height: MediaQuery.of(context).size.height - 300,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              hasNetworkError ? 'assets/order_nonet.webp' : 'assets/order_empty.webp',
+              width: 180,
+              height: 100,
             ),
-          ),
-          if (hasNetworkError) ...[
-            const SizedBox(height: 24),
+            const SizedBox(height: 8),
+            Text(
+              hasNetworkError ? context.l10n.networkErrorPleaseTryAgain : context.l10n.noData,
+              style: const TextStyle(
+                fontSize: 12,
+                color: Color(0xFFFF9027),
+              ),
+            ),
+            
+            if (hasNetworkError) ...[
+              const SizedBox(height: 24),
             ElevatedButton(
               onPressed: () async {
                 // 重新加载当前tab的数据
@@ -623,6 +675,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
             ),
           ],
         ],
+        ),
       ),
     );
   }
@@ -667,6 +720,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
           color: Colors.transparent, // 确保TabBarView的背景是透明
           child: TabBarView(
               controller: _tabController,
+              physics: const PageScrollPhysics(), // 使用页面滑动物理效果，更适合tab切换
               children: [
                 // 未结账 Tab
                 _buildOrderList(0),

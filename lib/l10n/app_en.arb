@@ -19,9 +19,9 @@
   "@copyright": {
     "description": "Copyright information"
   },
-  "loginNameCannotBeEmpty": "Login name cannot be empty",
+  "loginNameCannotBeEmpty": "Account cannot be empty",
   "@loginNameCannotBeEmpty": {
-    "description": "Login name cannot be empty"
+    "description": "Account cannot be empty"
   },
   "passwordCannotBeEmpty": "Password cannot be empty.",
   "@passwordCannotBeEmpty": {

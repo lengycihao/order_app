@@ -24,7 +24,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get copyright => '©2025 欧华智创（杭州）科技有限公司';
 
   @override
-  String get loginNameCannotBeEmpty => '登录名不能为空';
+  String get loginNameCannotBeEmpty => '账号不能为空';
 
   @override
   String get passwordCannotBeEmpty => '密码不能为空';

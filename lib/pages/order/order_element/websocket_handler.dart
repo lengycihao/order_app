@@ -59,13 +59,14 @@ class WebSocketHandler {
        _logTag = logTag;
 
   /// 初始化WebSocket连接
-  Future<bool> initialize(String? token) async {
+  Future<bool> initialize(String? token, {String? language}) async {
     try {
       logDebug('🔌 开始初始化桌台ID: $_tableId 的WebSocket连接...', tag: _logTag);
 
       final success = await _wsManager.initializeTableConnection(
         tableId: _tableId,
         token: token,
+        language: language,
       );
 
       if (success) {
@@ -262,6 +263,7 @@ class WebSocketHandler {
           // 需要强制操作确认 - 立即显示弹窗，不等待
           logDebug('⚠️ 收到409状态码，立即显示强制操作确认弹窗', tag: _logTag);
           // 立即触发强制更新回调，不延迟
+          // 注意：409状态码不调用_stopLoadingState()，保持loading状态直到用户确认操作完成
           onForceUpdateRequired?.call(message, data);
         } else if (code == 404) {
           // 404错误 - 显示具体错误信息

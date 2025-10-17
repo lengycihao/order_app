@@ -67,9 +67,10 @@ class WebSocketManager {
 
   /// 初始化桌台连接
   Future<bool> initializeTableConnection({
-    required String tableId,
+required String tableId,
     String? serverUrl,
     String? token,
+    String? language,
   }) async {
     try {
       // 如果已经连接，先断开
@@ -83,6 +84,7 @@ class WebSocketManager {
         serverUrl: serverUrl ?? 'ws://129.204.154.113:8050/api/waiter/ws',
         tableId: tableId,
         token: token,
+        language: language,
       );
 
       final wsUtil = WebSocketUtil();

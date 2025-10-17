@@ -25,8 +25,7 @@ class AppLocalizationsIt extends AppLocalizations {
       '©2025 Ouhua Zhichuang (Hangzhou) Technology Co., Ltd.';
 
   @override
-  String get loginNameCannotBeEmpty =>
-      'Il nome di accesso non può essere vuoto';
+  String get loginNameCannotBeEmpty => 'L\'account non può essere vuoto';
 
   @override
   String get passwordCannotBeEmpty => 'La password non può essere vuota.';

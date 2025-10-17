@@ -20,9 +20,9 @@
   "@copyright": {
     "description": "版权信息"
   },
-  "loginNameCannotBeEmpty": "登录名不能为空",
+  "loginNameCannotBeEmpty": "账号不能为空",
   "@loginNameCannotBeEmpty": {
-    "description": "登录名不能为空"
+    "description": "账号不能为空"
   },
   "passwordCannotBeEmpty": "密码不能为空",
   "@passwordCannotBeEmpty": {

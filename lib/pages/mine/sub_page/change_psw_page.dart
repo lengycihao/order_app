@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:order_app/pages/mine/sub_page/change_psw_controller.dart';
 import 'package:order_app/pages/order/components/restaurant_loading_widget.dart';
@@ -71,6 +72,10 @@ class ChangePasswordPage extends StatelessWidget {
                       // 新密码输入框（仅下边框）
                       Obx(
                         () => TextField(
+                          keyboardType: TextInputType.emailAddress, // 邮箱键盘布局
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')), // 只允许英文数字和常用符号
+                          ],
                           obscureText: !controller.tempShowNewPassword.value,
                           decoration: InputDecoration(
                             hintText: context.l10n.pleaseEnterNewPassword,
@@ -150,6 +155,10 @@ class ChangePasswordPage extends StatelessWidget {
                       // 确认密码输入框（仅下边框）
                       Obx(
                         () => TextField(
+                          keyboardType: TextInputType.emailAddress, // 邮箱键盘布局
+                          inputFormatters: [
+                            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')), // 只允许英文数字和常用符号
+                          ],
                           obscureText: !controller.tempShowConfirmPassword.value,
                           decoration: InputDecoration(
                             hintText: context.l10n.pleaseReenterNewPassword,

@@ -468,12 +468,16 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
     final tableName = controller.table.value?.tableName ?? 'null';
     final adultCount = controller.adultCount.value;
     final childCount = controller.childCount.value;
-    
+
     final tableText = '${context.l10n.table}:$tableName';
     final adultText = '${context.l10n.adults}:$adultCount';
     final childText = '${context.l10n.children}:$childCount';
-    final fullText = '$tableText | $adultText $childText';
-    
+
+    // 当小孩数量为0时，不显示小孩信息
+    final fullText = childCount == 0
+        ? '$tableText | $adultText'
+        : '$tableText | $adultText $childText';
+
     // 根据文本长度动态调整字号
     double fontSize = 12.0;
     if (fullText.length > 30) {
@@ -481,7 +485,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
     } else if (fullText.length > 20) {
       fontSize = 11.0;
     }
-    
+
     return Text(
       fullText,
       style: TextStyle(

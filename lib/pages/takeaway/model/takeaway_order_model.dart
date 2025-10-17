@@ -141,11 +141,16 @@ class TakeawayOrderModel {
 
   /// 判断是否已结账
   bool get isPaid {
-    return checkoutStatus == 1; // 假设1表示已结账
+    return checkoutStatus == 1; // 1表示已结账
   }
 
   /// 判断是否未结账
   bool get isUnpaid {
-    return checkoutStatus == 3; // 假设3表示未结账
+    return checkoutStatus == 3; // 3表示未结账
+  }
+
+  /// 获取订单状态描述（用于调试）
+  String get debugStatusInfo {
+    return 'ID: $id, OrderNo: $orderNo, CheckoutStatus: $checkoutStatus, CheckoutStatusName: $checkoutStatusName';
   }
 }

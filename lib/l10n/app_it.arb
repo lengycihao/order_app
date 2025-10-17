@@ -19,9 +19,9 @@
   "@copyright": {
     "description": "Informazioni sul copyright"
   },
-  "loginNameCannotBeEmpty": "Il nome di accesso non può essere vuoto",
+  "loginNameCannotBeEmpty": "L'account non può essere vuoto",
   "@loginNameCannotBeEmpty": {
-    "description": "Il nome di accesso non può essere vuoto"
+    "description": "L'account non può essere vuoto"
   },
   "passwordCannotBeEmpty": "La password non può essere vuota.",
   "@passwordCannotBeEmpty": {

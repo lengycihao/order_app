@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:order_app/pages/login/login_controller.dart';
 import 'package:get/get.dart';
 import 'package:order_app/utils/l10n_utils.dart';
@@ -197,6 +198,10 @@ class _LoginPageState extends State<LoginPage> {
                           height: context.adaptHeight(40),
                           child: TextField(
                             controller: controller.usernameController,
+                            keyboardType: TextInputType.emailAddress, // 账号键盘
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')), // 只允许英文数字和常用符号
+                            ],
                             cursorHeight: 16,
                             cursorColor: Colors.black54,
                             showCursor: true,
@@ -275,6 +280,10 @@ class _LoginPageState extends State<LoginPage> {
                             height: context.adaptHeight(40),
                             child: TextField(
                               controller: controller.passwordController,
+                              keyboardType: TextInputType.emailAddress, // 邮箱键盘布局
+                              inputFormatters: [
+                                FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9@._-]')), // 只允许英文数字和常用符号
+                              ],
                               obscureText: !controller.tempShowPassword.value,
                               cursorHeight: 16,
                               cursorColor: Colors.black54,

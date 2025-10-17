@@ -17,11 +17,13 @@ class WebSocketConfig {
   final String serverUrl;
   final String tableId;
   final String? token;
+  final String? language;
 
   const WebSocketConfig({
     required this.serverUrl,
     required this.tableId,
     this.token,
+    this.language,
   });
 
   /// 构建完整的WebSocket URL
@@ -50,7 +52,7 @@ class WebSocketConfig {
 
   @override
   String toString() {
-    return 'WebSocketConfig(serverUrl: $serverUrl, tableId: $tableId, token: ${token?.substring(0, 20) ?? 'null'}...)';
+    return 'WebSocketConfig(serverUrl: $serverUrl, tableId: $tableId, token: ${token?.substring(0, 20) ?? 'null'}..., language: $language)';
   }
 }
 
@@ -63,6 +65,7 @@ class WebSocketUtil {
   WebSocket? _webSocket;
   String? _serverUrl;
   String? _currentTableId;
+  String? _currentLanguage;
   
   /// 连接状态
   final ValueNotifier<WebSocketConnectionState> _connectionState = 
@@ -97,6 +100,7 @@ class WebSocketUtil {
     try {
       _serverUrl = config.buildFullUrl();
       _currentTableId = config.tableId;
+      _currentLanguage = config.language;
       
       debugPrint('🔌 WebSocket初始化配置: $config');
       debugPrint('🔌 WebSocket连接URL: $_serverUrl');
@@ -120,11 +124,20 @@ class WebSocketUtil {
       _connectionState.value = WebSocketConnectionState.connecting;
       debugPrint('🔌 正在连接WebSocket: $_serverUrl');
 
+      // 构建headers
+      final headers = <String, String>{
+        'tableId': _currentTableId!,
+      };
+      
+      // 添加语言头（如果有的话）
+      if (_currentLanguage != null && _currentLanguage!.isNotEmpty) {
+        headers['Language'] = _currentLanguage!;
+        debugPrint('🌐 WebSocket添加语言头: $_currentLanguage');
+      }
+
       _webSocket = await WebSocket.connect(
         _serverUrl!,
-        headers: {
-          'tableId': _currentTableId!,
-        },
+        headers: headers,
       ).timeout(const Duration(seconds: 10));
 
       _connectionState.value = WebSocketConnectionState.connected;
