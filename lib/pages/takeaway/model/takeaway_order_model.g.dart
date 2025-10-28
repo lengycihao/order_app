@@ -30,8 +30,8 @@ Map<String, dynamic> _$TakeawayOrderListResponseToJson(
 
 TakeawayOrderModel _$TakeawayOrderModelFromJson(Map<String, dynamic> json) =>
     TakeawayOrderModel(
-      id: (json['id'] as num?)?.toInt(),
-      orderNo: json['table_id'] as String?,
+      id: json['id'] as String?,
+      orderNo: json['order_no'] as String?,
       orderTime: json['order_time'] as String?,
       orderStatus: (json['order_status'] as num?)?.toInt(),
       orderStatusName: json['order_status_name'] as String?,
@@ -51,7 +51,7 @@ TakeawayOrderModel _$TakeawayOrderModelFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$TakeawayOrderModelToJson(TakeawayOrderModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'table_id': instance.orderNo,
+      'order_no': instance.orderNo,
       'order_time': instance.orderTime,
       'order_status': instance.orderStatus,
       'order_status_name': instance.orderStatusName,

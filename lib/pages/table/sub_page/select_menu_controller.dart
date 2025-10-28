@@ -15,9 +15,9 @@ import 'package:order_app/utils/toast_utils.dart';
 class SelectMenuController extends GetxController {
   // 传入的数据
   var table = TableListModel( 
-    hallId: 1,
+    hallId: '1',
     hallName: '',
-    tableId: 1,
+    tableId: '1',
     tableName: '',
     standardAdult: 2,
     standardChild: 1,
@@ -26,15 +26,15 @@ class SelectMenuController extends GetxController {
     status: 0,
     businessStatus: 0,
     businessStatusName: '',
-    mainTableId: 1,
-    menuId: 1,
+    mainTableId: '1',
+    menuId: '1',
     openTime: '',
     orderTime: '',
     orderDuration: 0,
     openDuration: 0,
     checkoutTime: '',
     orderAmount: 0,
-    orderId: 0,
+    orderId: '0',
     mainTable: null,
     mergedTables: null,
   ).obs;
@@ -69,8 +69,14 @@ class SelectMenuController extends GetxController {
     // 从 Get.arguments 获取传递的数据
     final args = Get.arguments as Map<String, dynamic>?;
     if (args != null) {
-      // 获取路由参数中的 table_id
-      final tableId = args['table_id'] as int?;
+      // 获取路由参数中的 table_id - 安全类型转换
+      int? tableId;
+      final tableIdValue = args['table_id'];
+      if (tableIdValue is int) {
+        tableId = tableIdValue;
+      } else if (tableIdValue is String) {
+        tableId = int.tryParse(tableIdValue);
+      }
       
       // 更新 table 信息
       if (args['table'] != null) {
@@ -126,6 +132,7 @@ class SelectMenuController extends GetxController {
       final currentTable = table.value;
       if (menu.isNotEmpty) {
         // 在菜单列表中查找当前桌台使用的菜单
+        // 现在两个都是String类型，直接比较
         final currentMenuIndex = menu.indexWhere(
           (menuItem) => menuItem.menuId == currentTable.menuId,
         );
@@ -183,12 +190,12 @@ class SelectMenuController extends GetxController {
   /// 获取单个菜单的菜品列表
   Future<List<DishListModel>> getMenuDishList({
     required int tableId,
-    required int menuId,
+    required String menuId,
   }) async {
     try {
       final result = await _baseApi.getMenudDishList(
         tableID: tableId.toString(),
-        menuId: menuId.toString(),
+        menuId: menuId,
       );
       
       if (result.isSuccess && result.data != null) {
@@ -262,10 +269,10 @@ class SelectMenuController extends GetxController {
     try {
       // 调用开桌接口
       final result = await _baseApi.openTable(
-        tableId: table.value.tableId.toInt(),
+        tableId: table.value.tableId,
         adultCount: adultCount.value,
         childCount: childCount.value,
-        menuId: getSelectedMenu()!.menuId!.toInt(),
+        menuId: getSelectedMenu()!.menuId!,
         // reserveId: 0, // 默认值
       );
 

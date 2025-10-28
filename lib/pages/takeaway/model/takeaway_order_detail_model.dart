@@ -5,7 +5,7 @@ part 'takeaway_order_detail_model.g.dart';
 /// 外卖订单详情响应模型
 @JsonSerializable()
 class TakeawayOrderDetailResponse {
-  final int? id;
+  final String? id;
   @JsonKey(name: 'order_no')
   final String? orderNo;
   @JsonKey(name: 'order_time')
@@ -32,6 +32,7 @@ class TakeawayOrderDetailResponse {
   final int? source;
   @JsonKey(name: 'source_name')
   final String? sourceName;
+  final int? quantity;
   final List<TakeawayOrderDetailItem>? details;
 
   TakeawayOrderDetailResponse({
@@ -50,6 +51,7 @@ class TakeawayOrderDetailResponse {
     this.remark,
     this.source,
     this.sourceName,
+    this.quantity,
     this.details,
   });
 
@@ -97,10 +99,12 @@ class TakeawayOrderDetailResponse {
 /// 外卖订单详情商品项模型
 @JsonSerializable()
 class TakeawayOrderDetailItem {
-  final int? id;
+  final String? id;
   @JsonKey(name: 'dish_id')
-  final int? dishId;
+  final String? dishId;
   final String? name;
+  @JsonKey(name: 'dish_type')
+  final int? dishType;
   final int? quantity;
   final String? price;
   @JsonKey(name: 'menu_price')
@@ -136,6 +140,7 @@ class TakeawayOrderDetailItem {
     this.id,
     this.dishId,
     this.name,
+    this.dishType,
     this.quantity,
     this.price,
     this.menuPrice,
@@ -195,7 +200,7 @@ class TakeawayOrderDetailItem {
 @JsonSerializable()
 class AllergenInfo {
   final String? label;
-  final int? id;
+  final String? id;
   final String? icon;
 
   AllergenInfo({

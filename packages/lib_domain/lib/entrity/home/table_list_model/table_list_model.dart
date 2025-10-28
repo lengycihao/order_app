@@ -10,16 +10,24 @@ num _toNum(dynamic value) {
   return 0;
 }
 
+/// 字符串转换函数，兼容 int、double、String
+String _toString(dynamic value) {
+  if (value == null) return '0';
+  if (value is String) return value;
+  if (value is num) return value.toString();
+  return '0';
+}
+
 @JsonSerializable()
 class TableListModel {
-  @JsonKey(name: 'hall_id', fromJson: _toNum)
-  final num hallId;
+  @JsonKey(name: 'hall_id', fromJson: _toString)
+  final String hallId;
 
   @JsonKey(name: 'hall_name')
   final String? hallName;
 
-  @JsonKey(name: 'table_id', fromJson: _toNum)
-  final num tableId;
+  @JsonKey(name: 'table_id', fromJson: _toString)
+  final String tableId;
 
   @JsonKey(name: 'table_name')
   final String? tableName;
@@ -45,11 +53,11 @@ class TableListModel {
   @JsonKey(name: 'business_status_name')
   final String? businessStatusName;
 
-  @JsonKey(name: 'main_table_id', fromJson: _toNum)
-  final num mainTableId;
+  @JsonKey(name: 'main_table_id', fromJson: _toString)
+  final String mainTableId;
 
-  @JsonKey(name: 'menu_id', fromJson: _toNum)
-  final num menuId;
+  @JsonKey(name: 'menu_id', fromJson: _toString)
+  final String menuId;
 
   @JsonKey(name: 'open_time')
   final String? openTime;
@@ -69,8 +77,8 @@ class TableListModel {
   @JsonKey(name: 'order_amount', fromJson: _toNum)
   final num orderAmount;
 
-  @JsonKey(name: 'order_id', fromJson: _toNum)
-  final num orderId;
+  @JsonKey(name: 'order_id', fromJson: _toString)
+  final String orderId;
 
   @JsonKey(name: 'main_table')
   final dynamic mainTable;

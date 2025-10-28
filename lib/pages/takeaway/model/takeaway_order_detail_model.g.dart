@@ -9,7 +9,7 @@ part of 'takeaway_order_detail_model.dart';
 TakeawayOrderDetailResponse _$TakeawayOrderDetailResponseFromJson(
   Map<String, dynamic> json,
 ) => TakeawayOrderDetailResponse(
-  id: (json['id'] as num?)?.toInt(),
+  id: json['id'] as String?,
   orderNo: json['order_no'] as String?,
   orderTime: json['order_time'] as String?,
   orderStatus: (json['order_status'] as num?)?.toInt(),
@@ -18,12 +18,13 @@ TakeawayOrderDetailResponse _$TakeawayOrderDetailResponseFromJson(
   checkoutStatusName: json['checkout_status_name'] as String?,
   checkoutTime: json['checkout_time'] as String?,
   totalAmount: json['total_amount'] as String?,
-  paidAmount: json['paid_amount']?.toString(),
+  paidAmount: json['paid_amount'] as String?,
   estimatePickupTime: json['estimate_pickup_time'] as String?,
   pickupCode: json['pickup_code'] as String?,
   remark: json['remark'] as String?,
   source: (json['source'] as num?)?.toInt(),
   sourceName: json['source_name'] as String?,
+  quantity: (json['quantity'] as num?)?.toInt(),
   details: (json['details'] as List<dynamic>?)
       ?.map((e) => TakeawayOrderDetailItem.fromJson(e as Map<String, dynamic>))
       .toList(),
@@ -47,21 +48,23 @@ Map<String, dynamic> _$TakeawayOrderDetailResponseToJson(
   'remark': instance.remark,
   'source': instance.source,
   'source_name': instance.sourceName,
+  'quantity': instance.quantity,
   'details': instance.details,
 };
 
 TakeawayOrderDetailItem _$TakeawayOrderDetailItemFromJson(
   Map<String, dynamic> json,
 ) => TakeawayOrderDetailItem(
-  id: (json['id'] as num?)?.toInt(),
-  dishId: (json['dish_id'] as num?)?.toInt(),
+  id: json['id'] as String?,
+  dishId: json['dish_id'] as String?,
   name: json['name'] as String?,
+  dishType: (json['dish_type'] as num?)?.toInt(),
   quantity: (json['quantity'] as num?)?.toInt(),
-  price: json['price']?.toString(),
-  menuPrice: json['menu_price']?.toString(),
-  priceIncrement: json['price_increment']?.toString(),
-  unitPrice: json['unit_price']?.toString(),
-  taxRate: json['tax_rate']?.toString(),
+  price: json['price'] as String?,
+  menuPrice: json['menu_price'] as String?,
+  priceIncrement: json['price_increment'] as String?,
+  unitPrice: json['unit_price'] as String?,
+  taxRate: json['tax_rate'] as String?,
   image: json['image'] as String?,
   allergens: (json['allergens'] as List<dynamic>?)
       ?.map((e) => AllergenInfo.fromJson(e as Map<String, dynamic>))
@@ -84,6 +87,7 @@ Map<String, dynamic> _$TakeawayOrderDetailItemToJson(
   'id': instance.id,
   'dish_id': instance.dishId,
   'name': instance.name,
+  'dish_type': instance.dishType,
   'quantity': instance.quantity,
   'price': instance.price,
   'menu_price': instance.menuPrice,
@@ -106,7 +110,7 @@ Map<String, dynamic> _$TakeawayOrderDetailItemToJson(
 
 AllergenInfo _$AllergenInfoFromJson(Map<String, dynamic> json) => AllergenInfo(
   label: json['label'] as String?,
-  id: (json['id'] as num?)?.toInt(),
+  id: json['id'] as String?,
   icon: json['icon'] as String?,
 );
 

@@ -33,7 +33,7 @@ import 'package:lib_base/lib/utils/websocket_manager.dart';
 // 初始化桌台连接
 final success = await wsManager.initializeTableConnection(
   tableId: '6',
-  serverUrl: 'ws://129.204.154.113:8050/api/waiter/ws', // 可选，有默认值
+  // serverUrl: 'ws://129.204.154.113:8050/api/waiter/ws', // 可选，会自动使用当前环境配置
   token: 'your_token_here', // 可选
 );
 

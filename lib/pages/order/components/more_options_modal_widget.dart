@@ -258,7 +258,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
     }
 
     final controller = Get.find<OrderController>();
-    final currentTableId = controller.table.value?.tableId.toInt();
+    final currentTableId = int.tryParse(controller.table.value?.tableId ?? '0');
 
     if (currentTableId == null) {
       GlobalToast.error(Get.context!.l10n.pleaseExitAndInAdain);
@@ -272,8 +272,8 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
 
     try {
       final result = await _api.changeTable(
-        tableId: currentTableId,
-        newTableId: _selectedTableId!,
+        tableId: currentTableId.toString(),
+        newTableId: _selectedTableId!.toString(),
       );
 
       // 无论成功失败都先关闭弹窗
@@ -284,7 +284,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
       if (result.isSuccess) {
         // 更新controller中的桌台信息
         final newTable = _availableTables.firstWhere(
-          (table) => table.tableId.toInt() == _selectedTableId,
+          (table) => int.tryParse(table.tableId) == _selectedTableId,
         );
         controller.table.value = newTable;
 
@@ -292,7 +292,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
         final websocketManager = WebSocketManager();
         await websocketManager.sendChangeTable(
           tableId: currentTableId.toString(),
-          newTableId: _selectedTableId!,
+          newTableId: _selectedTableId!.toString(),
           newTableName: newTable.tableName ?? '',
         );
 
@@ -371,7 +371,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
                       final tableName =
                           '${table.hallName ?? ''}-${table.tableName ?? ''}';
                       final isSelected =
-                          _selectedTableId == table.tableId.toInt();
+                          _selectedTableId == int.tryParse(table.tableId);
 
                       return _TableItem(
                         businessStatusName: table.businessStatusName ?? '',
@@ -381,7 +381,7 @@ class _ChangeTableModalContentState extends State<_ChangeTableModalContent> {
                         isSelected: isSelected,
                         onTap: () {
                           setState(() {
-                            _selectedTableId = table.tableId.toInt();
+                            _selectedTableId = int.tryParse(table.tableId) ?? 0;
                           });
                         },
                       );
@@ -580,7 +580,7 @@ class _TableItem extends StatelessWidget {
 /// 更换菜单弹窗内容
 class _ChangeMenuModalContent extends StatefulWidget {
   final TableMenuListModel? currentMenu;
-  final int currentMenuId;
+  final String currentMenuId;
   
   const _ChangeMenuModalContent({
     Key? key,
@@ -595,7 +595,7 @@ class _ChangeMenuModalContent extends StatefulWidget {
 
 class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
   List<TableMenuListModel> _menuList = [];
-  int? _selectedMenuId;
+  String? _selectedMenuId;
   bool _isLoading = true;
   bool _isProcessing = false; // 添加处理状态防止重复点击
   final _api = BaseApi();
@@ -641,7 +641,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
   void _setDefaultSelectedMenu() {
     try {
       // 优先使用 currentMenuId 进行匹配
-      if (widget.currentMenuId > 0) {
+      if (widget.currentMenuId.isNotEmpty) {
         // 在菜单列表中查找当前菜单
         final currentMenuIndex = _menuList.indexWhere(
           (menu) => menu.menuId == widget.currentMenuId,
@@ -741,7 +741,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
     }
 
     final controller = Get.find<OrderController>();
-    final currentTableId = controller.table.value?.tableId.toInt();
+    final currentTableId = int.tryParse(controller.table.value?.tableId ?? '0');
 
     if (currentTableId == null) {
       if (mounted) {
@@ -757,7 +757,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
 
     try {
       final result = await _api.changeMenu(
-        tableId: currentTableId,
+        tableId: currentTableId.toString(),
         menuId: _selectedMenuId!,
       );
 
@@ -773,7 +773,7 @@ class _ChangeMenuModalContentState extends State<_ChangeMenuModalContent> {
         );
         controller.menu.value = newMenu;
         // 同步更新menuId，确保菜品数据能正确加载
-        controller.menuId.value = newMenu.menuId ?? 0;
+        controller.menuId.value = newMenu.menuId ?? "";
 
         // 发送WebSocket消息通知其他客户端
         final websocketManager = WebSocketManager();
@@ -1152,7 +1152,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
     }
 
     final controller = Get.find<OrderController>();
-    final currentTableId = controller.table.value?.tableId.toInt();
+    final currentTableId = int.tryParse(controller.table.value?.tableId ?? '0');
 
     if (currentTableId == null) {
       if (mounted) {
@@ -1201,7 +1201,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
     try {
       // 先调用changePeopleCount接口更新服务器数据（传递增量）
       final changeResult = await _api.changePeopleCount(
-        tableId: tableId,
+        tableId: tableId.toString(),
         adultCount: adultCountIncrement,
         childCount: childCountIncrement,
       );
@@ -1212,7 +1212,7 @@ class _ChangePeopleModalContentState extends State<_ChangePeopleModalContent> {
       }
       
       // 调用桌台详情API获取最新数据
-      final result = await _api.getTableDetail(tableId: tableId);
+      final result = await _api.getTableDetail(tableId: tableId.toString());
       
       if (result.isSuccess && result.data != null) {
         final controller = Get.find<OrderController>();

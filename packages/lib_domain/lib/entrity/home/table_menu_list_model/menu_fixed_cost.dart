@@ -5,7 +5,7 @@ part 'menu_fixed_cost.g.dart';
 @JsonSerializable()
 class MenuFixedCost {
   @JsonKey(name: 'id')
-  int? id;
+  String? id;
 
   @JsonKey(name: 'name')
   String? name;

@@ -8,7 +8,7 @@ part of 'dish_list_model.dart';
 
 DishListModel _$DishListModelFromJson(Map<String, dynamic> json) =>
     DishListModel(
-      id: (json['id'] as num?)?.toInt(),
+      id: json['id'] as String?,
       name: json['name'] as String?,
       items: (json['items'] as List<dynamic>?)
           ?.map((e) => Item.fromJson(e as Map<String, dynamic>))

@@ -625,7 +625,7 @@ class _DishDetailPageState extends State<DishDetailPage> {
       
       // 获取桌台ID
       final tableId = controller.table.value?.tableId;
-      if (tableId == null || tableId <= 0) {
+      if (tableId == null || tableId.isEmpty || int.tryParse(tableId) == null || int.tryParse(tableId)! <= 0) {
         if (mounted) {
           Navigator.of(context).pop();
           ToastUtils.showError(context, context.l10n.operationTooFrequentPleaseTryAgainLater);

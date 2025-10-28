@@ -10,7 +10,7 @@ class AllergenModel {
 
   /// 过敏原ID
   @JsonKey(name: 'id')
-  int? id;
+  String? id;
 
   /// 过敏原图标
   @JsonKey(name: 'icon')

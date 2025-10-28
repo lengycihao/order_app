@@ -8,9 +8,9 @@ part of 'table_list_model.dart';
 
 TableListModel _$TableListModelFromJson(Map<String, dynamic> json) =>
     TableListModel(
-      hallId: _toNum(json['hall_id']),
+      hallId: _toString(json['hall_id']),
       hallName: json['hall_name'] as String?,
-      tableId: _toNum(json['table_id']),
+      tableId: _toString(json['table_id']),
       tableName: json['table_name'] as String?,
       standardAdult: _toNum(json['standard_adult']),
       standardChild: _toNum(json['standard_child']),
@@ -19,15 +19,15 @@ TableListModel _$TableListModelFromJson(Map<String, dynamic> json) =>
       status: _toNum(json['status']),
       businessStatus: _toNum(json['business_status']),
       businessStatusName: json['business_status_name'] as String?,
-      mainTableId: _toNum(json['main_table_id']),
-      menuId: _toNum(json['menu_id']),
+      mainTableId: _toString(json['main_table_id']),
+      menuId: _toString(json['menu_id']),
       openTime: json['open_time'] as String?,
       orderTime: json['order_time'] as String?,
       orderDuration: _toNum(json['order_duration']),
       openDuration: _toNum(json['open_duration']),
       checkoutTime: json['checkout_time'] as String?,
       orderAmount: _toNum(json['order_amount']),
-      orderId: _toNum(json['order_id']),
+      orderId: _toString(json['order_id']),
       mainTable: json['main_table'],
       mergedTables: json['merged_tables'],
     );

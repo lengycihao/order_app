@@ -43,8 +43,8 @@ class OrderController extends GetxController {
   final sortType = SortType.none.obs;
   final dishes = <Dish>[].obs;
   final cart = <CartItem, int>{}.obs;
-  final selectedAllergens = <int>[].obs;
-  final tempSelectedAllergens = <int>[].obs;
+  final selectedAllergens = <String>[].obs;
+  final tempSelectedAllergens = <String>[].obs;
   final allAllergens = <Allergen>[].obs;
   final isLoadingAllergens = false.obs;
   final isSearchVisible = false.obs;
@@ -67,7 +67,7 @@ class OrderController extends GetxController {
   // 从路由传递的数据
   var table = Rx<TableListModel?>(null);
   var menu = Rx<TableMenuListModel?>(null);
-  var menuId = 0.obs; // 菜单ID，用于直接获取菜品数据
+  var menuId = "".obs; // 菜单ID，用于直接获取菜品数据
   var adultCount = 0.obs;
   var childCount = 0.obs;
   var source = "".obs; // 订单来源：table(桌台), takeaway(外卖)
@@ -180,8 +180,8 @@ class OrderController extends GetxController {
       logDebug('✅ 桌台信息已设置: tableId=${tableData.tableId}, tableName=${tableData.tableName}, hallId=${tableData.hallId}', tag: OrderConstants.logTag);
       
       // 检查桌台ID是否有效
-      if (tableData.tableId == 0) {
-        logDebug('⚠️ 警告：桌台ID为0，这可能导致WebSocket连接失败', tag: OrderConstants.logTag);
+      if (tableData.tableId == '0' || tableData.tableId.isEmpty) {
+        logDebug('⚠️ 警告：桌台ID为0或空，这可能导致WebSocket连接失败', tag: OrderConstants.logTag);
       }
       
       // 桌台数据设置完成后，初始化WebSocket连接
@@ -201,15 +201,22 @@ class OrderController extends GetxController {
       
       if (menuData is TableMenuListModel) {
         menu.value = menuData;
-        menuId.value = menuData.menuId ?? 0;
+        menuId.value = menuData.menuId ?? "";
         logDebug('✅ 菜单信息已设置: ${menuData.menuName} (ID: ${menuData.menuId})', tag: OrderConstants.logTag);
       }
     } else if (args['menu_id'] != null) {
       // 如果只有menu_id参数，直接设置menuId
-      menuId.value = args['menu_id'] as int;
+      final menuIdValue = args['menu_id'];
+      if (menuIdValue is String) {
+        menuId.value = menuIdValue;
+      } else if (menuIdValue is int) {
+        menuId.value = menuIdValue.toString();
+      } else {
+        menuId.value = "";
+      }
       logDebug('✅ 直接设置菜单ID: ${menuId.value}', tag: OrderConstants.logTag);
     } else {
-      menuId.value = 0;
+      menuId.value = "";
       logDebug('❌ 没有找到menu参数', tag: OrderConstants.logTag);
     }
   }
@@ -221,17 +228,45 @@ class OrderController extends GetxController {
   void _processPeopleCount(Map<String, dynamic> args) {
     // 处理成人数量
     if (args['adultCount'] != null) {
-      adultCount.value = args['adultCount'] as int;
+      final adultCountValue = args['adultCount'];
+      if (adultCountValue is int) {
+        adultCount.value = adultCountValue;
+      } else if (adultCountValue is String) {
+        adultCount.value = int.tryParse(adultCountValue) ?? 0;
+      } else {
+        adultCount.value = 0;
+      }
     } else if (args['adult_count'] != null) {
-      adultCount.value = args['adult_count'] as int;
+      final adultCountValue = args['adult_count'];
+      if (adultCountValue is int) {
+        adultCount.value = adultCountValue;
+      } else if (adultCountValue is String) {
+        adultCount.value = int.tryParse(adultCountValue) ?? 0;
+      } else {
+        adultCount.value = 0;
+      }
     }
     logDebug('✅ 成人数量: ${adultCount.value}', tag: OrderConstants.logTag);
     
     // 处理儿童数量
     if (args['childCount'] != null) {
-      childCount.value = args['childCount'] as int;
+      final childCountValue = args['childCount'];
+      if (childCountValue is int) {
+        childCount.value = childCountValue;
+      } else if (childCountValue is String) {
+        childCount.value = int.tryParse(childCountValue) ?? 0;
+      } else {
+        childCount.value = 0;
+      }
     } else if (args['child_count'] != null) {
-      childCount.value = args['child_count'] as int;
+      final childCountValue = args['child_count'];
+      if (childCountValue is int) {
+        childCount.value = childCountValue;
+      } else if (childCountValue is String) {
+        childCount.value = int.tryParse(childCountValue) ?? 0;
+      } else {
+        childCount.value = 0;
+      }
     }
     logDebug('✅ 儿童数量: ${childCount.value}', tag: OrderConstants.logTag);
   }
@@ -246,7 +281,7 @@ class OrderController extends GetxController {
       logDebug('✅ 订单来源: takeaway (fromTakeaway参数)', tag: OrderConstants.logTag);
     } else {
       // 根据是否有桌台信息判断来源
-      if (table.value?.tableId != null && table.value!.tableId != 0) {
+      if (table.value?.tableId != null && table.value!.tableId != '0' && table.value!.tableId.isNotEmpty) {
         source.value = 'table';
         logDebug('✅ 根据桌台信息推断来源为: table', tag: OrderConstants.logTag);
       } else {
@@ -264,7 +299,7 @@ class OrderController extends GetxController {
 
   /// 初始化WebSocket连接
   Future<void> _initializeWebSocket() async {
-    if (table.value?.tableId == null || table.value!.tableId == 0) {
+    if (table.value?.tableId == null || table.value!.tableId == '0' || table.value!.tableId.isEmpty) {
       logDebug('❌ 桌台ID为空或无效，无法初始化WebSocket (tableId: ${table.value?.tableId})', tag: OrderConstants.logTag);
       return;
     }
@@ -355,7 +390,7 @@ class OrderController extends GetxController {
   
   /// 重连WebSocket
   Future<void> _reconnectWebSocket() async {
-    if (table.value?.tableId == null || table.value!.tableId == 0) return;
+    if (table.value?.tableId == null || table.value!.tableId == '0' || table.value!.tableId.isEmpty) return;
     
     try {
       final tableId = table.value!.tableId.toString();
@@ -530,7 +565,7 @@ class OrderController extends GetxController {
 
   /// 从API获取菜品数据
   Future<void> _loadDishesFromApi({bool refreshMode = false}) async {
-    if (menuId.value == 0) {
+    if (menuId.value.isEmpty) {
       GlobalToast.error('获取菜品数据失败');
       return;
     }
@@ -540,7 +575,7 @@ class OrderController extends GetxController {
       
       final result = await _api.getMenudDishList(
         tableID: table.value?.tableId.toString(),
-        menuId: menuId.value.toString(),
+        menuId: menuId.value,
       );
       
       if (result.isSuccess && result.data != null) {
@@ -836,7 +871,7 @@ class OrderController extends GetxController {
   // 保持现有的getter方法以确保UI兼容性
   int get totalCount => _cartController.totalCount;
   double get totalPrice => _cartController.totalPrice;
-  double get baseTotalPrice => _cartController.baseTotalPrice;
+  // double get baseTotalPrice => _cartController.baseTotalPrice;
   
   // API返回的总价格
   double get apiTotalPrice => cartInfo.value?.totalPrice ?? 0.0;
@@ -862,7 +897,7 @@ class OrderController extends GetxController {
 
   // ========== 敏感物相关 ==========
 
-  void toggleAllergen(int allergenId) {
+  void toggleAllergen(String allergenId) {
     if (selectedAllergens.contains(allergenId)) {
       selectedAllergens.remove(allergenId);
     } else {
@@ -921,7 +956,7 @@ class OrderController extends GetxController {
 
   // ========== 敏感物弹窗相关 ==========
 
-  void toggleTempAllergen(int allergenId) {
+  void toggleTempAllergen(String allergenId) {
     if (tempSelectedAllergens.contains(allergenId)) {
       tempSelectedAllergens.remove(allergenId);
     } else {
@@ -1077,7 +1112,7 @@ class OrderController extends GetxController {
     _updatePeopleCountViaApi(adultCount, childCount);
   }
 
-  void _handleMenuChange(int menuId) {
+  void _handleMenuChange(String menuId) {
     logDebug('📋 收到服务器修改菜单消息: $menuId', tag: OrderConstants.logTag);
     _updateMenuById(menuId);
   }
@@ -1093,7 +1128,7 @@ class OrderController extends GetxController {
 
   Future<void> _updatePeopleCountViaApi(int adultCount, int childCount) async {
     try {
-      final tableId = table.value?.tableId.toInt();
+      final tableId = table.value?.tableId;
       if (tableId == null) return;
 
       final result = await _api.changePeopleCount(
@@ -1114,13 +1149,13 @@ class OrderController extends GetxController {
     }
   }
 
-  Future<void> _updateMenuById(int menuId) async {
+  Future<void> _updateMenuById(String menuId) async {
     try {
       if (menu.value?.menuId == menuId) {
         await _loadDishesAndCart();
         return;
       }
-      
+
       final result = await _api.getTableMenuList();
       if (result.isSuccess && result.data != null) {
         final targetMenu = result.data!.firstWhere(
@@ -1130,7 +1165,7 @@ class OrderController extends GetxController {
         
         menu.value = targetMenu;
         // 同步更新menuId，确保菜品数据能正确加载
-        this.menuId.value = targetMenu.menuId ?? 0;
+        this.menuId.value = targetMenu.menuId ?? "";
         await _loadDishesAndCart();
         logDebug('✅ 菜单信息已更新: ${targetMenu.menuName}', tag: OrderConstants.logTag);
       }
@@ -1497,7 +1532,7 @@ class OrderController extends GetxController {
       logDebug('📤 开始提交订单...', tag: OrderConstants.logTag);
 
       final result = await _orderApi.submitOrder(
-        tableId: table.value!.tableId.toInt(),
+        tableId: int.tryParse(table.value!.tableId) ?? 0,
       );
 
       if (result.isSuccess) {

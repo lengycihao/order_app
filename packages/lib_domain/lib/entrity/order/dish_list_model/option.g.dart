@@ -7,7 +7,7 @@ part of 'option.dart';
 // **************************************************************************
 
 Option _$OptionFromJson(Map<String, dynamic> json) => Option(
-  id: (json['id'] as num?)?.toInt(),
+  id: json['id'] as String?,
   name: json['name'] as String?,
   isMultiple: json['is_multiple'] as bool?,
   isRequired: json['is_required'] as bool?,

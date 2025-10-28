@@ -46,7 +46,7 @@ class DishDetailController extends GetxController {
     try {
       // 将Dish模型转换为Item模型
       final item = Item(
-        id: int.tryParse(dishData!.id),
+        id: dishData!.id,
         name: dishData!.name,
         price: dishData!.price.toString(),
         image: dishData!.image,
@@ -159,7 +159,7 @@ class DishDetailController extends GetxController {
       name: item.name ?? '',
       image: item.image ?? '',
       price: double.tryParse(item.price ?? '0') ?? 0.0,
-      categoryId: item.categoryId ?? 0,
+      categoryId: int.tryParse(item.categoryId ?? '0') ?? 0,
       hasOptions: item.hasOptions ?? false,
       options: options,
       allergens: allergens,

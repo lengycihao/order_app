@@ -7,15 +7,15 @@ part of 'item.dart';
 // **************************************************************************
 
 Item _$ItemFromJson(Map<String, dynamic> json) => Item(
-  id: (json['id'] as num?)?.toInt(),
+  id: json['id'] as String?,
   name: json['name'] as String?,
-  categoryId: (json['category_id'] as num?)?.toInt(),
+  categoryId: json['category_id'] as String?,
   description: json['description'] as String?,
   price: json['price'] as String?,
   unitPrice: json['unit_price'] as String?,
   image: json['image'] as String?,
   tags: (json['tags'] as List<dynamic>?)?.map((e) => e as String).toList(),
-  type: (json['type'] as num?)?.toInt(),
+  type: json['type'] as String?,
   options: (json['options'] as List<dynamic>?)
       ?.map((e) => Option.fromJson(e as Map<String, dynamic>))
       .toList(),

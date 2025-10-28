@@ -8,7 +8,7 @@ part of 'allergen.dart';
 
 Allergen _$AllergenFromJson(Map<String, dynamic> json) => Allergen(
   label: json['label'] as String?,
-  id: (json['id'] as num?)?.toInt(),
+  id: json['id'] as String?,
   icon: json['icon'] as String?,
 );
 

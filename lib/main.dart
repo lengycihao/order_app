@@ -4,6 +4,7 @@ import 'package:lib_base/lib_base.dart';
 import 'package:order_app/pages/login/login_page.dart';
 import 'package:order_app/pages/nav/screen_nav_page.dart';
 import 'package:order_app/pages/dish/dish_detail_route_page.dart';
+import 'package:order_app/pages/splash/splash_page.dart';
 import 'package:lib_base/network/interceptor/auth_service.dart';
 import 'package:lib_base/config/app_configN.dart';
 import 'package:lib_base/network/interceptor/api_business_interceptor.dart';
@@ -98,12 +99,13 @@ class MyApp extends StatelessWidget {
       locale: languageService.currentLocale, // 使用LanguageService中的语言设置
       
       getPages: [
+        GetPage(name: '/splash', page: () => const SplashPage()), // 启动页路由
         GetPage(name: '/login', page: () => LoginPage()), // 登录页面路由
         // 在这里可以添加其他页面路由
         GetPage(name: '/home', page: () => ScreenNavPage()), // 示例其他页面路由
         GetPage(name: '/dish-detail-route', page: () => DishDetailRoutePage()), // 菜品详情路由页面
       ],
-      home: isLoggedIn ? ScreenNavPage() : LoginPage(), // 直接使用home而不是路由
+      home: const SplashPage(), // 启动时显示启动页
       builder: (context, child) {
         // 初始化 Toast Context
         ToastContext().init(context);

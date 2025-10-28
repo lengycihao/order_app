@@ -7,9 +7,9 @@ part of 'option_item.dart';
 // **************************************************************************
 
 OptionItem _$OptionItemFromJson(Map<String, dynamic> json) => OptionItem(
-  id: (json['id'] as num?)?.toInt(),
+  id: json['id'] as String?,
   label: json['label'] as String?,
-  value: (json['value'] as num?)?.toInt(),
+  value: json['value'] as String?,
   price: json['price'] as String?,
 );
 

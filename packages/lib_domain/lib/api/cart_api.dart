@@ -40,7 +40,7 @@ class CartApi {
           print('⚠️ CartAPI 返回空数据，创建空购物车');
           final emptyCart = CartInfoModel(
             cartId: null,
-            tableId: int.tryParse(tableId),
+            tableId: tableId,
             items: <CartItemModel>[],
             totalQuantity: 0,
             totalPrice: 0.0,

@@ -11,7 +11,7 @@ LobbyListModel _$LobbyListModelFromJson(Map<String, dynamic> json) =>
       halls: (json['halls'] as List<dynamic>?)
           ?.map((e) => Hall.fromJson(e as Map<String, dynamic>))
           .toList(),
-      totalTables: (json['total_tables'] as num?)?.toInt(),
+      totalTables: _toInt(json['total_tables']),
     );
 
 Map<String, dynamic> _$LobbyListModelToJson(LobbyListModel instance) =>

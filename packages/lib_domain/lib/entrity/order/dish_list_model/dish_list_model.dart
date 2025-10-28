@@ -6,7 +6,7 @@ part 'dish_list_model.g.dart';
 
 @JsonSerializable()
 class DishListModel {
-  int? id;
+  String? id;
   String? name;
   List<Item>? items;
 

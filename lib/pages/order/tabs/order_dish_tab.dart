@@ -575,7 +575,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
   Widget _buildMainDishContent() {
     return Obx(() {
       // 如果没有菜单ID，显示整个页面的空状态
-      if (controller.menuId.value == 0) {
+      if (controller.menuId.value.isEmpty) {
         return _buildEmptyState();
       }
       
@@ -611,10 +611,6 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
                 final categoryCount = controller.cart.entries
                     .where((e) => e.key.dish.categoryId == index && _isRegularDish(e.key.dish))
                     .fold<int>(0, (sum, e) => sum + e.value);
-
-                final selectedIndex = controller.selectedCategory.value;
-                final isAboveSelected = index == selectedIndex - 1;
-                final isBelowSelected = index == selectedIndex + 1;
                 
                 return GestureDetector(
                     onTap: () => _scrollToCategory(index),
@@ -1071,7 +1067,7 @@ class _OrderDishTabState extends BaseListPageState<OrderDishTab> with AutomaticK
       
       // 获取桌台ID
       final tableId = controller.table.value?.tableId;
-      if (tableId == null || tableId <= 0) {
+      if (tableId == null || tableId.isEmpty || int.tryParse(tableId) == null || int.tryParse(tableId)! <= 0) {
         if (mounted) {
           Navigator.of(context).pop();
           ToastUtils.showError(context, context.l10n.operationTooFrequentPleaseTryAgainLater);

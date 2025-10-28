@@ -746,13 +746,13 @@ class CartController extends GetxController {
     return cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
   }
   
-  /// 获取基础总价格（不包含价格增量、税费等额外费用）
-  double get baseTotalPrice {
-    // 计算本地购物车的基础总价
-    double total = cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
-    // 修复浮点数精度问题，保留2位小数
-    return double.parse(total.toStringAsFixed(2));
-  }
+  // /// 获取基础总价格（不包含价格增量、税费等额外费用）
+  // double get baseTotalPrice {
+  //   // 计算本地购物车的基础总价
+  //   double total = cart.entries.fold(0.0, (sum, e) => sum + e.key.dish.price * e.value);
+  //   // 修复浮点数精度问题，保留2位小数
+  //   return double.parse(total.toString());
+  // }
   
   /// 暴露私有字段用于委托模式（只读访问）
   CartItem? get lastOperationCartItem => _lastOperationCartItem;
@@ -786,7 +786,7 @@ class CartController extends GetxController {
       dish: dish,
       selectedOptions: selectedOptions ?? {},
       cartSpecificationId: "0", // 临时ID，不会用于实际操作
-      cartId: 0,
+      cartId: "0",
       apiPrice: null,
     );
   }

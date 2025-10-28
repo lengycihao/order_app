@@ -10,8 +10,8 @@ class AllergenController extends GetxController {
   final String _logTag = 'AllergenController';
   
   // 敏感物数据
-  final selectedAllergens = <int>[].obs;
-  final tempSelectedAllergens = <int>[].obs;
+  final selectedAllergens = <String>[].obs;
+  final tempSelectedAllergens = <String>[].obs;
   final allAllergens = <Allergen>[].obs;
   final isLoadingAllergens = false.obs;
 
@@ -50,7 +50,7 @@ class AllergenController extends GetxController {
   }
 
   /// 切换敏感物选择状态
-  void toggleAllergen(int allergenId) {
+  void toggleAllergen(String allergenId) {
     if (selectedAllergens.contains(allergenId)) {
       selectedAllergens.remove(allergenId);
     } else {
@@ -68,7 +68,7 @@ class AllergenController extends GetxController {
   }
 
   /// 切换临时敏感物选择状态（用于弹窗）
-  void toggleTempAllergen(int allergenId) {
+  void toggleTempAllergen(String allergenId) {
     if (tempSelectedAllergens.contains(allergenId)) {
       tempSelectedAllergens.remove(allergenId);
     } else {

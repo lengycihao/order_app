@@ -8,7 +8,7 @@ part of 'table_menu_list_model.dart';
 
 TableMenuListModel _$TableMenuListModelFromJson(Map<String, dynamic> json) =>
     TableMenuListModel(
-      menuId: (json['menu_id'] as num?)?.toInt(),
+      menuId: json['menu_id'] as String?,
       menuName: json['menu_name'] as String?,
       menuType: (json['menu_type'] as num?)?.toInt(),
       menuImage: json['menu_image'] as String?,

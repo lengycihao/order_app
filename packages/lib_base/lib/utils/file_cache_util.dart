@@ -336,11 +336,4 @@ class FileCacheUtil {
     }
   }
 
-  // 根据文件路径计算文件大小
-  Future<int> _calculateSize(File file) async {
-    if (await file.exists()) {
-      return await file.length();
-    }
-    return 0;
-  }
 }

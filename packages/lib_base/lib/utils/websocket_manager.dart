@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:math';
 import 'websocket_util.dart';
 import '../logging/logging.dart';
+import '../config/app_configN.dart';
 
 /// 菜品规格选项
 class DishOption {
-  final int id; // 规格名称id
-  final List<int> itemIds; // 规格对应的值的id列表
+  final String id; // 规格名称id
+  final List<String> itemIds; // 规格对应的值的id列表
   final List<String> customValues; // 自定义值（暂时不用）
 
   const DishOption({
@@ -25,8 +26,8 @@ class DishOption {
 
   factory DishOption.fromJson(Map<String, dynamic> json) {
     return DishOption(
-      id: json['id'] as int,
-      itemIds: (json['item_ids'] as List<dynamic>).cast<int>(),
+      id: json['id'].toString(),
+      itemIds: (json['item_ids'] as List<dynamic>).map((e) => e.toString()).toList(),
       customValues: (json['custom_values'] as List<dynamic>?)?.cast<String>() ?? [],
     );
   }
@@ -81,7 +82,7 @@ required String tableId,
       logDebug('🔌 初始化桌台 $tableId 的WebSocket连接...', tag: 'WebSocketManager');
 
       final config = WebSocketConfig(
-        serverUrl: serverUrl ?? 'ws://129.204.154.113:8050/api/waiter/ws',
+        serverUrl: serverUrl ?? AppConfigN.baseWsUrl,
         tableId: tableId,
         token: token,
         language: language,
@@ -166,7 +167,7 @@ required String tableId,
   /// 发送添加菜品到购物车消息
   Future<bool> sendAddDishToCart({
     required String tableId,
-    required int dishId,
+    required String dishId,
     required int quantity,
     List<DishOption> options = const [],
     bool forceOperate = false,
@@ -205,7 +206,7 @@ required String tableId,
   /// 发送添加菜品到购物车消息（带自定义消息ID）
   Future<bool> sendAddDishToCartWithId({
     required String tableId,
-    required int dishId,
+    required String dishId,
     required int quantity,
     List<DishOption> options = const [],
     bool forceOperate = false,
@@ -247,7 +248,7 @@ required String tableId,
   Future<bool> sendUpdateDishQuantity({
     required String tableId,
     required int quantity,
-    required int cartId,
+    required String cartId,
     required String cartSpecificationId,
   }) async {
     return sendUpdateDishQuantityWithId(
@@ -263,7 +264,7 @@ required String tableId,
   Future<bool> sendUpdateDishQuantityWithId({
     required String tableId,
     required int quantity,
-    required int cartId,
+    required String cartId,
     required String cartSpecificationId,
     required String messageId,
   }) async {
@@ -300,7 +301,7 @@ required String tableId,
   /// 发送减少菜品数量消息（使用incr_quantity字段）
   Future<bool> sendDecreaseDishQuantity({
     required String tableId,
-    required int cartId,
+    required String cartId,
     required String cartSpecificationId,
     required int incrQuantity, // 负数表示减少
   }) async {
@@ -316,7 +317,7 @@ required String tableId,
   /// 发送减少菜品数量消息（带消息ID，使用incr_quantity字段）
   Future<bool> sendDecreaseDishQuantityWithId({
     required String tableId,
-    required int cartId,
+    required String cartId,
     required String cartSpecificationId,
     required int incrQuantity, // 负数表示减少
     required String messageId,
@@ -355,7 +356,7 @@ required String tableId,
   Future<bool> sendDeleteDish({
     required String tableId,
     required String cartSpecificationId,
-    required int cartId,
+    required String cartId,
   }) async {
     return sendDeleteDishWithId(
       tableId: tableId,
@@ -369,7 +370,7 @@ required String tableId,
   Future<bool> sendDeleteDishWithId({
     required String tableId,
     required String cartSpecificationId,
-    required int cartId,
+    required String cartId,
     required String messageId,
   }) async {
     final connection = _tableConnections[tableId];
@@ -654,7 +655,7 @@ required String tableId,
   /// 发送更换桌子消息
   Future<bool> sendChangeTable({
     required String tableId,
-    required int newTableId,
+    required String newTableId,
     required String newTableName,
   }) async {
     final connection = _tableConnections[tableId];
@@ -689,7 +690,7 @@ required String tableId,
   /// 发送更换菜单消息
   Future<bool> sendChangeMenu({
     required String tableId,
-    required int menuId,
+    required String menuId,
   }) async {
     final connection = _tableConnections[tableId];
     if (connection == null) {

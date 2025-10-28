@@ -19,9 +19,6 @@ class WebSocketDebounceManager {
   // 失败回调函数
   Function(CartItem, int)? _onWebSocketFailed;
   
-  // 操作频率统计 - 用于智能防抖
-  final Map<String, List<DateTime>> _operationHistory = {};
-  final Map<String, int> _operationCounts = {};
   
   WebSocketDebounceManager({
     required WebSocketHandler wsHandler,
@@ -31,32 +28,6 @@ class WebSocketDebounceManager {
   /// 设置失败回调函数
   void setFailureCallback(Function(CartItem, int)? onWebSocketFailed) {
     _onWebSocketFailed = onWebSocketFailed;
-  }
-  
-  /// 获取智能防抖时间 - 根据操作频率动态调整
-  int _getSmartDebounceTime(String key) {
-    final now = DateTime.now();
-    final history = _operationHistory[key] ?? [];
-    
-    // 清理1分钟前的历史记录
-    history.removeWhere((time) => now.difference(time).inMinutes > 1);
-    _operationHistory[key] = history;
-    
-    // 记录当前操作
-    history.add(now);
-    _operationCounts[key] = (history.length);
-    
-    // 根据操作频率调整防抖时间
-    if (history.length >= 10) {
-      // 非常频繁操作，使用最长防抖时间
-      return OrderConstants.websocketBatchDebounceMs + 500;
-    } else if (history.length >= 5) {
-      // 频繁操作，增加防抖时间
-      return OrderConstants.websocketBatchDebounceMs + 200;
-    } else {
-      // 正常操作，使用标准防抖时间
-      return OrderConstants.websocketBatchDebounceMs;
-    }
   }
   
   /// 防抖发送更新数量操作

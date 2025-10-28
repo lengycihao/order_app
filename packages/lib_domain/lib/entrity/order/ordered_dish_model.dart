@@ -27,15 +27,19 @@ class StringToDoubleConverter implements JsonConverter<double?, dynamic> {
 class OrderedDishModel {
   /// 订单菜品ID
   @JsonKey(name: 'id')
-  int? id;
+  String? id;
 
   /// 菜品ID
   @JsonKey(name: 'dish_id')
-  int? dishId;
+  String? dishId;
 
   /// 菜品名称
   @JsonKey(name: 'name')
   String? name;
+
+  /// 菜品类型
+  @JsonKey(name: 'dish_type')
+  int? dishType;
 
   /// 数量
   @JsonKey(name: 'quantity')
@@ -110,6 +114,7 @@ class OrderedDishModel {
     this.id,
     this.dishId,
     this.name,
+    this.dishType,
     this.quantity,
     this.price,
     this.menuPrice,

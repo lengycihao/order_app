@@ -7,11 +7,11 @@ part 'cart_info_model.g.dart';
 class CartInfoModel {
   /// 购物车ID
   @JsonKey(name: 'id')
-  int? cartId;
+  String? cartId;
   
   /// 桌台ID
   @JsonKey(name: 'table_id')
-  int? tableId;
+  String? tableId;
   
   /// 购物车项目列表
   @JsonKey(name: 'dishes')

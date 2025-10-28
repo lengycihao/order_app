@@ -8,9 +8,10 @@ part of 'ordered_dish_model.dart';
 
 OrderedDishModel _$OrderedDishModelFromJson(Map<String, dynamic> json) =>
     OrderedDishModel(
-      id: (json['id'] as num?)?.toInt(),
-      dishId: (json['dish_id'] as num?)?.toInt(),
+      id: json['id'] as String?,
+      dishId: json['dish_id'] as String?,
       name: json['name'] as String?,
+      dishType: (json['dish_type'] as num?)?.toInt(),
       quantity: (json['quantity'] as num?)?.toInt(),
       price: const StringToDoubleConverter().fromJson(json['price']),
       menuPrice: const StringToDoubleConverter().fromJson(json['menu_price']),
@@ -38,6 +39,7 @@ Map<String, dynamic> _$OrderedDishModelToJson(OrderedDishModel instance) =>
       'id': instance.id,
       'dish_id': instance.dishId,
       'name': instance.name,
+      'dish_type': instance.dishType,
       'quantity': instance.quantity,
       'price': const StringToDoubleConverter().toJson(instance.price),
       'menu_price': const StringToDoubleConverter().toJson(instance.menuPrice),

@@ -333,9 +333,9 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     }
     
     // 去重：根据桌台ID去重，保留第一个出现的桌台
-    Map<int, TableListModel> uniqueTables = {};
+    Map<String, TableListModel> uniqueTables = {};
     for (var table in allTables) {
-      final tableId = table.tableId.toInt();
+      final tableId = table.tableId;
       if (!uniqueTables.containsKey(tableId)) {
         uniqueTables[tableId] = table;
       }
@@ -405,7 +405,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       final tableIds = selectedTableIds.map((id) => int.parse(id)).toList();
 
       // 调用并桌API
-      final result = await _baseApi.mergeTables(tableIds: tableIds);
+      final result = await _baseApi.mergeTables(tableIds: tableIds.map((id) => id.toString()).toList());
 
       if (result.isSuccess && result.data != null) {
         // 并桌成功，直接使用返回的桌台详情

@@ -6,7 +6,7 @@ part 'option.g.dart';
 
 @JsonSerializable()
 class Option {
-  int? id;
+  String? id;
   String? name;
   @JsonKey(name: 'is_multiple')
   bool? isMultiple;

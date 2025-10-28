@@ -74,7 +74,7 @@ class DataConverter {
 
   /// 构建已选敏感物名称列表
   static List<String> buildSelectedAllergenNames({
-    required List<int> selectedAllergens,
+    required List<String> selectedAllergens,
     required List<Allergen> allAllergens,
   }) {
     return selectedAllergens.map((id) {

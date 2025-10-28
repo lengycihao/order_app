@@ -11,7 +11,7 @@ import 'package:order_app/pages/order/components/restaurant_loading_widget.dart'
 import 'package:order_app/utils/keyboard_utils.dart';
 import 'package:order_app/widgets/base_list_page_widget.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart' hide RefreshIndicator;
-import 'package:lib_base/logging/logging.dart';
+import 'package:lib_base/logging/logging.dart'; 
 
 class TakeawayPage extends BaseListPageWidget {
   final List<String> tabs = [Get.context!.l10n.unpaid, Get.context!.l10n.paid];
@@ -452,7 +452,7 @@ class _TakeawayPageState extends BaseListPageState<TakeawayPage> with TickerProv
         final tableData = result['data'];
         
         // 额外验证桌台数据的有效性
-        if (tableData.tableId != null && tableData.tableId > 0) {
+        if (tableData.tableId != null && tableData.tableId.isNotEmpty) {
           logDebug('✅ 虚拟开桌成功，跳转到点餐页面', tag: 'TakeawayPage');
           Get.to(
             () => OrderMainPage(),

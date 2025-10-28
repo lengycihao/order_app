@@ -50,7 +50,7 @@ class _SpecificationModalContent extends StatefulWidget {
 
 class _SpecificationModalContentState
     extends State<_SpecificationModalContent> {
-  Map<int, List<int>> selectedOptions = {}; // 规格ID -> 选中的选项ID列表
+  Map<String, List<String>> selectedOptions = {}; // 规格ID -> 选中的选项ID列表
   int quantity = 1;
   double totalPrice = 0;
   // 已移除：_quantityController 和 _quantityFocusNode（禁用手动输入数量）
@@ -585,9 +585,7 @@ class _SpecificationModalContentState
       selectedOptions.forEach((optionId, selectedItemIds) {
         if (selectedItemIds.isNotEmpty) {
           // 直接使用optionId作为key，itemIds作为value
-          selectedOptionsMap[optionId.toString()] = selectedItemIds
-              .map((id) => id.toString())
-              .toList();
+          selectedOptionsMap[optionId] = selectedItemIds;
         }
       });
 

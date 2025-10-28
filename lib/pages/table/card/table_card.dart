@@ -119,7 +119,7 @@ class TableCard extends StatelessWidget {
               // 调用API切换桌台状态
               await controller.changeTableStatus(
                 context: context,
-                tableId: table.tableId.toInt(),
+                tableId: table.tableId,
                 newStatus: newStatus,
               );
             },
@@ -150,7 +150,7 @@ class TableCard extends StatelessWidget {
                 );
                 final baseApi = BaseApi();
                 final result = await baseApi.getTableDetail(
-                  tableId: table.tableId.toInt(),
+                  tableId: table.tableId,
                 );
 
                 if (!result.isSuccess || result.data == null) {
@@ -167,7 +167,7 @@ class TableCard extends StatelessWidget {
                 );
 
                 // 检查桌台ID是否有效
-                if (latestTable.tableId == 0) {
+                if (latestTable.tableId == '0' || latestTable.tableId.isEmpty) {
                   logDebug('⚠️ 警告：API返回的桌台ID为0', tag: 'TableCard');
                 }
 
@@ -361,7 +361,7 @@ class TableCard extends StatelessWidget {
     // 只要有订单金额就显示
     if (table.orderAmount > 0) {
       return Text(
-        '€ ${table.orderAmount.toStringAsFixed(2)}',
+        '€ ${table.orderAmount.toString()}',
         style: TextStyle(
           color: Colors.black,
           fontSize: 16,

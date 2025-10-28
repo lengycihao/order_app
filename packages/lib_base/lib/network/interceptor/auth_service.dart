@@ -8,7 +8,6 @@ class AuthService {
   // ✅ 公开构造函数，GetIt 可以直接 new 出来
   AuthService();
 
-  static const String _userAccountsKey = 'user_accounts';
   static const String _currentUserKey = 'current_user';
   static const FlutterSecureStorage _storage = FlutterSecureStorage();
 

@@ -54,7 +54,7 @@ class BaseApi {
         // 检查解析后的桌台数据
         for (int i = 0; i < list.length; i++) {
           final table = list[i];
-          if (table.tableId == 0) {
+          if (table.tableId == '0' || table.tableId.isEmpty) {
             // 可以在这里添加特殊处理逻辑
           }
         }
@@ -139,8 +139,8 @@ class BaseApi {
 
   /// 换桌
   Future<HttpResultN<void>> changeTable({
-    required int tableId,
-    required int newTableId,
+    required String tableId,
+    required String newTableId,
   }) async {
     final params = {
       "table_id": tableId,
@@ -160,18 +160,18 @@ class BaseApi {
 
   /// 开桌
   Future<HttpResultN<void>> openTable({
-    required int tableId,
+    required String tableId,
     required int adultCount,
     required int childCount,
-    required int menuId,
-    // int reserveId = 0,
+    required String menuId,
+    String? waiterId,
   }) async {
     final params = {
       "table_id": tableId,
       "adult_count": adultCount,
       "child_count": childCount,
       "menu_id": menuId,
-      // "reserve_id": reserveId,
+      if (waiterId != null) "waiter_id": waiterId,
     };
     final result = await HttpManagerN.instance.executePost(
       ApiRequest.openTable,
@@ -187,12 +187,14 @@ class BaseApi {
 
   /// 更换桌台状态
   Future<HttpResultN<void>> changeTableStatus({
-    required int tableId,
+    required String tableId,
     required int status,
+    String? reasonId,
   }) async {
     final params = {
       "table_id": tableId,
       "status": status,
+      if (reasonId != null) "reason_id": reasonId,
     };
     final result = await HttpManagerN.instance.executePost(
       ApiRequest.changeTableStatus,
@@ -208,12 +210,16 @@ class BaseApi {
 
   /// 更换菜单
   Future<HttpResultN<void>> changeMenu({
-    required int tableId,
-    required int menuId,
+    required String tableId,
+    required String menuId,
+    String? merchantId,
+    String? storeId,
   }) async {
     final params = {
       "table_id": tableId,
       "menu_id": menuId,
+      if (merchantId != null) "merchant_id": merchantId,
+      if (storeId != null) "store_id": storeId,
     };
     final result = await HttpManagerN.instance.executePost(
       ApiRequest.changeMenu,
@@ -229,7 +235,7 @@ class BaseApi {
 
   /// 更换人数
   Future<HttpResultN<void>> changePeopleCount({
-    required int tableId,
+    required String tableId,
     required int adultCount,
     required int childCount,
   }) async {
@@ -252,7 +258,7 @@ class BaseApi {
 
   /// 获取桌台详情
   Future<HttpResultN<TableListModel>> getTableDetail({
-    required int tableId,
+    required String tableId,
   }) async {
     final params = {
       "table_id": tableId,
@@ -278,10 +284,14 @@ class BaseApi {
 
   /// 并桌
   Future<HttpResultN<TableListModel>> mergeTables({
-    required List<int> tableIds,
+    required List<String> tableIds,
+    String? merchantId,
+    String? storeId,
   }) async {
     final params = {
       "table_ids": tableIds,
+      if (merchantId != null) "merchant_id": merchantId,
+      if (storeId != null) "store_id": storeId,
     };
     final result = await HttpManagerN.instance.executePost(
       ApiRequest.mergeTable,
@@ -301,6 +311,69 @@ class BaseApi {
   Future<HttpResultN<TableListModel>> openVirtualTable() async {
     final result = await HttpManagerN.instance.executePost(
       ApiRequest.openVirtualTable,
+    );
+    
+    if (result.isSuccess) {
+      return result.convert(
+        data: TableListModel.fromJson(result.getDataJson()),
+      );
+    } else {
+      return result.convert();
+    }
+  }
+
+  /// 修改桌台信息
+  Future<HttpResultN<TableListModel>> changeInfo({
+    required String tableId,
+    Map<String, dynamic>? additionalParams,
+  }) async {
+    final params = {
+      "table_id": tableId,
+      ...?additionalParams,
+    };
+    final result = await HttpManagerN.instance.executePost(
+      ApiRequest.changeInfo,
+      jsonParam: params,
+    );
+    
+    if (result.isSuccess) {
+      return result.convert(
+        data: TableListModel.fromJson(result.getDataJson()),
+      );
+    } else {
+      return result.convert();
+    }
+  }
+
+  /// 获取预约信息
+  Future<HttpResultN<Map<String, dynamic>>> getReserveInfo({
+    required String tableId,
+  }) async {
+    final params = {
+      "table_id": tableId,
+    };
+    final result = await HttpManagerN.instance.executeGet(
+      ApiRequest.reserveInfo,
+      queryParam: params,
+    );
+    
+    if (result.isSuccess) {
+      return result.convert(data: result.getDataJson());
+    } else {
+      return result.convert();
+    }
+  }
+
+  /// 拆桌
+  Future<HttpResultN<TableListModel>> unmergeTables({
+    required List<String> unmergeTableIds,
+  }) async {
+    final params = {
+      "unmerge_table_ids": unmergeTableIds,
+    };
+    final result = await HttpManagerN.instance.executePost(
+      ApiRequest.unmergeTable,
+      jsonParam: params,
     );
     
     if (result.isSuccess) {

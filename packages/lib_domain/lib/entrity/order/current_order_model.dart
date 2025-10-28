@@ -28,7 +28,11 @@ class StringToDoubleConverter implements JsonConverter<double?, dynamic> {
 class CurrentOrderModel {
   /// 订单ID
   @JsonKey(name: 'id')
-  int? orderId;
+  String? orderId;
+
+  /// 订单ID列表
+  @JsonKey(name: 'order_ids')
+  List<String>? orderIds;
 
   /// 订单类型
   @JsonKey(name: 'order_type')
@@ -49,6 +53,20 @@ class CurrentOrderModel {
   @StringToDoubleConverter()
   double? paidAmount;
 
+  /// 折扣金额
+  @JsonKey(name: 'discount_amount')
+  @StringToDoubleConverter()
+  double? discountAmount;
+
+  /// 舍入金额
+  @JsonKey(name: 'round_amount')
+  @StringToDoubleConverter()
+  double? roundAmount;
+
+  /// 支付状态
+  @JsonKey(name: 'payment_status')
+  int? paymentStatus;
+
   /// 总数量
   @JsonKey(name: 'quantity')
   int? quantity;
@@ -63,10 +81,14 @@ class CurrentOrderModel {
 
   CurrentOrderModel({
     this.orderId,
+    this.orderIds,
     this.orderType,
     this.totalAmount,
     this.settledAmount,
     this.paidAmount,
+    this.discountAmount,
+    this.roundAmount,
+    this.paymentStatus,
     this.quantity,
     this.details,
     this.payments,

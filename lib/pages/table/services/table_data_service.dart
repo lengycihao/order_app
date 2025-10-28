@@ -46,7 +46,7 @@ class TableDataService {
         if (result.data != null && result.data!.isNotEmpty) {
           for (int i = 0; i < result.data!.length; i++) {
             final table = result.data![i];
-            if (table.tableId == 0) {
+            if (table.tableId == '0' || table.tableId.isEmpty) {
               logDebug('⚠️ 发现桌台ID为0的异常数据', tag: _logTag);
             } else {
               // logDebug('✅ 桌台数据正常: tableId=${table.tableId}', tag: _logTag);
@@ -100,7 +100,7 @@ class TableDataService {
 
   /// 更改桌台状态
   Future<HttpResultN<void>> changeTableStatus({
-    required int tableId,
+    required String tableId,
     required int status,
   }) async {
     try {

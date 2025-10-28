@@ -6,7 +6,7 @@ part 'table_menu_list_model.g.dart';
 @JsonSerializable()
 class TableMenuListModel {
   @JsonKey(name: 'menu_id')
-  int? menuId;
+  String? menuId;
   @JsonKey(name: 'menu_name')
   String? menuName;
   @JsonKey(name: 'menu_type')

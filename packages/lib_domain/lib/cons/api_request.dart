@@ -29,6 +29,12 @@ class ApiRequest {
 
   static const mergeTable = '/api/waiter/table/merge';
 
+  static const changeInfo = '/api/waiter/table/change_info';
+
+  static const reserveInfo = '/api/waiter/table/reserve_info';
+
+  static const unmergeTable = '/api/waiter/table/unmerge';
+
   // 外卖相关接口
   static const takeoutList = '/api/waiter/order/takeout/list';
   

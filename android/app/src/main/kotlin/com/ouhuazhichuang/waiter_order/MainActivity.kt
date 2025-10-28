@@ -1,4 +1,4 @@
-package com.example.order_app
+package com.ouhuazhichuang.waiter_order
 
 import io.flutter.embedding.android.FlutterActivity
 import android.os.Bundle

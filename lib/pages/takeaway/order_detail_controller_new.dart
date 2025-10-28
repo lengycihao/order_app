@@ -15,7 +15,7 @@ class OrderDetailControllerNew extends GetxController {
   final TakeoutApi _takeoutApi = TakeoutApi();
   
   // 订单ID
-  int? orderId;
+  String? orderId;
 
   @override
   void onInit() {
@@ -24,7 +24,7 @@ class OrderDetailControllerNew extends GetxController {
     // 从路由参数获取订单ID
     final arguments = Get.arguments as Map<String, dynamic>?;
     if (arguments != null && arguments['orderId'] != null) {
-      orderId = arguments['orderId'] as int;
+      orderId = arguments['orderId'].toString();
       loadOrderDetail();
     } else {
       logDebug('❌ 订单ID不能为空', tag: 'OrderDetailControllerNew');
@@ -53,7 +53,7 @@ class OrderDetailControllerNew extends GetxController {
     isLoading.value = true;
     
     try {
-      final result = await _takeoutApi.getTakeoutDetail(id: orderId!);
+      final result = await _takeoutApi.getTakeoutDetail(id: int.parse(orderId!));
       
       logDebug('🔍 API返回结果: $result', tag: 'OrderDetailControllerNew');
       logDebug('🔍 API返回数据: ${result.data}', tag: 'OrderDetailControllerNew');

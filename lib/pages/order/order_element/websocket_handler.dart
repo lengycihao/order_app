@@ -28,7 +28,7 @@ class WebSocketHandler {
   final Function()? onCartClear;
   final Function()? onOrderRefresh; // 已点订单刷新回调
   final Function(int, int)? onPeopleCountChange;
-  final Function(int)? onMenuChange;
+  final Function(String)? onMenuChange;
   final Function(String)? onTableChange;
   final Function(String, Map<String, dynamic>?)? onForceUpdateRequired;
   final Function(String?, String)? onOperationFailed; // 操作失败回调，传递消息ID和错误信息
@@ -194,8 +194,12 @@ class WebSocketHandler {
     
     switch (action) {
       case 'change_menu':
-        final menuId = data['menu_id'] as int?;
-        if (menuId != null) onMenuChange?.call(menuId);
+        final menuId = data['menu_id'];
+        if (menuId != null) {
+          // 将 menuId 转换为 String 类型
+          final menuIdStr = menuId.toString();
+          onMenuChange?.call(menuIdStr);
+        }
         break;
       case 'change_people_count':
         final adultCount = data['adult_count'] as int?;
@@ -329,7 +333,7 @@ class WebSocketHandler {
     String? customMessageId,
   }) async {
     try {
-      final dishId = int.tryParse(dish.id) ?? 0;
+      final dishId = dish.id; // 直接使用 String 类型的 dishId
       final options = _convertOptionsToServerFormat(selectedOptions);
       
       // 生成或使用自定义消息ID
@@ -537,17 +541,13 @@ class WebSocketHandler {
     final options = <DishOption>[];
     
     selectedOptions.forEach((optionIdStr, itemIdStrs) {
-      if (itemIdStrs.isNotEmpty) {
-        final optionId = int.tryParse(optionIdStr) ?? 0;
-        final itemIds = itemIdStrs.map((idStr) => int.tryParse(idStr) ?? 0).toList();
-        
-        if (optionId > 0 && itemIds.any((id) => id > 0)) {
-          options.add(DishOption(
-            id: optionId,
-            itemIds: itemIds,
-            customValues: [],
-          ));
-        }
+      if (itemIdStrs.isNotEmpty && optionIdStr.isNotEmpty) {
+        // 直接使用 String 类型的 ID
+        options.add(DishOption(
+          id: optionIdStr,
+          itemIds: itemIdStrs,
+          customValues: [],
+        ));
       }
     });
     

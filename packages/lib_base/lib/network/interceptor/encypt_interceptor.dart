@@ -4,14 +4,11 @@ import 'package:dio/dio.dart';
 import 'package:lib_base/network/cons/http_header_key.dart';
 
 class EncryptInterceptor extends Interceptor {
-  final String _defaultAesKey;
-  final String _defaultAesIv;
   final Encrypter _encrypter;
   final IV _iv;
 
   EncryptInterceptor({String? aesKey, String? aesIv})
-    : _defaultAesKey = aesKey ?? 'your-32-char-secret-key-here!',
-      _defaultAesIv = aesIv ?? 'your-16-char-iv!',
+    :
       _encrypter = Encrypter(
         AES(
           Key.fromBase64(

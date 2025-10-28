@@ -27,11 +27,11 @@ class StringToDoubleConverter implements JsonConverter<double?, dynamic> {
 class CartItemModel {
   /// 购物车项目ID
   @JsonKey(name: 'id')
-  int? cartId;
+  String? cartId;
   
   /// 菜品ID
   @JsonKey(name: 'dish_id')
-  int? dishId;
+  String? dishId;
   
   /// 菜品名称
   @JsonKey(name: 'name')
@@ -102,7 +102,7 @@ class CartItemModel {
   
   /// 类型
   @JsonKey(name: 'type')
-  int? type;
+  String? type;
   
   /// 菜品类型
   @JsonKey(name: 'dish_type')
@@ -110,11 +110,11 @@ class CartItemModel {
   
   /// 服务员ID
   @JsonKey(name: 'waiter_id')
-  int? waiterId;
+  String? waiterId;
   
   /// 客户ID
   @JsonKey(name: 'customer_id')
-  int? customerId;
+  String? customerId;
   
   /// 浏览器指纹哈希
   @JsonKey(name: 'browser_fingerprint_hash')
@@ -177,13 +177,13 @@ class CartItemModel {
 @JsonSerializable()
 class TempDishInfo {
   /// 类目ID
-  int? categoryId;
+  String? categoryId;
   
   /// 类目名称
   String? categoryName;
   
   /// 出菜档口ID
-  int? kitchenStationId;
+  String? kitchenStationId;
   
   /// 出菜档口名称
   String? kitchenStationName;

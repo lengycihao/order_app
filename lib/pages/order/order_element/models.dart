@@ -2,7 +2,7 @@ import '../model/dish.dart';
 
 /// 敏感物模型
 class Allergen {
-  final int id;
+  final String id;
   final String label;
   final String? icon;
 
@@ -14,7 +14,7 @@ class Allergen {
 
   factory Allergen.fromJson(Map<String, dynamic> json) {
     return Allergen(
-      id: json['id'] ?? 0,
+      id: json['id']?.toString() ?? '0',
       label: json['label'] ?? '',
       icon: json['icon'],
     );
@@ -26,8 +26,8 @@ class CartItem {
   final Dish dish;
   final Map<String, List<String>> selectedOptions; // 选择的规格选项
   final String? cartSpecificationId; // WebSocket操作需要的规格ID
-  final int? cartItemId; // 购物车项的ID
-  final int? cartId; // 购物车的外层ID（用于update和delete操作）
+  final String? cartItemId; // 购物车项的ID
+  final String? cartId; // 购物车的外层ID（用于update和delete操作）
   final String? optionsStr; // 规格选项字符串，从API获取
   final double? apiPrice; // API返回的价格（优先使用此价格）
 

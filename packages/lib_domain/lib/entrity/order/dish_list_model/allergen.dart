@@ -5,7 +5,7 @@ part 'allergen.g.dart';
 @JsonSerializable()
 class Allergen {
   String? label;
-  int? id;
+  String? id;
   String? icon;
 
   Allergen({this.label, this.id, this.icon});

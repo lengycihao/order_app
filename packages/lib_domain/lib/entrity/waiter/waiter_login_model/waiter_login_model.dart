@@ -6,11 +6,15 @@ part 'waiter_login_model.g.dart';
 class WaiterLoginModel {
   String? token;
   @JsonKey(name: 'waiter_id')
-  int? waiterId;
+  String? waiterId;
   @JsonKey(name: 'waiter_name')
   String? waiterName;
   @JsonKey(name: 'language_code')
   String? languageCode;
+  @JsonKey(name: 'merchant_id')
+  String? merchantId;
+  @JsonKey(name: 'store_id')
+  String? storeId;
   @JsonKey(name: 'avatar')
   String? avatar;
 
@@ -19,6 +23,8 @@ class WaiterLoginModel {
     this.waiterId,
     this.waiterName,
     this.languageCode,
+    this.merchantId,
+    this.storeId,
     this.avatar,
   });
 

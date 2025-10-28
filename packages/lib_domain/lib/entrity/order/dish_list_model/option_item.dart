@@ -4,9 +4,9 @@ part 'option_item.g.dart';
 
 @JsonSerializable()
 class OptionItem {
-  int? id;
+  String? id;
   String? label;
-  int? value;
+  String? value;
   String? price;
 
   OptionItem({

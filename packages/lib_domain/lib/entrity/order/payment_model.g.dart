@@ -7,7 +7,7 @@ part of 'payment_model.dart';
 // **************************************************************************
 
 PaymentModel _$PaymentModelFromJson(Map<String, dynamic> json) => PaymentModel(
-  id: (json['id'] as num?)?.toInt(),
+  id: json['id'] as String?,
   paymentMethod: json['payment_method'] as String?,
   amount: (json['amount'] as num?)?.toDouble(),
   status: (json['status'] as num?)?.toInt(),

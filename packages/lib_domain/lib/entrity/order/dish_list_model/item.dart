@@ -7,17 +7,17 @@ part 'item.g.dart';
 
 @JsonSerializable()
 class Item {
-  int? id;
+  String? id;
   String? name;
   @JsonKey(name: 'category_id')
-  int? categoryId;
+  String? categoryId;
   String? description;
   String? price;
   @JsonKey(name: 'unit_price')
   String? unitPrice;
   String? image;
   List<String>? tags;
-  int? type;
+  String? type;
   List<Option>? options;
   @JsonKey(name: 'has_options')
   bool? hasOptions;

@@ -413,7 +413,7 @@ class TableControllerRefactored extends GetxController {
   /// 更改桌台状态
   Future<void> changeTableStatus({
     required BuildContext context,
-    required int tableId,
+    required String tableId,
     required TableStatus newStatus,
   }) async {
     // 在 async gap 之前提取所有需要的多语言文本

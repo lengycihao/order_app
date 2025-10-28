@@ -6,7 +6,7 @@ part 'payment_model.g.dart';
 class PaymentModel {
   /// 支付ID
   @JsonKey(name: 'id')
-  int? id;
+  String? id;
 
   /// 支付方式
   @JsonKey(name: 'payment_method')

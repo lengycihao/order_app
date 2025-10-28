@@ -39,7 +39,7 @@ class TakeawayOrderListResponse {
 @JsonSerializable()
 class TakeawayOrderModel {
   @JsonKey(name: 'id')
-  int? id;
+  String? id;
 
   @JsonKey(name: 'order_no')
   String? orderNo;

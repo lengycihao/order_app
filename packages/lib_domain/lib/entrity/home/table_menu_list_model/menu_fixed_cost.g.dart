@@ -8,7 +8,7 @@ part of 'menu_fixed_cost.dart';
 
 MenuFixedCost _$MenuFixedCostFromJson(Map<String, dynamic> json) =>
     MenuFixedCost(
-      id: (json['id'] as num?)?.toInt(),
+      id: json['id'] as String?,
       name: json['name'] as String?,
       amount: json['amount'] as String?,
       type: (json['type'] as num?)?.toInt(),

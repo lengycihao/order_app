@@ -23,6 +23,27 @@ class StringToDoubleConverter implements JsonConverter<double?, dynamic> {
   dynamic toJson(double? value) => value;
 }
 
+/// 字符串转int的转换器，处理API返回的字符串数字或空字符串
+class StringToIntConverter implements JsonConverter<int?, dynamic> {
+  const StringToIntConverter();
+
+  @override
+  int? fromJson(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    if (value is String) {
+      if (value.isEmpty) return null;
+      final parsed = int.tryParse(value);
+      return parsed;
+    }
+    return null;
+  }
+
+  @override
+  dynamic toJson(int? value) => value;
+}
+
 @JsonSerializable()
 class OrderDetailModel {
   /// 下单次数
@@ -41,6 +62,10 @@ class OrderDetailModel {
   @JsonKey(name: 'quantity_str')
   String? quantityStr;
 
+  /// 备注
+  @JsonKey(name: 'remark')
+  String? remark;
+
   /// 总金额
   @JsonKey(name: 'total_amount')
   @StringToDoubleConverter()
@@ -52,6 +77,7 @@ class OrderDetailModel {
 
   /// 支付ID
   @JsonKey(name: 'payment_id')
+  @StringToIntConverter()
   int? paymentId;
 
   /// 菜品列表
@@ -63,6 +89,7 @@ class OrderDetailModel {
     this.timesStr,
     this.roundStr,
     this.quantityStr,
+    this.remark,
     this.totalAmount,
     this.paymentStatus,
     this.paymentId,

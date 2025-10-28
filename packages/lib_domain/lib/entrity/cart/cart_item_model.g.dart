@@ -8,8 +8,8 @@ part of 'cart_item_model.dart';
 
 CartItemModel _$CartItemModelFromJson(Map<String, dynamic> json) =>
     CartItemModel(
-      cartId: (json['id'] as num?)?.toInt(),
-      dishId: (json['dish_id'] as num?)?.toInt(),
+      cartId: json['id'] as String?,
+      dishId: json['dish_id'] as String?,
       dishName: json['name'] as String?,
       price: const StringToDoubleConverter().fromJson(json['unit_price']),
       originalPrice: const StringToDoubleConverter().fromJson(json['price']),
@@ -30,10 +30,10 @@ CartItemModel _$CartItemModelFromJson(Map<String, dynamic> json) =>
       optionsStr: json['options_str'] as String?,
       options: json['options'],
       source: (json['source'] as num?)?.toInt(),
-      type: (json['type'] as num?)?.toInt(),
+      type: json['type'] as String?,
       dishType: (json['dish_type'] as num?)?.toInt(),
-      waiterId: (json['waiter_id'] as num?)?.toInt(),
-      customerId: (json['customer_id'] as num?)?.toInt(),
+      waiterId: json['waiter_id'] as String?,
+      customerId: json['customer_id'] as String?,
       browserFingerprintHash: json['browser_fingerprint_hash'] as String?,
       specifications: (json['specifications'] as List<dynamic>?)
           ?.map(
@@ -83,9 +83,9 @@ Map<String, dynamic> _$CartItemModelToJson(CartItemModel instance) =>
     };
 
 TempDishInfo _$TempDishInfoFromJson(Map<String, dynamic> json) => TempDishInfo(
-  categoryId: (json['categoryId'] as num?)?.toInt(),
+  categoryId: json['categoryId'] as String?,
   categoryName: json['categoryName'] as String?,
-  kitchenStationId: (json['kitchenStationId'] as num?)?.toInt(),
+  kitchenStationId: json['kitchenStationId'] as String?,
   kitchenStationName: json['kitchenStationName'] as String?,
 );
 
