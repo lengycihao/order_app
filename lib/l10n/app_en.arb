@@ -487,6 +487,22 @@
   "@merging": {
     "description": "Merging..."
   },
+  "pleaseSelectAtLeastTwoTables": "Please select at least 2 tables to merge",
+  "@pleaseSelectAtLeastTwoTables": {
+    "description": "Please select at least 2 tables to merge"
+  },
+  "pleaseSelectAtLeastOneTable": "Please select at least 1 table",
+  "@pleaseSelectAtLeastOneTable": {
+    "description": "Please select at least 1 table"
+  },
+  "closingTable": "Closing table...",
+  "@closingTable": {
+    "description": "Closing table..."
+  },
+  "removingTable": "Removing table...",
+  "@removingTable": {
+    "description": "Removing table..."
+  },
   "unknown": "Unknown",
   "@unknown": {
     "description": "Unknown"
@@ -590,5 +606,45 @@
   "logining": "Logging in...",
   "@logining": {
     "description": "Logging in..."
+  },
+  "serverAddress": "Server Address",
+  "@serverAddress": {
+    "description": "Server Address"
+  },
+  "ipAddress": "IP Address",
+  "@ipAddress": {
+    "description": "IP Address"
+  },
+  "port": "Port",
+  "@port": {
+    "description": "Port"
+  },
+  "pleaseEnterIpAddress": "Please enter IP address",
+  "@pleaseEnterIpAddress": {
+    "description": "Please enter IP address"
+  },
+  "pleaseEnterPort": "Please enter port",
+  "@pleaseEnterPort": {
+    "description": "Please enter port"
+  },
+  "serverConfigSavedSuccessfully": "Server configuration saved successfully",
+  "@serverConfigSavedSuccessfully": {
+    "description": "Server configuration saved successfully"
+  },
+  "serverConfigSaveFailed": "Server configuration save failed",
+  "@serverConfigSaveFailed": {
+    "description": "Server configuration save failed"
+  },
+  "invalidIpAddress": "Invalid IP address format",
+  "@invalidIpAddress": {
+    "description": "Invalid IP address format"
+  },
+  "invalidPort": "Invalid port format",
+  "@invalidPort": {
+    "description": "Invalid port format"
+  },
+  "selectReason": "Please select a reason",
+  "@selectReason": {
+    "description": "Please select a reason"
   }
 }

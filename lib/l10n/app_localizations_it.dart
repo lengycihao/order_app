@@ -21,8 +21,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get login => 'Accedi';
 
   @override
-  String get copyright =>
-      '©2025 Ouhua Zhichuang (Hangzhou) Technology Co., Ltd.';
+  String get copyright => '©2025 Ouhua Zhichuang (Hangzhou) Technology Co., Ltd.';
 
   @override
   String get loginNameCannotBeEmpty => 'L\'account non può essere vuoto';
@@ -40,8 +39,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get loginFailedPleaseRetry => 'Accesso fallito, riprova per favore';
 
   @override
-  String get accountLoggedInOnAnotherDevice =>
-      'L\'account è stato accesso su un altro dispositivo';
+  String get accountLoggedInOnAnotherDevice => 'L\'account è stato accesso su un altro dispositivo';
 
   @override
   String get table => 'Tavolo';
@@ -92,19 +90,16 @@ class AppLocalizationsIt extends AppLocalizations {
   String get currentTableUnavailable => 'Il tavolo corrente non è disponibile.';
 
   @override
-  String get onlyOneNonFreeTableCanBeSelected =>
-      'Può essere selezionato solo uno dei seguenti tavoli non liberi.';
+  String get onlyOneNonFreeTableCanBeSelected => 'Può essere selezionato solo uno dei seguenti tavoli non liberi.';
 
   @override
   String get pleaseSelectNumberOfDiners => 'Seleziona il numero di commensali';
 
   @override
-  String get standardAdultsForThisTable =>
-      'Numero standard di adulti per questo tavolo: ';
+  String get standardAdultsForThisTable => 'Numero standard di adulti per questo tavolo: ';
 
   @override
-  String get standardChildrenForThisTable =>
-      'Numero standard di bambini per questo tavolo:';
+  String get standardChildrenForThisTable => 'Numero standard di bambini per questo tavolo:';
 
   @override
   String get pleaseSelectMenu => 'Seleziona un menù';
@@ -116,44 +111,34 @@ class AppLocalizationsIt extends AppLocalizations {
   String get mergeFailedPleaseRetry => 'Fusione fallita, riprova per favore.';
 
   @override
-  String get oneTableMustRemainWhenRemoving =>
-      'Quando si rimuovono i tavoli, deve rimanere un tavolo.';
+  String get oneTableMustRemainWhenRemoving => 'Quando si rimuovono i tavoli, deve rimanere un tavolo.';
 
   @override
-  String get tableRemovalSuccessful =>
-      'Rimozione del tavolo avvenuta con successo';
+  String get tableRemovalSuccessful => 'Rimozione del tavolo avvenuta con successo';
 
   @override
-  String get tableRemovalFailedPleaseRetry =>
-      'Rimozione del tavolo fallita, riprova per favore';
+  String get tableRemovalFailedPleaseRetry => 'Rimozione del tavolo fallita, riprova per favore';
 
   @override
-  String get tableClosingSuccessful =>
-      'Chiusura del tavolo avvenuta con successo';
+  String get tableClosingSuccessful => 'Chiusura del tavolo avvenuta con successo';
 
   @override
-  String get tableClosingFailedPleaseRetry =>
-      'Chiusura del tavolo fallita, riprova per favore';
+  String get tableClosingFailedPleaseRetry => 'Chiusura del tavolo fallita, riprova per favore';
 
   @override
-  String get tableOpeningSuccessful =>
-      'Apertura del tavolo avvenuta con successo';
+  String get tableOpeningSuccessful => 'Apertura del tavolo avvenuta con successo';
 
   @override
-  String get tableOpeningFailedPleaseRetry =>
-      'Apertura del tavolo fallita, riprova per favore';
+  String get tableOpeningFailedPleaseRetry => 'Apertura del tavolo fallita, riprova per favore';
 
   @override
-  String get pleaseEnterLast4DigitsOfReservedPhone =>
-      'Inserisci gli ultimi 4 cifri del numero di cellulare prenotato?';
+  String get pleaseEnterLast4DigitsOfReservedPhone => 'Inserisci gli ultimi 4 cifri del numero di cellulare prenotato?';
 
   @override
-  String get numberIncorrectPleaseReenter =>
-      'Il numero non è corretto, reinserisci per favore';
+  String get numberIncorrectPleaseReenter => 'Il numero non è corretto, reinserisci per favore';
 
   @override
-  String get numberCorrectEnjoyYourMeal =>
-      'Il numero è corretto. Buon appetito!';
+  String get numberCorrectEnjoyYourMeal => 'Il numero è corretto. Buon appetito!';
 
   @override
   String get menu => 'Menù ';
@@ -177,8 +162,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get allergens => 'Allergeni';
 
   @override
-  String get excludeDishesWithAllergens =>
-      'Escludi i piatti contenenti gli allergeni specificati';
+  String get excludeDishesWithAllergens => 'Escludi i piatti contenenti gli allergeni specificati';
 
   @override
   String get selected => 'Selezionato:';
@@ -199,12 +183,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get noRelevantDishesFound => 'Non sono stati trovati piatti correlati';
 
   @override
-  String get dishSoldOutPleaseChooseAnother =>
-      'è esaurito. Si prega di scegliere un altro piatto.';
+  String get dishSoldOutPleaseChooseAnother => 'è esaurito. Si prega di scegliere un altro piatto.';
 
   @override
-  String get nextRoundTimeNotReached =>
-      'Tempo del prossimo turno non raggiunto';
+  String get nextRoundTimeNotReached => 'Tempo del prossimo turno non raggiunto';
 
   @override
   String get cartHasNewChanges => 'Carrello ha nuovi cambiamenti';
@@ -213,15 +195,13 @@ class AppLocalizationsIt extends AppLocalizations {
   String get orderPlacedSuccessfully => 'Ordine inviato con successo';
 
   @override
-  String get orderPlacementFailedContactWaiter =>
-      'Ordine non inviato, contatta il cameriere';
+  String get orderPlacementFailedContactWaiter => 'Ordine non inviato, contatta il cameriere';
 
   @override
   String get clearShoppingCart => 'Vuoi cancellare il';
 
   @override
-  String get quantityExceedsLimitPlaceAtOriginalPrice =>
-      'La quantità supera il limite. Vuoi ordinare al prezzo originale?';
+  String get quantityExceedsLimitPlaceAtOriginalPrice => 'La quantità supera il limite. Vuoi ordinare al prezzo originale?';
 
   @override
   String get takeaway => 'Da Asporto';
@@ -266,12 +246,10 @@ class AppLocalizationsIt extends AppLocalizations {
   String get otherTime => 'Altro Orario';
 
   @override
-  String get pleaseSelectPickupTime =>
-      'Si prega di selezionare un orario di ritiro';
+  String get pleaseSelectPickupTime => 'Si prega di selezionare un orario di ritiro';
 
   @override
-  String get pickupTimeMustBeAtLeast30MinutesLater =>
-      'L\'orario di ritiro deve essere almeno 30 minuti dopo.';
+  String get pickupTimeMustBeAtLeast30MinutesLater => 'L\'orario di ritiro deve essere almeno 30 minuti dopo.';
 
   @override
   String get profile => 'Profilo';
@@ -322,22 +300,19 @@ class AppLocalizationsIt extends AppLocalizations {
   String get passwordUpdatedSuccessfully => 'Password modificata con successo';
 
   @override
-  String get passwordChangeFailedPleaseRetry =>
-      'La modifica della password è fallita, riprova per favore.';
+  String get passwordChangeFailedPleaseRetry => 'La modifica della password è fallita, riprova per favore.';
 
   @override
   String get languageSwitchedSuccessfully => 'Lingua cambiata con successo';
 
   @override
-  String get languageSwitchFailedPleaseRetry =>
-      'Il cambio di lingua è fallito, riprova per favore.';
+  String get languageSwitchFailedPleaseRetry => 'Il cambio di lingua è fallito, riprova per favore.';
 
   @override
   String get networkErrorPleaseTryAgain => 'Errore di rete, riprova per favore';
 
   @override
-  String get operationTooFrequentPleaseTryAgainLater =>
-      'L\'operazione è troppo frequente, riprova più tardi.';
+  String get operationTooFrequentPleaseTryAgainLater => 'L\'operazione è troppo frequente, riprova più tardi.';
 
   @override
   String get noData => 'Nessun dato disponibile';
@@ -400,6 +375,18 @@ class AppLocalizationsIt extends AppLocalizations {
   String get merging => 'Unione in corso...';
 
   @override
+  String get pleaseSelectAtLeastTwoTables => 'Seleziona almeno 2 tavoli da unire';
+
+  @override
+  String get pleaseSelectAtLeastOneTable => 'Seleziona almeno 1 tavolo';
+
+  @override
+  String get closingTable => 'Chiusura tavolo in corso...';
+
+  @override
+  String get removingTable => 'Rimozione tavolo in corso...';
+
+  @override
   String get unknown => 'Sconosciuto';
 
   @override
@@ -418,8 +405,7 @@ class AppLocalizationsIt extends AppLocalizations {
   String get pleaseSelect => 'Seleziona';
 
   @override
-  String get filterDishesWithAllergens =>
-      'Filtra i piatti contenenti allergeni';
+  String get filterDishesWithAllergens => 'Filtra i piatti contenenti allergeni';
 
   @override
   String get noOrder => 'Nessun dato sugli ordini disponibile';
@@ -477,4 +463,34 @@ class AppLocalizationsIt extends AppLocalizations {
 
   @override
   String get logining => 'Accesso in corso...';
+
+  @override
+  String get serverAddress => 'Indirizzo del server';
+
+  @override
+  String get ipAddress => 'Indirizzo IP';
+
+  @override
+  String get port => 'Porta';
+
+  @override
+  String get pleaseEnterIpAddress => 'Inserisci l\'indirizzo IP';
+
+  @override
+  String get pleaseEnterPort => 'Inserisci la porta';
+
+  @override
+  String get serverConfigSavedSuccessfully => 'Configurazione del server salvata con successo';
+
+  @override
+  String get serverConfigSaveFailed => 'Salvataggio della configurazione del server fallito';
+
+  @override
+  String get invalidIpAddress => 'Formato indirizzo IP non valido';
+
+  @override
+  String get invalidPort => 'Formato porta non valido';
+
+  @override
+  String get selectReason => 'Seleziona un motivo';
 }

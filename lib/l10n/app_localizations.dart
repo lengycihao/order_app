@@ -63,8 +63,7 @@ import 'app_localizations_zh.dart';
 /// be consistent with the languages listed in the AppLocalizations.supportedLocales
 /// property.
 abstract class AppLocalizations {
-  AppLocalizations(String locale)
-    : localeName = intl.Intl.canonicalizedLocale(locale.toString());
+  AppLocalizations(String locale) : localeName = intl.Intl.canonicalizedLocale(locale.toString());
 
   final String localeName;
 
@@ -72,8 +71,7 @@ abstract class AppLocalizations {
     return Localizations.of<AppLocalizations>(context, AppLocalizations);
   }
 
-  static const LocalizationsDelegate<AppLocalizations> delegate =
-      _AppLocalizationsDelegate();
+  static const LocalizationsDelegate<AppLocalizations> delegate = _AppLocalizationsDelegate();
 
   /// A list of this localizations delegate along with the default localizations
   /// delegates.
@@ -85,912 +83,994 @@ abstract class AppLocalizations {
   /// Additional delegates can be added by appending to this list in
   /// MaterialApp. This list does not have to be used at all if a custom list
   /// of delegates is preferred or required.
-  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates =
-      <LocalizationsDelegate<dynamic>>[
-        delegate,
-        GlobalMaterialLocalizations.delegate,
-        GlobalCupertinoLocalizations.delegate,
-        GlobalWidgetsLocalizations.delegate,
-      ];
+  static const List<LocalizationsDelegate<dynamic>> localizationsDelegates = <LocalizationsDelegate<dynamic>>[
+    delegate,
+    GlobalMaterialLocalizations.delegate,
+    GlobalCupertinoLocalizations.delegate,
+    GlobalWidgetsLocalizations.delegate,
+  ];
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('en'),
     Locale('it'),
-    Locale('zh'),
+    Locale('zh')
   ];
 
-  /// 应用程序标题
+  /// Application title
   ///
-  /// In zh, this message translates to:
-  /// **'欧华餐饮系统(服务员)'**
+  /// In en, this message translates to:
+  /// **'OUHUA RISTOO(Waiter)'**
   String get appTitle;
 
-  /// 请输入登录名
+  /// Please enter your login name
   ///
-  /// In zh, this message translates to:
-  /// **'请输入登录名'**
+  /// In en, this message translates to:
+  /// **'Please enter your login name'**
   String get pleaseEnterLoginName;
 
-  /// 请输入密码
+  /// Please enter the password
   ///
-  /// In zh, this message translates to:
-  /// **'请输入密码'**
+  /// In en, this message translates to:
+  /// **'Please enter the password'**
   String get pleaseEnterPassword;
 
-  /// 登录
+  /// Login
   ///
-  /// In zh, this message translates to:
-  /// **'登录'**
+  /// In en, this message translates to:
+  /// **'Login'**
   String get login;
 
-  /// 版权信息
+  /// Copyright information
   ///
-  /// In zh, this message translates to:
-  /// **'©2025 欧华智创（杭州）科技有限公司'**
+  /// In en, this message translates to:
+  /// **'©2025 Ouhua Zhichuang (Hangzhou) Technology Co., Ltd.'**
   String get copyright;
 
-  /// 账号不能为空
+  /// Account cannot be empty
   ///
-  /// In zh, this message translates to:
-  /// **'账号不能为空'**
+  /// In en, this message translates to:
+  /// **'Account cannot be empty'**
   String get loginNameCannotBeEmpty;
 
-  /// 密码不能为空
+  /// Password cannot be empty
   ///
-  /// In zh, this message translates to:
-  /// **'密码不能为空'**
+  /// In en, this message translates to:
+  /// **'Password cannot be empty.'**
   String get passwordCannotBeEmpty;
 
-  /// 用户名或密码错误
+  /// Incorrect Password
   ///
-  /// In zh, this message translates to:
-  /// **'用户名或密码错误'**
+  /// In en, this message translates to:
+  /// **'Incorrect Password'**
   String get incorrectPassword;
 
-  /// 登录成功
+  /// Login Successful
   ///
-  /// In zh, this message translates to:
-  /// **'登录成功'**
+  /// In en, this message translates to:
+  /// **'Login Successful'**
   String get loginSuccessful;
 
-  /// 登录失败，请重试
+  /// Login failed, please retry
   ///
-  /// In zh, this message translates to:
-  /// **'登录失败，请重试'**
+  /// In en, this message translates to:
+  /// **'Login failed, please retry'**
   String get loginFailedPleaseRetry;
 
-  /// 账号已在其他设备登录
+  /// The account has been logged in on another device
   ///
-  /// In zh, this message translates to:
-  /// **'账号已在其他设备登录'**
+  /// In en, this message translates to:
+  /// **'The account has been logged in on another device'**
   String get accountLoggedInOnAnotherDevice;
 
-  /// 桌台
+  /// Table
   ///
-  /// In zh, this message translates to:
-  /// **'桌台'**
+  /// In en, this message translates to:
+  /// **'Table '**
   String get table;
 
-  /// 更多
+  /// More
   ///
-  /// In zh, this message translates to:
-  /// **'更多'**
+  /// In en, this message translates to:
+  /// **'More'**
   String get more;
 
-  /// 并桌
+  /// Merge Tables
   ///
-  /// In zh, this message translates to:
-  /// **'并桌'**
+  /// In en, this message translates to:
+  /// **'Merge Tables'**
   String get mergeTables;
 
-  /// 撤桌
+  /// Clear Table
   ///
-  /// In zh, this message translates to:
-  /// **'撤桌'**
+  /// In en, this message translates to:
+  /// **'Clear Table'**
   String get clearTable;
 
-  /// 关桌
+  /// Close Table
   ///
-  /// In zh, this message translates to:
-  /// **'关桌'**
+  /// In en, this message translates to:
+  /// **'Close Table'**
   String get closeTable;
 
-  /// 确认
+  /// Confirm
   ///
-  /// In zh, this message translates to:
-  /// **'确认'**
+  /// In en, this message translates to:
+  /// **'Confirm'**
   String get confirm;
 
-  /// 包含桌台
+  /// Including Tables
   ///
-  /// In zh, this message translates to:
-  /// **'包含桌台'**
+  /// In en, this message translates to:
+  /// **'Including Tables'**
   String get includingTables;
 
-  /// 选择桌台
+  /// Select Table
   ///
-  /// In zh, this message translates to:
-  /// **'选择桌台'**
+  /// In en, this message translates to:
+  /// **'Select Table'**
   String get selectTable;
 
-  /// 原因
+  /// Reason
   ///
-  /// In zh, this message translates to:
-  /// **'原因'**
+  /// In en, this message translates to:
+  /// **'Reason'**
   String get reason;
 
-  /// 取消
+  /// Cancel
   ///
-  /// In zh, this message translates to:
-  /// **'取消'**
+  /// In en, this message translates to:
+  /// **'Cancel'**
   String get cancel;
 
-  /// 本桌人数
+  /// Table People
   ///
-  /// In zh, this message translates to:
-  /// **'本桌人数'**
+  /// In en, this message translates to:
+  /// **'Table People'**
   String get tablePeople;
 
-  /// 大人
+  /// Adults
   ///
-  /// In zh, this message translates to:
-  /// **'大人'**
+  /// In en, this message translates to:
+  /// **'Adults'**
   String get adults;
 
-  /// 小孩
+  /// Children
   ///
-  /// In zh, this message translates to:
-  /// **'小孩'**
+  /// In en, this message translates to:
+  /// **'Children'**
   String get children;
 
-  /// 选择菜单
+  /// Select Menu
   ///
-  /// In zh, this message translates to:
-  /// **'选择菜单'**
+  /// In en, this message translates to:
+  /// **'Select Menu'**
   String get selectMenu;
 
-  /// 开始点餐
+  /// Start Ordering
   ///
-  /// In zh, this message translates to:
-  /// **'开始点餐'**
+  /// In en, this message translates to:
+  /// **'Start Ordering'**
   String get startOrdering;
 
-  /// 当前桌台不可用
+  /// The current table is unavailable
   ///
-  /// In zh, this message translates to:
-  /// **'当前桌台不可用'**
+  /// In en, this message translates to:
+  /// **'The current table is unavailable'**
   String get currentTableUnavailable;
 
-  /// 仅可选择一张以下非空闲状态桌台
+  /// Only one of the following non - free tables can be selected
   ///
-  /// In zh, this message translates to:
-  /// **'仅可选择一张以下非空闲状态桌台'**
+  /// In en, this message translates to:
+  /// **'Only one of the following non - free tables can be selected.'**
   String get onlyOneNonFreeTableCanBeSelected;
 
-  /// 请选择就餐人数
+  /// Please select the number of diners
   ///
-  /// In zh, this message translates to:
-  /// **'请选择就餐人数'**
+  /// In en, this message translates to:
+  /// **'Please select the number of diners'**
   String get pleaseSelectNumberOfDiners;
 
-  /// 本桌标准大人人数
+  /// Standard number of adults for this table
   ///
-  /// In zh, this message translates to:
-  /// **'本桌标准大人人数:'**
+  /// In en, this message translates to:
+  /// **'Standard number of adults for this table: '**
   String get standardAdultsForThisTable;
 
-  /// 本桌标准小孩人数
+  /// Standard number of children for this table
   ///
-  /// In zh, this message translates to:
-  /// **'本桌标准小孩人数:'**
+  /// In en, this message translates to:
+  /// **'Standard number of children for this table:'**
   String get standardChildrenForThisTable;
 
-  /// 请选择菜单
+  /// Please select a menu
   ///
-  /// In zh, this message translates to:
-  /// **'请选择菜单'**
+  /// In en, this message translates to:
+  /// **'Please select a menu'**
   String get pleaseSelectMenu;
 
-  /// 合并成功
+  /// Merge successful
   ///
-  /// In zh, this message translates to:
-  /// **'合并成功'**
+  /// In en, this message translates to:
+  /// **'Merge successful'**
   String get mergeSuccessful;
 
-  /// 合并失败，请重试
+  /// Merge failed, please retry
   ///
-  /// In zh, this message translates to:
-  /// **'合并失败，请重试'**
+  /// In en, this message translates to:
+  /// **'Merge failed, please retry.'**
   String get mergeFailedPleaseRetry;
 
-  /// 撤桌必须留下一张桌台
+  /// When removing tables, one table must remain
   ///
-  /// In zh, this message translates to:
-  /// **'撤桌必须留下一张桌台'**
+  /// In en, this message translates to:
+  /// **'When removing tables, one table must remain.'**
   String get oneTableMustRemainWhenRemoving;
 
-  /// 撤桌成功
+  /// Table removal successful
   ///
-  /// In zh, this message translates to:
-  /// **'撤桌成功'**
+  /// In en, this message translates to:
+  /// **'Table removal successful'**
   String get tableRemovalSuccessful;
 
-  /// 撤桌失败，请重试
+  /// Table removal failed, please retry
   ///
-  /// In zh, this message translates to:
-  /// **'撤桌失败，请重试'**
+  /// In en, this message translates to:
+  /// **'Table removal failed, please retry'**
   String get tableRemovalFailedPleaseRetry;
 
-  /// 关桌成功
+  /// Table closing successful
   ///
-  /// In zh, this message translates to:
-  /// **'关桌成功'**
+  /// In en, this message translates to:
+  /// **'Table closing successful'**
   String get tableClosingSuccessful;
 
-  /// 关桌失败，请重试
+  /// Table closing failed, please retry
   ///
-  /// In zh, this message translates to:
-  /// **'关桌失败，请重试'**
+  /// In en, this message translates to:
+  /// **'Table closing failed, please retry'**
   String get tableClosingFailedPleaseRetry;
 
-  /// 开桌成功
+  /// Table opening successful
   ///
-  /// In zh, this message translates to:
-  /// **'开桌成功'**
+  /// In en, this message translates to:
+  /// **'Table opening successful'**
   String get tableOpeningSuccessful;
 
-  /// 开桌失败，请重试
+  /// Table opening failed, please retry
   ///
-  /// In zh, this message translates to:
-  /// **'开桌失败，请重试'**
+  /// In en, this message translates to:
+  /// **'Table opening failed, please retry'**
   String get tableOpeningFailedPleaseRetry;
 
-  /// 请输入预留手机号码后 4 位
+  /// Please enter the last 4 digits of the reserved phone number
   ///
-  /// In zh, this message translates to:
-  /// **'请输入预留手机号码后 4 位？'**
+  /// In en, this message translates to:
+  /// **'Please enter the last 4 digits of the reserved phone number?'**
   String get pleaseEnterLast4DigitsOfReservedPhone;
 
-  /// 号码不正确，请重新输入
+  /// The number is incorrect, please re-enter
   ///
-  /// In zh, this message translates to:
-  /// **'号码不正确，请重新输入'**
+  /// In en, this message translates to:
+  /// **'The number is incorrect, please re-enter'**
   String get numberIncorrectPleaseReenter;
 
-  /// 号码正确，祝你用餐愉快
+  /// The number is correct. Enjoy your meal
   ///
-  /// In zh, this message translates to:
-  /// **'号码正确，祝你用餐愉快'**
+  /// In en, this message translates to:
+  /// **'The number is correct. Enjoy your meal!'**
   String get numberCorrectEnjoyYourMeal;
 
-  /// 菜单
+  /// Menu
   ///
-  /// In zh, this message translates to:
-  /// **'菜单'**
+  /// In en, this message translates to:
+  /// **'Menu'**
   String get menu;
 
-  /// 已点
+  /// Ordered
   ///
-  /// In zh, this message translates to:
-  /// **'已点'**
+  /// In en, this message translates to:
+  /// **'Ordered'**
   String get ordered;
 
-  /// 输入菜品编码或名称
+  /// Enter dish code or name
   ///
-  /// In zh, this message translates to:
-  /// **'输入菜品编码或名称'**
+  /// In en, this message translates to:
+  /// **'Enter dish code or name'**
   String get enterDishCodeOrName;
 
-  /// 选规格
+  /// Select specification
   ///
-  /// In zh, this message translates to:
-  /// **'选规格'**
+  /// In en, this message translates to:
+  /// **'Variante'**
   String get selectSpecification;
 
-  /// 下单
+  /// Place order
   ///
-  /// In zh, this message translates to:
-  /// **'下单'**
+  /// In en, this message translates to:
+  /// **'Order'**
   String get placeOrder;
 
-  /// 清空
+  /// Clear
   ///
-  /// In zh, this message translates to:
-  /// **'清空'**
+  /// In en, this message translates to:
+  /// **'Clear'**
   String get clear;
 
-  /// 敏感物
+  /// Allergens
   ///
-  /// In zh, this message translates to:
-  /// **'敏感物'**
+  /// In en, this message translates to:
+  /// **'Allergens'**
   String get allergens;
 
-  /// 去除含有指定敏感物的菜品
+  /// Exclude dishes containing the specified allergens
   ///
-  /// In zh, this message translates to:
-  /// **'去除含有指定敏感物的菜品'**
+  /// In en, this message translates to:
+  /// **'Exclude dishes containing the specified allergens'**
   String get excludeDishesWithAllergens;
 
-  /// 已选
+  /// Selected
   ///
-  /// In zh, this message translates to:
-  /// **'已选：'**
+  /// In en, this message translates to:
+  /// **'Selected:'**
   String get selected;
 
-  /// 购物车
+  /// Cart
   ///
-  /// In zh, this message translates to:
-  /// **'购物车'**
+  /// In en, this message translates to:
+  /// **'Cart'**
   String get cart;
 
-  /// 更换桌台
+  /// Change Table
   ///
-  /// In zh, this message translates to:
-  /// **'更换桌台'**
+  /// In en, this message translates to:
+  /// **'Change Table'**
   String get changeTable;
 
-  /// 更换菜单
+  /// Change Menu
   ///
-  /// In zh, this message translates to:
-  /// **'更换菜单'**
+  /// In en, this message translates to:
+  /// **'Change Menu'**
   String get changeMenu;
 
-  /// 增加人数
+  /// Increase Number of People
   ///
-  /// In zh, this message translates to:
-  /// **'增加人数'**
+  /// In en, this message translates to:
+  /// **'Increase Number of People'**
   String get increaseNumberOfPeople;
 
-  /// 未找到相关菜品
+  /// No relevant dishes found
   ///
-  /// In zh, this message translates to:
-  /// **'未找到相关菜品'**
+  /// In en, this message translates to:
+  /// **'No relevant dishes found'**
   String get noRelevantDishesFound;
 
-  /// 已售罄，请选择其他菜品
+  /// is sold out. Please choose another dish
   ///
-  /// In zh, this message translates to:
-  /// **'已售罄，请选择其他菜品'**
+  /// In en, this message translates to:
+  /// **'is sold out. Please choose another dish.'**
   String get dishSoldOutPleaseChooseAnother;
 
-  /// 下一轮次时间未到
+  /// Next round time not reached
   ///
-  /// In zh, this message translates to:
-  /// **'下一轮次时间未到'**
+  /// In en, this message translates to:
+  /// **'Next round time not reached'**
   String get nextRoundTimeNotReached;
 
-  /// 购物车有新的变动
+  /// Cart has new changes
   ///
-  /// In zh, this message translates to:
-  /// **'购物车有新的变动'**
+  /// In en, this message translates to:
+  /// **'Cart has new changes'**
   String get cartHasNewChanges;
 
-  /// 下单成功
+  /// Order placed successfully
   ///
-  /// In zh, this message translates to:
-  /// **'下单成功'**
+  /// In en, this message translates to:
+  /// **'Order placed successfully'**
   String get orderPlacedSuccessfully;
 
-  /// 下单失败，请联系服务员
+  /// Order Placement Failed, Please Contact the Waiter
   ///
-  /// In zh, this message translates to:
-  /// **'下单失败，请联系服务员'**
+  /// In en, this message translates to:
+  /// **'Order Placement Failed, Please Contact the Waiter'**
   String get orderPlacementFailedContactWaiter;
 
-  /// 是否清空购物车
+  /// Clear shopping cart
   ///
-  /// In zh, this message translates to:
-  /// **'是否清空购物车？'**
+  /// In en, this message translates to:
+  /// **'Clear shopping cart?'**
   String get clearShoppingCart;
 
-  /// 数量超出限制，是否以原价下单
+  /// Quantity exceeds the limit. Place order at original price
   ///
-  /// In zh, this message translates to:
-  /// **'数量超出限制，是否以原价下单？'**
+  /// In en, this message translates to:
+  /// **'Quantity exceeds the limit. Place order at original price?'**
   String get quantityExceedsLimitPlaceAtOriginalPrice;
 
-  /// 外卖
+  /// Takeaway
   ///
-  /// In zh, this message translates to:
-  /// **'外卖'**
+  /// In en, this message translates to:
+  /// **'Takeaway'**
   String get takeaway;
 
-  /// 未结帐
+  /// Unsettled
   ///
-  /// In zh, this message translates to:
-  /// **'未结帐'**
+  /// In en, this message translates to:
+  /// **'Unsettled'**
   String get unsettled;
 
-  /// 已结帐
+  /// Settled
   ///
-  /// In zh, this message translates to:
-  /// **'已结帐'**
+  /// In en, this message translates to:
+  /// **'Settled'**
   String get settled;
 
-  /// 请输入取餐码
+  /// Please enter pickup code
   ///
-  /// In zh, this message translates to:
-  /// **'请输入取餐码'**
+  /// In en, this message translates to:
+  /// **'Please enter pickup code'**
   String get pleaseEnterPickupCode;
 
-  /// 订单信息
+  /// Order Information
   ///
-  /// In zh, this message translates to:
-  /// **'订单信息'**
+  /// In en, this message translates to:
+  /// **'Order Information'**
   String get orderInformation;
 
-  /// 取餐码
+  /// Pickup Code
   ///
-  /// In zh, this message translates to:
-  /// **'取餐码'**
+  /// In en, this message translates to:
+  /// **'Pickup Code'**
   String get pickupCode;
 
-  /// 取餐时间
+  /// Pickup Time
   ///
-  /// In zh, this message translates to:
-  /// **'取餐时间'**
+  /// In en, this message translates to:
+  /// **'Pickup Time'**
   String get pickupTime;
 
-  /// 备注
+  /// Remarks
   ///
-  /// In zh, this message translates to:
-  /// **'备注'**
+  /// In en, this message translates to:
+  /// **'Remarks'**
   String get remarks;
 
-  /// 订单来源
+  /// Order Source
   ///
-  /// In zh, this message translates to:
-  /// **'订单来源'**
+  /// In en, this message translates to:
+  /// **'Order Source'**
   String get orderSource;
 
-  /// 下单时间
+  /// Order Placement Time
   ///
-  /// In zh, this message translates to:
-  /// **'下单时间'**
+  /// In en, this message translates to:
+  /// **'Order Placement Time'**
   String get orderPlacementTime;
 
-  /// 结账时间
+  /// Checkout Time
   ///
-  /// In zh, this message translates to:
-  /// **'结账时间'**
+  /// In en, this message translates to:
+  /// **'Checkout Time'**
   String get checkoutTime;
 
-  /// 商品信息
+  /// Product Information
   ///
-  /// In zh, this message translates to:
-  /// **'商品信息'**
+  /// In en, this message translates to:
+  /// **'Product Information'**
   String get productInformation;
 
-  /// 其他信息
+  /// Additional Information
   ///
-  /// In zh, this message translates to:
-  /// **'其他信息'**
+  /// In en, this message translates to:
+  /// **'Additional Information'**
   String get additionalInformation;
 
-  /// 其他时间
+  /// Other Time
   ///
-  /// In zh, this message translates to:
-  /// **'其他时间'**
+  /// In en, this message translates to:
+  /// **'Other Time'**
   String get otherTime;
 
-  /// 请选择取餐时间
+  /// Please select a pickup time
   ///
-  /// In zh, this message translates to:
-  /// **'请选择取餐时间'**
+  /// In en, this message translates to:
+  /// **'Please select a pickup time'**
   String get pleaseSelectPickupTime;
 
-  /// 取餐时间至少30分钟后
+  /// The pickup time must be at least 30 minutes later
   ///
-  /// In zh, this message translates to:
-  /// **'取餐时间至少30分钟后'**
+  /// In en, this message translates to:
+  /// **'The pickup time must be at least 30 minutes later.'**
   String get pickupTimeMustBeAtLeast30MinutesLater;
 
-  /// 我的
+  /// Profile
   ///
-  /// In zh, this message translates to:
-  /// **'我的'**
+  /// In en, this message translates to:
+  /// **'Profile'**
   String get profile;
 
-  /// 账号
+  /// Account
   ///
-  /// In zh, this message translates to:
-  /// **'账号'**
+  /// In en, this message translates to:
+  /// **'Account'**
   String get account;
 
-  /// 到期日期
+  /// Expiry date
   ///
-  /// In zh, this message translates to:
-  /// **'到期日期'**
+  /// In en, this message translates to:
+  /// **'Expiry date'**
   String get expirationDate;
 
-  /// 剩余天数
+  /// Remaining Days
   ///
-  /// In zh, this message translates to:
-  /// **'剩余天数'**
+  /// In en, this message translates to:
+  /// **'Remaining Days'**
   String get remainingDays;
 
-  /// 修改密码
+  /// Change Password
   ///
-  /// In zh, this message translates to:
-  /// **'修改密码'**
+  /// In en, this message translates to:
+  /// **'Change Password'**
   String get changePassword;
 
-  /// 语言
+  /// Language
   ///
-  /// In zh, this message translates to:
-  /// **'语言'**
+  /// In en, this message translates to:
+  /// **'Language'**
   String get language;
 
-  /// 系统版本
+  /// System Version
   ///
-  /// In zh, this message translates to:
-  /// **'系统版本'**
+  /// In en, this message translates to:
+  /// **'System Version'**
   String get systemVersion;
 
-  /// 更新
+  /// Update
   ///
-  /// In zh, this message translates to:
-  /// **'更新'**
+  /// In en, this message translates to:
+  /// **'Update'**
   String get update;
 
-  /// 退出登录
+  /// Logout
   ///
-  /// In zh, this message translates to:
-  /// **'退出登录'**
+  /// In en, this message translates to:
+  /// **'Logout'**
   String get logout;
 
-  /// 新密码
+  /// New Password
   ///
-  /// In zh, this message translates to:
-  /// **'新密码'**
+  /// In en, this message translates to:
+  /// **'New Password'**
   String get newPassword;
 
-  /// 任意8位以上字符
+  /// Any characters of 8 or more digits
   ///
-  /// In zh, this message translates to:
-  /// **'任意8位以上字符'**
+  /// In en, this message translates to:
+  /// **'Any characters of 8 or more digits'**
   String get anyCharactersOf8OrMore;
 
-  /// 请输入新密码
+  /// Please enter new password
   ///
-  /// In zh, this message translates to:
-  /// **'请输入新密码'**
+  /// In en, this message translates to:
+  /// **'Please enter new password'**
   String get pleaseEnterNewPassword;
 
-  /// 确认密码
+  /// Confirm Password
   ///
-  /// In zh, this message translates to:
-  /// **'确认密码'**
+  /// In en, this message translates to:
+  /// **'Confirm Password'**
   String get confirmPassword;
 
-  /// 请再次输入新密码
+  /// Please re-enter new password
   ///
-  /// In zh, this message translates to:
-  /// **'请再次输入新密码'**
+  /// In en, this message translates to:
+  /// **'Please re-enter new password'**
   String get pleaseReenterNewPassword;
 
-  /// 提交
+  /// Submit
   ///
-  /// In zh, this message translates to:
-  /// **'提交'**
+  /// In en, this message translates to:
+  /// **'Submit'**
   String get submit;
 
-  /// 密码修改成功
+  /// Password updated successfully
   ///
-  /// In zh, this message translates to:
-  /// **'密码修改成功'**
+  /// In en, this message translates to:
+  /// **'Password updated successfully'**
   String get passwordUpdatedSuccessfully;
 
-  /// 密码修改失败，请重试
+  /// Password change failed, please retry
   ///
-  /// In zh, this message translates to:
-  /// **'密码修改失败，请重试'**
+  /// In en, this message translates to:
+  /// **'Password change failed, please retry.'**
   String get passwordChangeFailedPleaseRetry;
 
-  /// 切换语言成功
+  /// Language switched successfully
   ///
-  /// In zh, this message translates to:
-  /// **'切换语言成功'**
+  /// In en, this message translates to:
+  /// **'Language switched successfully'**
   String get languageSwitchedSuccessfully;
 
-  /// 切换语言失败，请重试
+  /// Language switch failed, please retry
   ///
-  /// In zh, this message translates to:
-  /// **'切换语言失败，请重试'**
+  /// In en, this message translates to:
+  /// **'Language switch failed, please retry.'**
   String get languageSwitchFailedPleaseRetry;
 
-  /// 网络错误，请重试
+  /// Network error, please try again
   ///
-  /// In zh, this message translates to:
-  /// **'网络错误，请重试'**
+  /// In en, this message translates to:
+  /// **'Network error, please try again'**
   String get networkErrorPleaseTryAgain;
 
-  /// 操作频繁 请稍后再试
+  /// Operation is too frequent, please try again later
   ///
-  /// In zh, this message translates to:
-  /// **'操作频繁 请稍后再试'**
+  /// In en, this message translates to:
+  /// **'Operation is too frequent, please try again later.'**
   String get operationTooFrequentPleaseTryAgainLater;
 
-  /// 暂无数据
+  /// No data available
   ///
-  /// In zh, this message translates to:
-  /// **'暂无数据'**
+  /// In en, this message translates to:
+  /// **'No data available'**
   String get noData;
 
-  /// 重新加载
+  /// Retry
   ///
-  /// In zh, this message translates to:
-  /// **'重新加载'**
+  /// In en, this message translates to:
+  /// **'Retry'**
   String get loadAgain;
 
-  /// 全部
+  /// All
   ///
-  /// In zh, this message translates to:
-  /// **'全部'**
+  /// In en, this message translates to:
+  /// **'All'**
   String get allData;
 
-  /// 加载中...
+  /// Loading...
   ///
-  /// In zh, this message translates to:
-  /// **'加载中...'**
+  /// In en, this message translates to:
+  /// **'Loading...'**
   String get loadingData;
 
-  /// 成功
+  /// Success
   ///
-  /// In zh, this message translates to:
-  /// **'成功'**
+  /// In en, this message translates to:
+  /// **'Success'**
   String get success;
 
-  /// 失败
+  /// Failed
   ///
-  /// In zh, this message translates to:
-  /// **'失败'**
+  /// In en, this message translates to:
+  /// **'Failed'**
   String get failed;
 
-  /// 选择人数
+  /// Select people
   ///
-  /// In zh, this message translates to:
-  /// **'选择人数'**
+  /// In en, this message translates to:
+  /// **'Select people'**
   String get selectPeople;
 
-  /// 获取菜单失败
+  /// Menu loading failed
   ///
-  /// In zh, this message translates to:
-  /// **'获取菜单失败'**
+  /// In en, this message translates to:
+  /// **'Menu loading failed'**
   String get loadMenuFailed;
 
-  /// 两次输入的密码不一致
+  /// Passwords do not match
   ///
-  /// In zh, this message translates to:
-  /// **'两次输入的密码不一致'**
+  /// In en, this message translates to:
+  /// **'Passwords do not match'**
   String get twoPasswordsDoNotMatch;
 
-  /// 密码最少8位字符
+  /// Minimum 8 characters
   ///
-  /// In zh, this message translates to:
-  /// **'密码最少8位字符'**
+  /// In en, this message translates to:
+  /// **'Minimum 8 characters'**
   String get passwordLengthCannotBeLessThan8;
 
-  /// /份
+  /// per portion
   ///
-  /// In zh, this message translates to:
-  /// **'/份'**
+  /// In en, this message translates to:
+  /// **'per portion'**
   String get perPortion;
 
-  /// 更换
+  /// Replace
   ///
-  /// In zh, this message translates to:
-  /// **'更换'**
+  /// In en, this message translates to:
+  /// **'Replace'**
   String get replace;
 
-  /// 更换人数
+  /// Change guests
   ///
-  /// In zh, this message translates to:
-  /// **'更换人数'**
+  /// In en, this message translates to:
+  /// **'Change guests'**
   String get changePerson;
 
-  /// 获取桌台失败
+  /// Failed to get table
   ///
-  /// In zh, this message translates to:
-  /// **'获取桌台失败'**
+  /// In en, this message translates to:
+  /// **'Failed to get table'**
   String get getTableFailed;
 
-  /// 请选择桌台
+  /// Please select a table
   ///
-  /// In zh, this message translates to:
-  /// **'请选择桌台'**
+  /// In en, this message translates to:
+  /// **'Please select a table'**
   String get pleaseSelectTable;
 
-  /// 请退出点餐页面重新进入!
+  /// Please exit the ordering page and re-enter!
   ///
-  /// In zh, this message translates to:
-  /// **'请退出点餐页面重新进入!'**
+  /// In en, this message translates to:
+  /// **'Please exit the ordering page and re-enter!'**
   String get pleaseExitAndInAdain;
 
-  /// 暂无可用桌台
+  /// No available tables
   ///
-  /// In zh, this message translates to:
-  /// **'暂无可用桌台'**
+  /// In en, this message translates to:
+  /// **'No available tables'**
   String get noCanUseTable;
 
-  /// 暂无可用菜单
+  /// No available menu
   ///
-  /// In zh, this message translates to:
-  /// **'暂无可用菜单'**
+  /// In en, this message translates to:
+  /// **'No available menu'**
   String get noCanUseMenu;
 
-  /// 请至少选择1人
+  /// Please select at least 1 person
   ///
-  /// In zh, this message translates to:
-  /// **'请至少选择1人'**
+  /// In en, this message translates to:
+  /// **'Please select at least 1 person'**
   String get pleaseSelectAtLeastOnePerson;
 
-  /// 合并中...
+  /// Merging...
   ///
-  /// In zh, this message translates to:
-  /// **'合并中...'**
+  /// In en, this message translates to:
+  /// **'Merging...'**
   String get merging;
 
-  /// 未知
+  /// Please select at least 2 tables to merge
   ///
-  /// In zh, this message translates to:
-  /// **'未知'**
+  /// In en, this message translates to:
+  /// **'Please select at least 2 tables to merge'**
+  String get pleaseSelectAtLeastTwoTables;
+
+  /// Please select at least 1 table
+  ///
+  /// In en, this message translates to:
+  /// **'Please select at least 1 table'**
+  String get pleaseSelectAtLeastOneTable;
+
+  /// Closing table...
+  ///
+  /// In en, this message translates to:
+  /// **'Closing table...'**
+  String get closingTable;
+
+  /// Removing table...
+  ///
+  /// In en, this message translates to:
+  /// **'Removing table...'**
+  String get removingTable;
+
+  /// Unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
   String get unknown;
 
-  /// 购物车是空的
+  /// The shopping cart is empty
   ///
-  /// In zh, this message translates to:
-  /// **'购物车是空的'**
+  /// In en, this message translates to:
+  /// **'The shopping cart is empty'**
   String get cartIsEmpty;
 
-  /// 是否删除菜品？
+  /// Do you want to delete this dish?
   ///
-  /// In zh, this message translates to:
-  /// **'是否删除菜品？'**
+  /// In en, this message translates to:
+  /// **'Do you want to delete this dish?'**
   String get areYouSureToDeleteTheDish;
 
-  /// 删除
+  /// Delete
   ///
-  /// In zh, this message translates to:
-  /// **'删除'**
+  /// In en, this message translates to:
+  /// **'Delete'**
   String get delete;
 
-  /// 数量
+  /// Quantity
   ///
-  /// In zh, this message translates to:
-  /// **'数量'**
+  /// In en, this message translates to:
+  /// **'Quantity'**
   String get quantity;
 
-  /// 请选择
+  /// Please select
   ///
-  /// In zh, this message translates to:
-  /// **'请选择'**
+  /// In en, this message translates to:
+  /// **'Please select'**
   String get pleaseSelect;
 
-  /// 请选择
+  /// Filter dishes containing allergens
   ///
-  /// In zh, this message translates to:
-  /// **'请选择'**
+  /// In en, this message translates to:
+  /// **'Filter dishes containing allergens'**
   String get filterDishesWithAllergens;
 
-  /// 暂无订单
+  /// No order data available
   ///
-  /// In zh, this message translates to:
-  /// **'暂无订单'**
+  /// In en, this message translates to:
+  /// **'No order data available'**
   String get noOrder;
 
-  /// 去点餐
+  /// Go to order
   ///
-  /// In zh, this message translates to:
-  /// **'去点餐'**
+  /// In en, this message translates to:
+  /// **'Go to order'**
   String get goToOrder;
 
-  /// 未结账
+  /// Unpaid
   ///
-  /// In zh, this message translates to:
-  /// **'未结账'**
+  /// In en, this message translates to:
+  /// **'Unpaid'**
   String get unpaid;
 
-  /// 已结账
+  /// Paid
   ///
-  /// In zh, this message translates to:
-  /// **'已结账'**
+  /// In en, this message translates to:
+  /// **'Paid'**
   String get paid;
 
-  /// 订单编号
+  /// Order Number
   ///
-  /// In zh, this message translates to:
-  /// **'订单编号'**
+  /// In en, this message translates to:
+  /// **'Order Number'**
   String get orderNo;
 
-  /// 单据来源
+  /// No description provided for @orderSourceNew.
   ///
-  /// In zh, this message translates to:
-  /// **'单据来源'**
+  /// In en, this message translates to:
+  /// **'Source of Document'**
   String get orderSourceNew;
 
-  /// 操作确认
+  /// Product Details
   ///
-  /// In zh, this message translates to:
-  /// **'商品详情'**
+  /// In en, this message translates to:
+  /// **'Product Details'**
   String get productDetails;
 
-  /// No description provided for @operationConfirmed.
+  /// Confirm Action
   ///
-  /// In zh, this message translates to:
-  /// **'操作确认'**
+  /// In en, this message translates to:
+  /// **'Confirm Action'**
   String get operationConfirmed;
 
-  /// 是否退出当前登录？
+  /// Do you want to log out?
   ///
-  /// In zh, this message translates to:
-  /// **'是否退出当前登录？'**
+  /// In en, this message translates to:
+  /// **'Do you want to log out?'**
   String get areYouSureToLogout;
 
-  /// 确认退出
+  /// Confirm Logout
   ///
-  /// In zh, this message translates to:
-  /// **'确认退出'**
+  /// In en, this message translates to:
+  /// **'Confirm Logout'**
   String get sureLogout;
 
-  /// 欢迎使用
+  /// Welcome
   ///
-  /// In zh, this message translates to:
-  /// **'欢迎使用'**
+  /// In en, this message translates to:
+  /// **'Welcome'**
   String get welcome;
 
-  /// 服务端
+  /// Server
   ///
-  /// In zh, this message translates to:
-  /// **'服务端'**
+  /// In en, this message translates to:
+  /// **'Server'**
   String get serviceApp;
 
-  /// 密码
+  /// Password
   ///
-  /// In zh, this message translates to:
-  /// **'密码'**
+  /// In en, this message translates to:
+  /// **'Password'**
   String get password;
 
-  /// 备注
+  /// Remark
   ///
-  /// In zh, this message translates to:
-  /// **'备注'**
+  /// In en, this message translates to:
+  /// **'Remark'**
   String get remark;
 
-  /// 添加备注
+  /// Add Remark
   ///
-  /// In zh, this message translates to:
-  /// **'添加备注'**
+  /// In en, this message translates to:
+  /// **'Add Remark'**
   String get addRemark;
 
-  /// 修改备注
+  /// Edit Remark
   ///
-  /// In zh, this message translates to:
-  /// **'修改备注'**
+  /// In en, this message translates to:
+  /// **'Edit Remark'**
   String get editRemark;
 
-  /// 确认下单？
+  /// Confirm order?
   ///
-  /// In zh, this message translates to:
-  /// **'确认下单？'**
+  /// In en, this message translates to:
+  /// **'Confirm order?'**
   String get confirmOrder;
 
-  /// 请输入
+  /// Please enter
   ///
-  /// In zh, this message translates to:
-  /// **'请输入'**
+  /// In en, this message translates to:
+  /// **'Please enter'**
   String get pleaseEnter;
 
-  /// 登录中...
+  /// Logging in...
   ///
-  /// In zh, this message translates to:
-  /// **'登录中...'**
+  /// In en, this message translates to:
+  /// **'Logging in...'**
   String get logining;
+
+  /// Server Address
+  ///
+  /// In en, this message translates to:
+  /// **'Server Address'**
+  String get serverAddress;
+
+  /// IP Address
+  ///
+  /// In en, this message translates to:
+  /// **'IP Address'**
+  String get ipAddress;
+
+  /// Port
+  ///
+  /// In en, this message translates to:
+  /// **'Port'**
+  String get port;
+
+  /// Please enter IP address
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter IP address'**
+  String get pleaseEnterIpAddress;
+
+  /// Please enter port
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter port'**
+  String get pleaseEnterPort;
+
+  /// Server configuration saved successfully
+  ///
+  /// In en, this message translates to:
+  /// **'Server configuration saved successfully'**
+  String get serverConfigSavedSuccessfully;
+
+  /// Server configuration save failed
+  ///
+  /// In en, this message translates to:
+  /// **'Server configuration save failed'**
+  String get serverConfigSaveFailed;
+
+  /// Invalid IP address format
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid IP address format'**
+  String get invalidIpAddress;
+
+  /// Invalid port format
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid port format'**
+  String get invalidPort;
+
+  /// Please select a reason
+  ///
+  /// In en, this message translates to:
+  /// **'Please select a reason'**
+  String get selectReason;
 }
 
-class _AppLocalizationsDelegate
-    extends LocalizationsDelegate<AppLocalizations> {
+class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
   const _AppLocalizationsDelegate();
 
   @override
@@ -999,28 +1079,26 @@ class _AppLocalizationsDelegate
   }
 
   @override
-  bool isSupported(Locale locale) =>
-      <String>['en', 'it', 'zh'].contains(locale.languageCode);
+  bool isSupported(Locale locale) => <String>['en', 'it', 'zh'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
+
+
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
-    case 'en':
-      return AppLocalizationsEn();
-    case 'it':
-      return AppLocalizationsIt();
-    case 'zh':
-      return AppLocalizationsZh();
+    case 'en': return AppLocalizationsEn();
+    case 'it': return AppLocalizationsIt();
+    case 'zh': return AppLocalizationsZh();
   }
 
   throw FlutterError(
     'AppLocalizations.delegate failed to load unsupported locale "$locale". This is likely '
     'an issue with the localizations generation tool. Please file an issue '
     'on GitHub with a reproducible sample app and the gen-l10n configuration '
-    'that was used.',
+    'that was used.'
   );
 }

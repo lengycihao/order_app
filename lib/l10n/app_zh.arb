@@ -488,6 +488,22 @@
   "@merging": {
     "description": "合并中..."
   },
+  "pleaseSelectAtLeastTwoTables": "请至少选择2个桌台进行合并",
+  "@pleaseSelectAtLeastTwoTables": {
+    "description": "请至少选择2个桌台进行合并"
+  },
+  "pleaseSelectAtLeastOneTable": "请至少选择1个桌台",
+  "@pleaseSelectAtLeastOneTable": {
+    "description": "请至少选择1个桌台"
+  },
+  "closingTable": "关桌中...",
+  "@closingTable": {
+    "description": "关桌中..."
+  },
+  "removingTable": "撤桌中...",
+  "@removingTable": {
+    "description": "撤桌中..."
+  },
   "unknown": "未知",
   "@unknown": {
     "description": "未知"
@@ -591,5 +607,45 @@
   "logining": "登录中...",
   "@logining": {
     "description": "登录中..."
+  },
+  "serverAddress": "服务器地址",
+  "@serverAddress": {
+    "description": "服务器地址"
+  },
+  "ipAddress": "IP地址",
+  "@ipAddress": {
+    "description": "IP地址"
+  },
+  "port": "端口",
+  "@port": {
+    "description": "端口"
+  },
+  "pleaseEnterIpAddress": "请输入IP地址",
+  "@pleaseEnterIpAddress": {
+    "description": "请输入IP地址"
+  },
+  "pleaseEnterPort": "请输入端口",
+  "@pleaseEnterPort": {
+    "description": "请输入端口"
+  },
+  "serverConfigSavedSuccessfully": "服务器配置保存成功",
+  "@serverConfigSavedSuccessfully": {
+    "description": "服务器配置保存成功"
+  },
+  "serverConfigSaveFailed": "服务器配置保存失败",
+  "@serverConfigSaveFailed": {
+    "description": "服务器配置保存失败"
+  },
+  "invalidIpAddress": "IP地址格式不正确",
+  "@invalidIpAddress": {
+    "description": "IP地址格式不正确"
+  },
+  "invalidPort": "端口格式不正确",
+  "@invalidPort": {
+    "description": "端口格式不正确"
+  },
+  "selectReason": "请选择原因",
+  "@selectReason": {
+    "description": "请选择原因"
   }
 }

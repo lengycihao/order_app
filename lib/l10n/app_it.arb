@@ -487,6 +487,22 @@
   "@merging": {
     "description": "Unione in corso..."
   },
+  "pleaseSelectAtLeastTwoTables": "Seleziona almeno 2 tavoli da unire",
+  "@pleaseSelectAtLeastTwoTables": {
+    "description": "Seleziona almeno 2 tavoli da unire"
+  },
+  "pleaseSelectAtLeastOneTable": "Seleziona almeno 1 tavolo",
+  "@pleaseSelectAtLeastOneTable": {
+    "description": "Seleziona almeno 1 tavolo"
+  },
+  "closingTable": "Chiusura tavolo in corso...",
+  "@closingTable": {
+    "description": "Chiusura tavolo in corso..."
+  },
+  "removingTable": "Rimozione tavolo in corso...",
+  "@removingTable": {
+    "description": "Rimozione tavolo in corso..."
+  },
   "unknown": "Sconosciuto",
   "@unknown": {
     "description": "Sconosciuto"
@@ -590,5 +606,45 @@
   "logining": "Accesso in corso...",
   "@logining": {
     "description": "Accesso in corso..."
+  },
+  "serverAddress": "Indirizzo del server",
+  "@serverAddress": {
+    "description": "Indirizzo del server"
+  },
+  "ipAddress": "Indirizzo IP",
+  "@ipAddress": {
+    "description": "Indirizzo IP"
+  },
+  "port": "Porta",
+  "@port": {
+    "description": "Porta"
+  },
+  "pleaseEnterIpAddress": "Inserisci l'indirizzo IP",
+  "@pleaseEnterIpAddress": {
+    "description": "Inserisci l'indirizzo IP"
+  },
+  "pleaseEnterPort": "Inserisci la porta",
+  "@pleaseEnterPort": {
+    "description": "Inserisci la porta"
+  },
+  "serverConfigSavedSuccessfully": "Configurazione del server salvata con successo",
+  "@serverConfigSavedSuccessfully": {
+    "description": "Configurazione del server salvata con successo"
+  },
+  "serverConfigSaveFailed": "Salvataggio della configurazione del server fallito",
+  "@serverConfigSaveFailed": {
+    "description": "Salvataggio della configurazione del server fallito"
+  },
+  "invalidIpAddress": "Formato indirizzo IP non valido",
+  "@invalidIpAddress": {
+    "description": "Formato indirizzo IP non valido"
+  },
+  "invalidPort": "Formato porta non valido",
+  "@invalidPort": {
+    "description": "Formato porta non valido"
+  },
+  "selectReason": "Seleziona un motivo",
+  "@selectReason": {
+    "description": "Seleziona un motivo"
   }
 }

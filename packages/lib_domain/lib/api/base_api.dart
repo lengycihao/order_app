@@ -6,11 +6,20 @@ import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_mo
 import 'package:lib_domain/entrity/order/dish_list_model/dish_list_model.dart';
 import 'package:lib_domain/entrity/waiter/waiter_info_model.dart';
 import 'package:lib_domain/entrity/waiter/waiter_setting_model.dart';
+import 'package:lib_domain/entrity/table/close_reason_model.dart';
 
 class BaseApi {
   //大厅列表
-  Future<HttpResultN<LobbyListModel>> getLobbyList() async {
-    final result = await HttpManagerN.instance.executeGet(ApiRequest.lobbyList);
+  Future<HttpResultN<LobbyListModel>> getLobbyList({
+    String? queryType,
+  }) async {
+    final params = {
+      if (queryType != null) "query_type": queryType,
+    };
+    final result = await HttpManagerN.instance.executeGet(
+      ApiRequest.lobbyList,
+      queryParam: params,
+    );
     if (result.isSuccess) {
       return result.convert(
         data: LobbyListModel.fromJson(result.getDataJson()),
@@ -328,7 +337,7 @@ class BaseApi {
     Map<String, dynamic>? additionalParams,
   }) async {
     final params = {
-      "table_id": tableId,
+      "table_id": tableId,         
       ...?additionalParams,
     };
     final result = await HttpManagerN.instance.executePost(
@@ -366,9 +375,11 @@ class BaseApi {
 
   /// 拆桌
   Future<HttpResultN<TableListModel>> unmergeTables({
+    required String tableId,
     required List<String> unmergeTableIds,
   }) async {
     final params = {
+      "table_id": tableId,
       "unmerge_table_ids": unmergeTableIds,
     };
     final result = await HttpManagerN.instance.executePost(
@@ -407,6 +418,39 @@ class BaseApi {
         data: WaiterSettingModel.fromJson(result.getDataJson()),
       );
     } else {
+      return result.convert();
+    }
+  }
+
+  /// 获取关桌原因选项列表
+  Future<HttpResultN<List<CloseReasonModel>>> getCloseReasonOptions() async {
+    final result = await HttpManagerN.instance.executeGet(
+      ApiRequest.closeReasonOption,
+    );
+    
+    if (result.isSuccess) {
+      if (result.dataJson == null) {
+        logDebug('⚠️ 关桌原因选项API返回数据为空', tag: 'BaseApi');
+        return result.convert(data: <CloseReasonModel>[]);
+      }
+      
+      if (result.dataJson is! List) {
+        logDebug('⚠️ 关桌原因选项API返回数据格式错误，期望List，实际: ${result.dataJson.runtimeType}', tag: 'BaseApi');
+        return result.convert(data: <CloseReasonModel>[]);
+      }
+      
+      try {
+        final List<CloseReasonModel> list = (result.dataJson as List)
+            .map((e) => CloseReasonModel.fromJson(e as Map<String, dynamic>))
+            .toList();
+        
+        return result.convert(data: list);
+      } catch (e) {
+        logError('❌ 关桌原因选项数据解析失败: $e', tag: 'BaseApi');
+        return result.convert(data: <CloseReasonModel>[]);
+      }
+    } else {
+      logError('❌ 关桌原因选项API请求失败: ${result.msg}', tag: 'BaseApi');
       return result.convert();
     }
   }

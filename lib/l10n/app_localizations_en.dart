@@ -21,8 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get login => 'Login';
 
   @override
-  String get copyright =>
-      '©2025 Ouhua Zhichuang (Hangzhou) Technology Co., Ltd.';
+  String get copyright => '©2025 Ouhua Zhichuang (Hangzhou) Technology Co., Ltd.';
 
   @override
   String get loginNameCannotBeEmpty => 'Account cannot be empty';
@@ -40,8 +39,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get loginFailedPleaseRetry => 'Login failed, please retry';
 
   @override
-  String get accountLoggedInOnAnotherDevice =>
-      'The account has been logged in on another device';
+  String get accountLoggedInOnAnotherDevice => 'The account has been logged in on another device';
 
   @override
   String get table => 'Table ';
@@ -92,19 +90,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currentTableUnavailable => 'The current table is unavailable';
 
   @override
-  String get onlyOneNonFreeTableCanBeSelected =>
-      'Only one of the following non - free tables can be selected.';
+  String get onlyOneNonFreeTableCanBeSelected => 'Only one of the following non - free tables can be selected.';
 
   @override
   String get pleaseSelectNumberOfDiners => 'Please select the number of diners';
 
   @override
-  String get standardAdultsForThisTable =>
-      'Standard number of adults for this table: ';
+  String get standardAdultsForThisTable => 'Standard number of adults for this table: ';
 
   @override
-  String get standardChildrenForThisTable =>
-      'Standard number of children for this table:';
+  String get standardChildrenForThisTable => 'Standard number of children for this table:';
 
   @override
   String get pleaseSelectMenu => 'Please select a menu';
@@ -116,41 +111,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get mergeFailedPleaseRetry => 'Merge failed, please retry.';
 
   @override
-  String get oneTableMustRemainWhenRemoving =>
-      'When removing tables, one table must remain.';
+  String get oneTableMustRemainWhenRemoving => 'When removing tables, one table must remain.';
 
   @override
   String get tableRemovalSuccessful => 'Table removal successful';
 
   @override
-  String get tableRemovalFailedPleaseRetry =>
-      'Table removal failed, please retry';
+  String get tableRemovalFailedPleaseRetry => 'Table removal failed, please retry';
 
   @override
   String get tableClosingSuccessful => 'Table closing successful';
 
   @override
-  String get tableClosingFailedPleaseRetry =>
-      'Table closing failed, please retry';
+  String get tableClosingFailedPleaseRetry => 'Table closing failed, please retry';
 
   @override
   String get tableOpeningSuccessful => 'Table opening successful';
 
   @override
-  String get tableOpeningFailedPleaseRetry =>
-      'Table opening failed, please retry';
+  String get tableOpeningFailedPleaseRetry => 'Table opening failed, please retry';
 
   @override
-  String get pleaseEnterLast4DigitsOfReservedPhone =>
-      'Please enter the last 4 digits of the reserved phone number?';
+  String get pleaseEnterLast4DigitsOfReservedPhone => 'Please enter the last 4 digits of the reserved phone number?';
 
   @override
-  String get numberIncorrectPleaseReenter =>
-      'The number is incorrect, please re-enter';
+  String get numberIncorrectPleaseReenter => 'The number is incorrect, please re-enter';
 
   @override
-  String get numberCorrectEnjoyYourMeal =>
-      'The number is correct. Enjoy your meal!';
+  String get numberCorrectEnjoyYourMeal => 'The number is correct. Enjoy your meal!';
 
   @override
   String get menu => 'Menu';
@@ -174,8 +162,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get allergens => 'Allergens';
 
   @override
-  String get excludeDishesWithAllergens =>
-      'Exclude dishes containing the specified allergens';
+  String get excludeDishesWithAllergens => 'Exclude dishes containing the specified allergens';
 
   @override
   String get selected => 'Selected:';
@@ -196,8 +183,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noRelevantDishesFound => 'No relevant dishes found';
 
   @override
-  String get dishSoldOutPleaseChooseAnother =>
-      'is sold out. Please choose another dish.';
+  String get dishSoldOutPleaseChooseAnother => 'is sold out. Please choose another dish.';
 
   @override
   String get nextRoundTimeNotReached => 'Next round time not reached';
@@ -209,15 +195,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get orderPlacedSuccessfully => 'Order placed successfully';
 
   @override
-  String get orderPlacementFailedContactWaiter =>
-      'Order Placement Failed, Please Contact the Waiter';
+  String get orderPlacementFailedContactWaiter => 'Order Placement Failed, Please Contact the Waiter';
 
   @override
   String get clearShoppingCart => 'Clear shopping cart?';
 
   @override
-  String get quantityExceedsLimitPlaceAtOriginalPrice =>
-      'Quantity exceeds the limit. Place order at original price?';
+  String get quantityExceedsLimitPlaceAtOriginalPrice => 'Quantity exceeds the limit. Place order at original price?';
 
   @override
   String get takeaway => 'Takeaway';
@@ -265,8 +249,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseSelectPickupTime => 'Please select a pickup time';
 
   @override
-  String get pickupTimeMustBeAtLeast30MinutesLater =>
-      'The pickup time must be at least 30 minutes later.';
+  String get pickupTimeMustBeAtLeast30MinutesLater => 'The pickup time must be at least 30 minutes later.';
 
   @override
   String get profile => 'Profile';
@@ -317,22 +300,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get passwordUpdatedSuccessfully => 'Password updated successfully';
 
   @override
-  String get passwordChangeFailedPleaseRetry =>
-      'Password change failed, please retry.';
+  String get passwordChangeFailedPleaseRetry => 'Password change failed, please retry.';
 
   @override
   String get languageSwitchedSuccessfully => 'Language switched successfully';
 
   @override
-  String get languageSwitchFailedPleaseRetry =>
-      'Language switch failed, please retry.';
+  String get languageSwitchFailedPleaseRetry => 'Language switch failed, please retry.';
 
   @override
   String get networkErrorPleaseTryAgain => 'Network error, please try again';
 
   @override
-  String get operationTooFrequentPleaseTryAgainLater =>
-      'Operation is too frequent, please try again later.';
+  String get operationTooFrequentPleaseTryAgainLater => 'Operation is too frequent, please try again later.';
 
   @override
   String get noData => 'No data available';
@@ -380,8 +360,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pleaseSelectTable => 'Please select a table';
 
   @override
-  String get pleaseExitAndInAdain =>
-      'Please exit the ordering page and re-enter!';
+  String get pleaseExitAndInAdain => 'Please exit the ordering page and re-enter!';
 
   @override
   String get noCanUseTable => 'No available tables';
@@ -394,6 +373,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get merging => 'Merging...';
+
+  @override
+  String get pleaseSelectAtLeastTwoTables => 'Please select at least 2 tables to merge';
+
+  @override
+  String get pleaseSelectAtLeastOneTable => 'Please select at least 1 table';
+
+  @override
+  String get closingTable => 'Closing table...';
+
+  @override
+  String get removingTable => 'Removing table...';
 
   @override
   String get unknown => 'Unknown';
@@ -472,4 +463,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logining => 'Logging in...';
+
+  @override
+  String get serverAddress => 'Server Address';
+
+  @override
+  String get ipAddress => 'IP Address';
+
+  @override
+  String get port => 'Port';
+
+  @override
+  String get pleaseEnterIpAddress => 'Please enter IP address';
+
+  @override
+  String get pleaseEnterPort => 'Please enter port';
+
+  @override
+  String get serverConfigSavedSuccessfully => 'Server configuration saved successfully';
+
+  @override
+  String get serverConfigSaveFailed => 'Server configuration save failed';
+
+  @override
+  String get invalidIpAddress => 'Invalid IP address format';
+
+  @override
+  String get invalidPort => 'Invalid port format';
+
+  @override
+  String get selectReason => 'Please select a reason';
 }

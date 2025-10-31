@@ -375,6 +375,18 @@ class AppLocalizationsZh extends AppLocalizations {
   String get merging => '合并中...';
 
   @override
+  String get pleaseSelectAtLeastTwoTables => '请至少选择2个桌台进行合并';
+
+  @override
+  String get pleaseSelectAtLeastOneTable => '请至少选择1个桌台';
+
+  @override
+  String get closingTable => '关桌中...';
+
+  @override
+  String get removingTable => '撤桌中...';
+
+  @override
   String get unknown => '未知';
 
   @override
@@ -451,4 +463,34 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get logining => '登录中...';
+
+  @override
+  String get serverAddress => '服务器地址';
+
+  @override
+  String get ipAddress => 'IP地址';
+
+  @override
+  String get port => '端口';
+
+  @override
+  String get pleaseEnterIpAddress => '请输入IP地址';
+
+  @override
+  String get pleaseEnterPort => '请输入端口';
+
+  @override
+  String get serverConfigSavedSuccessfully => '服务器配置保存成功';
+
+  @override
+  String get serverConfigSaveFailed => '服务器配置保存失败';
+
+  @override
+  String get invalidIpAddress => 'IP地址格式不正确';
+
+  @override
+  String get invalidPort => '端口格式不正确';
+
+  @override
+  String get selectReason => '请选择原因';
 }

@@ -51,4 +51,7 @@ class ApiRequest {
   
   // 服务员设置接口
   static const waiterSetting = '/api/waiter/setting/info';
+  
+  // 关桌原因选项接口
+  static const closeReasonOption = '/api/waiter/table/close_reason_option';
 }

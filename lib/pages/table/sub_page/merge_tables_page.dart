@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:lib_domain/entrity/home/table_menu_list_model/table_menu_list_model.dart';
 import 'package:lib_domain/entrity/home/lobby_list_model/lobby_list_model.dart';
+import 'package:lib_domain/entrity/table/close_reason_model.dart';
 import 'package:order_app/utils/l10n_utils.dart';
 import 'package:order_app/utils/toast_utils.dart';
 import '../../../constants/global_colors.dart';
@@ -16,89 +17,118 @@ import 'package:order_app/utils/pull_to_refresh_wrapper.dart';
 import 'package:pull_to_refresh/pull_to_refresh.dart';
 import 'package:lib_base/logging/logging.dart';
 import 'package:order_app/cons/table_status.dart';
+import 'package:order_app/pages/table/sub_page/merge_tables_controller.dart';
 
 class MergeTablesPage extends BaseListPageWidget {
-  final List<List<TableListModel>> allTabTables;
   final List<TableMenuListModel> menuModelList;
-  final LobbyListModel lobbyListModel;
   final TableListModel? mergedTable;
-  final bool hasInitialNetworkError;
+  final String? operationType; // 操作类型：merge(并桌)、close(关桌)、remove(撤桌)
 
   const MergeTablesPage({
     super.key,
-    required this.allTabTables,
     required this.menuModelList,
-    required this.lobbyListModel,
     this.mergedTable,
-    this.hasInitialNetworkError = false,
+    this.operationType,
   });
 
   @override
   State<MergeTablesPage> createState() => _MergeTablesPageState();
 }
 
-class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with TickerProviderStateMixin {
+class _MergeTablesPageState extends BaseListPageState<MergeTablesPage>
+    with TickerProviderStateMixin {
+  // Controller 用于业务逻辑
+  late MergeTablesController _controller;
+  
   // 每个tab一个独立的RefreshController
   final List<RefreshController> _refreshControllers = [];
   final List<String> selectedTableIds = [];
   final BaseApi _baseApi = BaseApi();
   bool _isMerging = false;
   
+  // 撤桌状态下，选中要移除的桌台列表
+  final List<String> selectedRemoveTableIds = [];
+
   // Tab相关
   late TabController _tabController;
+
+  // Tab滚动相关
+  late ScrollController _tabScrollController;
+
+  // 已选桌台区域滚动控制器
+  late ScrollController _selectedTablesScrollController;
+
+  // 使用 controller 的状态变量
   var lobbyListModel = LobbyListModel(halls: []).obs;
   var tabDataList = <RxList<TableListModel>>[].obs;
   var selectedTab = 0.obs;
   var _isLoading = false.obs;
   var _hasError = false.obs;
   var errorMessage = ''.obs;
-  
-  // 预加载相关
-  var _preloadedTabs = <int>{}.obs; // 已预加载的tab索引
-  var _preloadingTabs = <int>{}.obs; // 正在预加载的tab索引
-  final int _maxPreloadRange = 1; // 预加载范围：前后各1个tab
-  
-  // Tab滚动相关
-  late ScrollController _tabScrollController;
-  
-  // 已选桌台区域滚动控制器
-  late ScrollController _selectedTablesScrollController;
+  var _preloadedTabs = <int>{}.obs;
+  var closeReasonList = <CloseReasonModel>[].obs;
+  var selectedCloseReason = Rx<CloseReasonModel?>(null);
+  var isLoadingCloseReasons = false.obs;
+  var isReasonDrawerVisible = false.obs;
 
   @override
   void initState() {
     super.initState();
+    
+    // 初始化 controller
+    _controller = Get.put(MergeTablesController(), tag: 'merge_tables_${DateTime.now().millisecondsSinceEpoch}');
+    _controller.operationType = widget.operationType;
+    
+    // 同步 controller 的状态到页面变量（保持 UI 代码不变）
+    lobbyListModel = _controller.lobbyListModel;
+    tabDataList = _controller.tabDataList;
+    selectedTab = _controller.selectedTab;
+    _isLoading = _controller.isLoading;
+    _hasError = _controller.hasError;
+    errorMessage = _controller.errorMessage;
+    _preloadedTabs = _controller.preloadedTabs;
+    closeReasonList = _controller.closeReasonList;
+    selectedCloseReason = _controller.selectedCloseReason;
+    isLoadingCloseReasons = _controller.isLoadingCloseReasons;
+    isReasonDrawerVisible = _controller.isReasonDrawerVisible;
+    
     // 如果传入了已合并的桌台，自动选中
     if (widget.mergedTable != null) {
       selectedTableIds.add(widget.mergedTable!.tableId.toString());
     }
-    
+
     // 初始化tab滚动控制器
     _tabScrollController = ScrollController();
-    
+
     // 初始化已选桌台滚动控制器
     _selectedTablesScrollController = ScrollController();
-    
-    // 初始化tab数据
-    _initializeTabData();
+
+    // 初始化数据并加载大厅列表
+    _initializeData();
   }
   
+  /// 初始化数据
+  Future<void> _initializeData() async {
+    // 调用 controller 初始化数据（会自动获取大厅列表）
+    await _controller.initializeData();
+    
+    // 大厅数据加载完成后，初始化tab相关
+    final halls = lobbyListModel.value.halls ?? [];
+    if (halls.isNotEmpty) {
+    _initializeTabData();
+    }
+  }
+
   /// 初始化tab数据
   void _initializeTabData() {
-    lobbyListModel.value = widget.lobbyListModel;
     final halls = lobbyListModel.value.halls ?? [];
-    
-    // 初始化tabDataList
-    tabDataList.value = List.generate(
-      halls.length,
-      (_) => <TableListModel>[].obs,
-    );
-    
+
     // 为每个tab创建独立的RefreshController
     _refreshControllers.clear();
     for (int i = 0; i < halls.length; i++) {
       _refreshControllers.add(RefreshController());
     }
-    
+
     // 初始化TabController
     _tabController = TabController(length: halls.length, vsync: this);
     _tabController.addListener(() {
@@ -108,139 +138,41 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       // 滚动tab到可视区域
       _scrollToTab(_tabController.index);
     });
-    
-    // 获取第一个tab的数据
-    _fetchDataForTab(0);
-  }
-  
-  /// 获取指定tab的数据
+
+      // 获取第一个tab的数据
+      _fetchDataForTab(0);
+      
+      // 如果是关桌页面，加载关桌原因列表
+      if (widget.operationType == 'close') {
+        _loadCloseReasons();
+      }
+    }
+
+  /// 获取指定tab的数据（委托给 controller）
   Future<void> _fetchDataForTab(int index) async {
-    if (index >= tabDataList.length) return;
-    
-    // 检查大厅数据是否有效
-    if (lobbyListModel.value.halls == null || 
-        lobbyListModel.value.halls!.isEmpty || 
-        index >= lobbyListModel.value.halls!.length) {
-      _hasError.value = true;
-      errorMessage.value = '大厅数据无效或索引越界';
-      tabDataList[index].value = [];
-      return;
-    }
-    
-    _isLoading.value = true;
-    _hasError.value = false;
-    errorMessage.value = '';
-    
-    try {
-      final hallId = lobbyListModel.value.halls![index].hallId.toString();
-      logDebug('🔄 合并桌台页面获取tab $index 数据: hallId=$hallId');
-      
-      final result = await _baseApi.getTableList(hallId: hallId);
-      
-      if (result.isSuccess) {
-        List<TableListModel> data = result.data!;
-        tabDataList[index].value = data;
-        _hasError.value = false;
-        // 标记为已预加载
-        _preloadedTabs.add(index);
-       } else {
-        _hasError.value = true;
-        errorMessage.value = result.msg ?? '数据加载失败';
-        tabDataList[index].value = [];
-        // 加载失败时，从预加载成功列表中移除
-        _preloadedTabs.remove(index);
-        logError('❌ 合并桌台页面Tab $index 数据获取失败: ${result.msg}');
-      }
-    } catch (e) {
-      _hasError.value = true;
-      errorMessage.value = '网络连接异常，请检查网络后重试';
-      tabDataList[index].value = [];
-      // 加载失败时，从预加载成功列表中移除
-      _preloadedTabs.remove(index);
-      logError('❌ 合并桌台页面Tab $index 数据获取异常: $e');
-    }
-    
-    _isLoading.value = false;
-    
-    // 当前tab加载完成后，预加载相邻tab
-    _preloadAdjacentTabs(index);
-  }
-  
-  /// 预加载相邻tab的数据
-  void _preloadAdjacentTabs(int currentIndex) {
-    final totalTabs = lobbyListModel.value.halls?.length ?? 0;
-    if (totalTabs <= 1) return; // 只有一个tab时不需要预加载
-    
-    // 计算需要预加载的tab范围
-    final startIndex = (currentIndex - _maxPreloadRange).clamp(0, totalTabs - 1);
-    final endIndex = (currentIndex + _maxPreloadRange).clamp(0, totalTabs - 1);
-    
-    // 预加载范围内的tab（排除当前tab）
-    for (int i = startIndex; i <= endIndex; i++) {
-      if (i != currentIndex && 
-          i < tabDataList.length && 
-          !_preloadedTabs.contains(i) && 
-          !_preloadingTabs.contains(i)) {
-        _preloadTabData(i);
-      }
-    }
+    await _controller.fetchDataForTab(index);
   }
 
-  /// 预加载指定tab的数据
-  Future<void> _preloadTabData(int index) async {
-    if (index >= tabDataList.length) return;
-    
-    // 检查大厅数据是否有效
-    if (lobbyListModel.value.halls == null || 
-        lobbyListModel.value.halls!.isEmpty || 
-        index >= lobbyListModel.value.halls!.length) {
-      logError('❌ 合并桌台页面预加载tab $index 失败: 大厅数据无效或索引越界', tag: 'MergeTablesPage');
-      return;
-    }
-    
-    _preloadingTabs.add(index);
-    
-    try {
-      final hallId = lobbyListModel.value.halls![index].hallId.toString();
-      logDebug('🔄 合并桌台页面预加载tab $index 数据: hallId=$hallId', tag: 'MergeTablesPage');
-      
-      final result = await _baseApi.getTableList(hallId: hallId);
-      
-      if (result.isSuccess) {
-        List<TableListModel> data = result.data!;
-        tabDataList[index].value = data;
-        _preloadedTabs.add(index);
-        logDebug('✅ 合并桌台页面预加载tab $index 数据成功，桌台数量: ${data.length}', tag: 'MergeTablesPage');
-      } else {
-        logError('❌ 合并桌台页面预加载tab $index 数据失败: ${result.msg}', tag: 'MergeTablesPage');
-      }
-    } catch (e) {
-      logError('❌ 合并桌台页面预加载tab $index 数据异常: $e', tag: 'MergeTablesPage');
-    } finally {
-      _preloadingTabs.remove(index);
-    }
-  }
-  
   /// 滚动tab到屏幕中间
   void _scrollToTab(int index) {
     if (!_tabScrollController.hasClients) return;
-    
+
     // 获取总tab数量
     int totalTabs = lobbyListModel.value.halls?.length ?? 0;
     if (totalTabs == 0) return;
-    
+
     // 计算目标tab在总宽度中的比例位置
     double tabRatio = index / (totalTabs - 1).clamp(1, double.infinity);
-    
+
     // 计算目标滚动位置，让选中的tab显示在屏幕中央
     double maxScrollPosition = _tabScrollController.position.maxScrollExtent;
-    
+
     // 使用更简单的计算方式，直接根据比例滚动到对应位置
     double targetScrollPosition = maxScrollPosition * tabRatio;
-    
+
     // 确保滚动位置在有效范围内
     targetScrollPosition = targetScrollPosition.clamp(0.0, maxScrollPosition);
-    
+
     // 执行滚动动画
     _tabScrollController.animateTo(
       targetScrollPosition,
@@ -248,39 +180,126 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       curve: Curves.easeInOut,
     );
   }
-  
-  /// 处理tab切换逻辑
+
+  /// 处理tab切换逻辑（委托给 controller）
   void _handleTabSwitch(int index) {
-    // 如果该tab已经预加载过，直接显示数据，不需要重新加载
-    if (_preloadedTabs.contains(index)) {
-      logDebug('并桌页面Tab $index 已预加载，直接显示数据', tag: 'MergeTablesPage');
-      // 预加载相邻tab
-      _preloadAdjacentTabs(index);
-    } else {
-      // 如果该tab没有预加载过，正常加载
-      logDebug('并桌页面Tab $index 未预加载，开始加载数据', tag: 'MergeTablesPage');
-      _fetchDataForTab(index);
-    }
+    _controller.handleTabSwitch(index);
   }
 
   /// 处理重新加载逻辑
   Future<void> _handleReload() async {
-    // 如果是初始网络错误或者halls为空，需要通知父页面重新获取lobby数据
-    if (widget.hasInitialNetworkError || 
-        lobbyListModel.value.halls == null || 
-        lobbyListModel.value.halls!.isEmpty) {
-      logDebug('并桌页面检测到初始网络错误或halls为空，返回桌台页面重新加载', tag: 'MergeTablesPage');
-      
-      // 返回桌台页面并携带重新加载的标识
-      Navigator.of(context).pop(true); // 传递true表示需要重新加载
-      return;
-    }
-    
-    // 否则重新加载当前tab数据
-    final currentTabIndex = selectedTab.value;
-    await _fetchDataForTab(currentTabIndex);
+    // 重新初始化数据（会重新获取大厅列表）
+    await _initializeData();
   }
-  
+
+  /// 加载关桌原因列表（委托给 controller）
+  Future<void> _loadCloseReasons() async {
+    await _controller.loadCloseReasons();
+  }
+
+  /// 切换原因选择抽屉显示/隐藏（委托给 controller）
+  void _toggleReasonDrawer() {
+    _controller.toggleReasonDrawer();
+  }
+
+  /// 隐藏原因选择抽屉（委托给 controller）
+  void _hideReasonDrawer() {
+    _controller.hideReasonDrawer();
+  }
+
+  /// 构建原因抽屉内容
+  Widget _buildReasonDrawerContent() {
+    return Obx(() {
+      if (isLoadingCloseReasons.value) {
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: 12,vertical: 5),
+          child: Center(
+            child: SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF9027)),
+              ),
+            ),
+          ),
+        );
+      }
+
+      if (closeReasonList.isEmpty) {
+        return Container(
+          padding: EdgeInsets.all(16),
+          child: Center(
+            child: Text(
+              context.l10n.noData,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+        );
+      }
+
+      const itemHeight = 32.0;
+      
+      return ListView.separated(
+        shrinkWrap: true,
+        padding: EdgeInsets.zero, // 移除默认的内边距
+        physics: NeverScrollableScrollPhysics(),
+        itemCount: closeReasonList.length,
+        separatorBuilder: (context, index) => SizedBox.shrink(), // 移除分隔线，改用边距
+        itemBuilder: (context, index) {
+          final reason = closeReasonList[index];
+          final isLast = index == closeReasonList.length - 1;
+          
+          return Obx(() {
+            final isSelected = selectedCloseReason.value?.value == reason.value;
+            
+            return GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTap: () {
+                selectedCloseReason.value = reason;
+                _hideReasonDrawer();
+              },
+              child: Container(
+                height: itemHeight,
+                padding: EdgeInsets.symmetric(horizontal: 12,vertical: 5),
+                margin: EdgeInsets.only(
+                  bottom: isLast ? 0 : 1, // 最后一项不需要下边距
+                ),
+                decoration: BoxDecoration(
+                  color: isSelected ? Color(0x33FF9027) : Colors.white, // #FF9027 20% 透明度 (0x33 = 20%)
+                  borderRadius: BorderRadius.circular(4), 
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        reason.label,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isSelected ? Color(0xFFFF9027) : Color(0xFF333333),
+                          fontWeight: isSelected ? FontWeight.w500 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                    if (isSelected)
+                      Icon(
+                        Icons.check,
+                        size: 16,
+                        color: Color(0xFFFF9027),
+                      ),
+                  ],
+                ),
+              ),
+            );
+          });
+        },
+      );
+    });
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -298,7 +317,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   bool get isLoading => _isLoading.value;
 
   @override
-  bool get hasNetworkError => _hasError.value || widget.hasInitialNetworkError;
+  bool get hasNetworkError => _hasError.value;
 
   @override
   bool get hasData {
@@ -308,7 +327,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     }
     return false;
   }
-  
+
   @override
   bool get shouldShowSkeleton => !hasData;
 
@@ -317,7 +336,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     final currentTabIndex = selectedTab.value;
     await _fetchDataForTab(currentTabIndex);
   }
-  
+
   @override
   Widget buildSkeletonWidget() {
     return const TablePageSkeleton();
@@ -326,12 +345,12 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   /// 获取所有可用的桌台（合并所有tab的数据）
   List<TableListModel> _getAllAvailableTables() {
     List<TableListModel> allTables = [];
-    
+
     // 合并所有tab的桌台数据
-    for (var tabTables in widget.allTabTables) {
+    for (var tabTables in tabDataList) {
       allTables.addAll(tabTables);
     }
-    
+
     // 去重：根据桌台ID去重，保留第一个出现的桌台
     Map<String, TableListModel> uniqueTables = {};
     for (var table in allTables) {
@@ -340,7 +359,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         uniqueTables[tableId] = table;
       }
     }
-    
+
     // 过滤出可用的桌台
     return uniqueTables.values.where((table) {
       final status = table.businessStatus.toInt();
@@ -348,13 +367,16 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     }).toList();
   }
 
-
   /// 切换桌台选择状态
   void _toggleTableSelection(String tableId) {
     setState(() {
       if (selectedTableIds.contains(tableId)) {
         selectedTableIds.remove(tableId);
       } else {
+        // 关桌和撤桌状态下只能单选，清空其他选择
+        if (widget.operationType == 'close' || widget.operationType == 'remove') {
+          selectedTableIds.clear();
+        }
         selectedTableIds.add(tableId);
         // 添加新桌台后，延迟滚动到底部以查看最新添加的桌台
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -370,22 +392,26 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     });
   }
 
-
   /// 根据桌台ID获取桌台信息
   TableListModel? _getTableById(String tableId) {
     final allTables = _getAllAvailableTables();
     try {
-      final id = int.parse(tableId);
+      final id = tableId;
       return allTables.firstWhere((table) => table.tableId == id);
     } catch (e) {
       return null;
     }
   }
 
-  /// 确认并桌操作
+  /// 确认操作（并桌/关桌/撤桌）
   Future<void> _confirmMerge() async {
-    if (selectedTableIds.length < 2) {
-      GlobalToast.error('请至少选择2个桌台进行合并');
+    final minTablesRequired = _needAtLeastTwoTables() ? 2 : 1;
+    if (selectedTableIds.length < minTablesRequired) {
+      if (widget.operationType == 'merge' || widget.operationType == null) {
+        GlobalToast.error(context.l10n.pleaseSelectAtLeastTwoTables);
+      } else {
+        GlobalToast.error(context.l10n.pleaseSelectAtLeastOneTable);
+      }
       return;
     }
 
@@ -398,21 +424,92 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     });
 
     try {
-      // 显示加载提示（使用临时提示，会自动取消之前的提示）
-      GlobalToast.message(context.l10n.merging);
+      // 根据类型显示不同的加载提示
+      if (widget.operationType == 'close') {
+        GlobalToast.message(context.l10n.closingTable);
+      } else if (widget.operationType == 'remove') {
+        GlobalToast.message(context.l10n.removingTable);
+      } else {
+        GlobalToast.message(context.l10n.merging);
+      }
 
+      // 根据操作类型执行不同的逻辑
+      if (widget.operationType == 'close') {
+        // 关桌操作：调用changeTableStatus API
+        final tableId = selectedTableIds.first; // 关桌只能单选
+        final reasonId = selectedCloseReason.value?.value;
+        
+        if (reasonId == null) {
+          GlobalToast.error(context.l10n.selectReason);
+          return;
+        }
+        
+        final result = await _baseApi.changeTableStatus(
+          tableId: tableId,
+          status: 5, // 5 = Unavailable (不可用)
+          reasonId: reasonId,
+        );
+
+        if (result.isSuccess) {
+          GlobalToast.success(context.l10n.tableClosingSuccessful);
+          // 关桌成功后，清空选中状态，刷新大厅列表和桌台列表，停留在当前页面
+          setState(() {
+            selectedTableIds.clear();
+          });
+          // 刷新大厅列表数据
+          await _initializeData();
+        } else {
+          GlobalToast.error(
+            result.msg ?? Get.context!.l10n.tableClosingFailedPleaseRetry,
+          );
+        }
+      } else if (widget.operationType == 'remove') {
+        // 撤桌操作：调用unmergeTables API
+        final tableId = selectedTableIds.first; // 撤桌只能单选
+        
+        // 检查是否选择了要移除的桌台
+        if (selectedRemoveTableIds.isEmpty) {
+          GlobalToast.error('请至少选择一个要移除的桌台');
+          return;
+        }
+        
+        final result = await _baseApi.unmergeTables(
+          tableId: tableId,
+          unmergeTableIds: selectedRemoveTableIds,
+        );
+
+        if (result.isSuccess) {
+          GlobalToast.success(context.l10n.tableRemovalSuccessful);
+          // 撤桌成功后，清空选中状态，刷新大厅列表和桌台列表，停留在当前页面
+          setState(() {
+            selectedTableIds.clear();
+            selectedRemoveTableIds.clear();
+          });
+          // 刷新大厅列表数据
+          await _initializeData();
+        } else {
+          GlobalToast.error(
+            result.msg ?? Get.context!.l10n.tableRemovalFailedPleaseRetry,
+          );
+        }
+      } else {
+        // 并桌操作：调用mergeTables API
       // 转换桌台ID为整数列表
       final tableIds = selectedTableIds.map((id) => int.parse(id)).toList();
 
-      // 调用并桌API
-      final result = await _baseApi.mergeTables(tableIds: tableIds.map((id) => id.toString()).toList());
+      final result = await _baseApi.mergeTables(
+        tableIds: tableIds.map((id) => id.toString()).toList(),
+      );
 
       if (result.isSuccess && result.data != null) {
-        // 并桌成功，直接使用返回的桌台详情
+        // 操作成功，直接使用返回的桌台详情
         await _handleMergeSuccess(result.data!);
       } else {
-        // 并桌失败，显示错误
-        GlobalToast.error(result.msg ?? Get.context!.l10n.mergeFailedPleaseRetry);
+        // 操作失败，显示错误
+          GlobalToast.error(
+            result.msg ?? Get.context!.l10n.mergeFailedPleaseRetry,
+          );
+        }
       }
     } catch (e) {
       // 网络错误，显示错误
@@ -426,15 +523,21 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     }
   }
 
-  /// 处理并桌成功后的逻辑
+  /// 处理操作成功后的逻辑
   Future<void> _handleMergeSuccess(TableListModel mergedTable) async {
     try {
-      // 显示成功提示
-      GlobalToast.success(context.l10n.mergeSuccessful);
+      // 根据类型显示不同的成功提示
+      if (widget.operationType == 'close') {
+        GlobalToast.success(context.l10n.tableClosingSuccessful);
+      } else if (widget.operationType == 'remove') {
+        GlobalToast.success(context.l10n.tableRemovalSuccessful);
+      } else {
+        GlobalToast.success(context.l10n.mergeSuccessful);
+      }
 
       // 判断选中的桌子中是否有非空闲桌子
       final hasNonEmptyTables = _hasNonEmptyTables();
-      
+
       if (hasNonEmptyTables) {
         // 有非空闲桌子，直接进入点餐页面
         await _navigateToOrderPage(mergedTable);
@@ -508,7 +611,9 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       'menu': selectedMenu,
       'table_id': mergedTable.tableId,
       'menu_id': selectedMenu.menuId,
-      'adult_count': mergedTable.currentAdult > 0 ? mergedTable.currentAdult.toInt() : mergedTable.standardAdult.toInt(),
+      'adult_count': mergedTable.currentAdult > 0
+          ? mergedTable.currentAdult.toInt()
+          : mergedTable.standardAdult.toInt(),
       'child_count': mergedTable.currentChild.toInt(),
       'isFromMerge': true, // 标识来自并桌操作
     };
@@ -523,13 +628,51 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     );
   }
 
+  /// 获取页面标题
+  String _getPageTitle(BuildContext context) {
+    switch (widget.operationType) {
+      case 'close':
+        return context.l10n.closeTable;
+      case 'remove':
+        return context.l10n.clearTable;
+      case 'merge':
+      default:
+        return context.l10n.mergeTables;
+    }
+  }
+
+  /// 获取确认按钮文本
+  String _getConfirmButtonText(BuildContext context) {
+    switch (widget.operationType) {
+      case 'close':
+        return context.l10n.closeTable;
+      case 'remove':
+        return context.l10n.clearTable;
+      case 'merge':
+      default:
+        return context.l10n.confirm;
+    }
+  }
+
+  /// 判断是否需要至少2个桌台
+  bool _needAtLeastTwoTables() {
+    // 并桌需要至少2个，关桌和撤桌只需要1个
+    return widget.operationType == 'merge' || widget.operationType == null;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    final minTablesRequired = _needAtLeastTwoTables() ? 2 : 1;
+    final canConfirm =
+        selectedTableIds.length >= minTablesRequired && !_isMerging;
+
+    return Stack(
+      children: [
+        // 主界面
+        Scaffold(
       backgroundColor: GlobalColors.primaryBackground,
       appBar: AppBar(
-        title: Text(context.l10n.mergeTables),
+        title: Text(_getPageTitle(context)),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -543,17 +686,17 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
+              // 关桌状态下不显示右上角确认按钮
+              if (widget.operationType != 'close')
           GestureDetector(
-            onTap: (selectedTableIds.length >= 2 && !_isMerging) ? _confirmMerge : null,
+            onTap: canConfirm ? _confirmMerge : null,
             child: Container(
               margin: EdgeInsets.only(right: 15),
               padding: EdgeInsets.symmetric(horizontal: 12),
               height: 24,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(20),
-                color: (selectedTableIds.length >= 2 && !_isMerging) 
-                    ? Color(0xffFF9027) 
-                    : Color(0xffCCCCCC),
+                color: canConfirm ? Color(0xffFF9027) : Color(0xffCCCCCC),
               ),
               alignment: Alignment.center,
               child: _isMerging
@@ -566,11 +709,9 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                       ),
                     )
                   : Text(
-                      context.l10n.confirm,
+                      _getConfirmButtonText(context),
                       style: TextStyle(
-                        color: (selectedTableIds.length >= 2 && !_isMerging) 
-                            ? Colors.white 
-                            : Color(0xff999999), 
+                        color: canConfirm ? Colors.white : Color(0xff999999),
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -580,6 +721,103 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         ],
       ),
       body: _buildMergeTablesPageBody(),
+        ),
+        // 灰色半透明背景层（只在关桌页面、选中桌台且抽屉显示时覆盖整个屏幕包括导航栏）
+        if (widget.operationType == 'close' && selectedTableIds.isNotEmpty)
+          Obx(() {
+            if (!isReasonDrawerVisible.value) {
+              return SizedBox.shrink();
+            }
+            return Positioned.fill(
+              child: GestureDetector(
+                onTap: _hideReasonDrawer,
+                child: Container(
+                  color: Colors.black.withOpacity(0.5),
+                ),
+              ),
+            );
+          }),
+        // 底部关桌信息抽屉（浮在最上层，覆盖灰色背景，只在选中桌台后显示）
+        if (widget.operationType == 'close' && selectedTableIds.isNotEmpty)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildCloseTableInfo(),
+          ),
+        // 底部撤桌信息模块（只在撤桌状态且选中桌台后显示）
+        if (widget.operationType == 'remove' && selectedTableIds.isNotEmpty)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: _buildRemoveTableInfo(),
+          ),
+        // 原因选择抽屉 - 提升到最外层Stack，确保在灰色背景之上（只在选中桌台且抽屉显示时显示）
+        if (widget.operationType == 'close' && selectedTableIds.isNotEmpty)
+          Obx(() {
+            if (!isReasonDrawerVisible.value) {
+              return SizedBox.shrink();
+            }
+            
+            const itemHeight = 48.0;
+            final drawerItemCount = closeReasonList.length.clamp(0, 5);
+            final drawerHeight = drawerItemCount * itemHeight;
+            const drawerBottomPosition = 160 - 30 - 10.0; // 底部容器高度 - 原因输入框高度 - 间距
+            
+            return Stack(
+              children: [
+                // 原因选择抽屉
+                Positioned(
+                  left: 70,
+                  right: 16,
+                  bottom: drawerBottomPosition,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () {
+                      // 阻止事件冒泡到父容器，避免关闭抽屉
+                    },
+                    child: Material(
+                      color: Colors.transparent,
+                      elevation: 8,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        constraints: BoxConstraints(
+                          maxHeight: drawerHeight,
+                        ),
+                        padding: EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.2),
+                              blurRadius: 10,
+                              offset: Offset(0, -2),
+                            ),
+                          ],
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: _buildReasonDrawerContent(),
+                      ),
+                    ),
+                  ),
+                ),
+                // 箭头指向图片（紧贴抽屉下方，间距为0）
+                Positioned(
+                  right: 20,
+                  bottom: drawerBottomPosition - 6, // 抽屉下方，紧贴抽屉（间距为0）
+                  child: Image.asset(
+                    'assets/reason_arrow.webp',
+                    width: 155,
+                    height: 6,
+                    fit: BoxFit.fill,
+                  ),
+                ),
+              ],
+            );
+          }),
+      ],
     );
   }
 
@@ -587,7 +825,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   Widget _buildMergeTablesPageBody() {
     return Obx(() {
       final halls = lobbyListModel.value.halls ?? [];
-      
+
       // 如果没有大厅数据，显示空状态
       if (halls.isEmpty) {
         if (shouldShowSkeleton && isLoading) {
@@ -606,7 +844,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       return buildDataContent();
     });
   }
-  
+
   /// Tab 按钮 - 与桌台页面相同的样式
   Widget _tabButton(String title, int index, int tableCount) {
     return Obx(() {
@@ -646,7 +884,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       );
     });
   }
-  
+
   /// 构建可刷新的网格 - 与桌台页面相同的样式
   Widget _buildRefreshableGrid(RxList<TableListModel> data, int tabIndex) {
     return Obx(() {
@@ -669,9 +907,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
             SliverPadding(
               padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               sliver: data.isEmpty
-                  ? SliverFillRemaining(
-                      child: buildEmptyState(),
-                    )
+                  ? SliverFillRemaining(child: buildEmptyState())
                   : SliverGrid(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 2,
@@ -679,33 +915,35 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                         crossAxisSpacing: 13,
                         childAspectRatio: 1.4, // 调整宽高比以避免越界
                       ),
-                      delegate: SliverChildBuilderDelegate(
-                        (context, index) {
-                          final table = data[index];
-                          final isSelected = selectedTableIds.contains(table.tableId.toString());
-                          final status = _getStatus(table.businessStatus.toInt());
-                          // 不可用、维修中、已预定的桌台不能被选择
-                          final isUnselectable = status == TableStatus.Unavailable || 
-                                                 status == TableStatus.Maintenance || 
-                                                 status == TableStatus.Reserved;
-                          
-                          return GestureDetector(
-                            onTap: isUnselectable 
-                                ? null 
-                                : () => _toggleTableSelection(table.tableId.toString()),
-                            child: Opacity(
-                              opacity: isUnselectable ? 0.5 : 1.0,
-                              child: TableCard(
-                                table: table,
-                                tableModelList: widget.menuModelList,
-                                isSelected: isSelected,
-                                isMergeMode: true,
-                              ),
+                      delegate: SliverChildBuilderDelegate((context, index) {
+                        final table = data[index];
+                        final isSelected = selectedTableIds.contains(
+                          table.tableId.toString(),
+                        );
+                        final status = _getStatus(table.businessStatus.toInt());
+                        // 不可用、维修中、已预定的桌台不能被选择
+                        final isUnselectable =
+                            status == TableStatus.Unavailable ||
+                            status == TableStatus.Maintenance ||
+                            status == TableStatus.Reserved;
+
+                        return GestureDetector(
+                          onTap: isUnselectable
+                              ? null
+                              : () => _toggleTableSelection(
+                                  table.tableId.toString(),
+                                ),
+                          child: Opacity(
+                            opacity: isUnselectable ? 0.5 : 1.0,
+                            child: TableCard(
+                              table: table,
+                              tableModelList: widget.menuModelList,
+                              isSelected: isSelected,
+                              isMergeMode: true,
                             ),
-                          );
-                        },
-                        childCount: data.length,
-                      ),
+                          ),
+                        );
+                      }, childCount: data.length),
                     ),
             ),
           ],
@@ -713,14 +951,13 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
       );
     });
   }
-  
 
   @override
   String getEmptyStateText() => context.l10n.noCanUseTable;
 
   @override
   String getNetworkErrorText() => context.l10n.networkErrorPleaseTryAgain;
-  
+
   /// 重写空状态操作按钮
   @override
   Widget? getEmptyStateAction() {
@@ -732,17 +969,12 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         backgroundColor: const Color(0xFFFF9027),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
-      child:  Text(
-        context.l10n.loadAgain,
-        style: TextStyle(fontSize: 14),
-      ),
+      child: Text(context.l10n.loadAgain, style: TextStyle(fontSize: 14)),
     );
   }
-  
+
   /// 重写网络错误状态操作按钮
   @override
   Widget? getNetworkErrorAction() {
@@ -754,14 +986,9 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         backgroundColor: const Color(0xFFFF9027),
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       ),
-      child: Text(
-        context.l10n.loadAgain,
-        style: TextStyle(fontSize: 14),
-      ),
+      child: Text(context.l10n.loadAgain, style: TextStyle(fontSize: 14)),
     );
   }
 
@@ -775,6 +1002,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
         tabDataList.add(<TableListModel>[].obs);
       }
 
+      // 关桌模式也使用 Column 结构，但底部留出抽屉空间
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -788,23 +1016,20 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: List.generate(halls.length, (index) {
-                  final hallName = halls[index].hallName ?? context.l10n.unknown;
+                  final hallName =
+                      halls[index].hallName ?? context.l10n.unknown;
                   return Row(
                     children: [
                       SizedBox(width: 12),
-                      _tabButton(
-                        hallName,
-                        index,
-                        halls[index].tableCount ?? 0,
-                      ),
+                      _tabButton(hallName, index, halls[index].tableCount ?? 0),
                     ],
                   );
                 }),
               ),
             ),
           ),
-          // 已选桌台信息显示区域
-          if (selectedTableIds.isNotEmpty)
+          // 已选桌台信息显示区域（关桌和撤桌状态下不显示）
+          if (selectedTableIds.isNotEmpty && widget.operationType != 'close' && widget.operationType != 'remove') 
             _buildSelectedTablesInfo(),
           // TabBarView
           Expanded(
@@ -814,10 +1039,339 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                 return _buildTabContent(index);
               }),
             ),
+            ),
+          // 关桌模式下，选中桌台后底部留出空间给抽屉
+          if (widget.operationType == 'close' && selectedTableIds.isNotEmpty)
+            SizedBox(height: 160),
+          // 撤桌模式下，选中桌台后底部留出空间给抽屉
+          if (widget.operationType == 'remove' && selectedTableIds.isNotEmpty)
+            SizedBox(height: 150), // 撤桌模块高度
+          ],
+        );
+      });
+    }
+
+  /// 构建底部关桌信息模块
+  Widget _buildCloseTableInfo() {
+    return Material(
+      color: Colors.transparent,
+      child: GestureDetector(
+      onTap: () {
+          // 点击底部区域本身不关闭抽屉
+        },
+        child: Stack(
+          clipBehavior: Clip.none, // 允许子元素溢出
+          children: [
+            Container(
+        width: double.infinity,
+        height: 160,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(8),
+            topRight: Radius.circular(8),
           ),
-        ],
-      );
-    });
+          boxShadow: [
+            BoxShadow(
+              color: Color(0xFF999999).withOpacity(0.1),
+              blurRadius: 10,
+              offset: Offset(0, -10),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+          children: [
+            Text(
+                  '${context.l10n.table}：',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF000000),
+              ),
+                ),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    selectedTableIds.isNotEmpty 
+                      ? (_getTableById(selectedTableIds.first)?.tableName ?? selectedTableIds.first)
+                      : '',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF000000),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 8),
+            Row(
+              children: [
+                Text(
+                  '${context.l10n.reason}:',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w400,
+                    color: Color(0xFF000000),
+                  ),
+                ),
+                SizedBox(width: 18),
+                Expanded(
+                  child: GestureDetector(
+                        onTap: () {
+                          _toggleReasonDrawer();
+                        },
+                        child: Container(
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: Color(0x33FF9027),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Color(0xFFFF9027), width: 1),
+                          ),
+                          padding: EdgeInsets.only(left: 12, right: 16),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Obx(() => Text(
+                            selectedCloseReason.value?.label ?? context.l10n.selectReason,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w400,
+                                  color: Color(0xFFFF9027),
+                                ),
+                              )),
+                              Image(
+                                image: AssetImage('assets/order_login_arrowD.webp'),
+                                width: 16,
+                                height: 16,
+                                color: Color(0xFFFF9027),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                ),
+              ],
+            ),
+            Spacer(),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [ 
+                GestureDetector(
+                  onTap: () {
+                    // 取消选中桌台
+                    setState(() {
+                      selectedTableIds.clear();
+                    });
+                  },
+                  child: Container(
+                    width: 160,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: Color(0xFF999999), width: 1),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      context.l10n.cancel,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w400,
+                        color: Color(0xFF999999),
+                      ),
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    _confirmMerge();
+                  },
+                  child: Container(
+                    width: 160,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: Color(0xFFFF9027),
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      context.l10n.confirm,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w400,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// 构建底部撤桌信息模块
+  Widget _buildRemoveTableInfo() {
+    final selectedTable = selectedTableIds.isNotEmpty ? _getTableById(selectedTableIds.first) : null;
+    final mergedTables = selectedTable?.mergedTables ?? [];
+    
+    return Material(
+                              color: Colors.transparent,
+                              child: Container(
+        width: double.infinity,
+        height: 150,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(8),
+            topRight: Radius.circular(8),
+          ),
+                                  boxShadow: [
+                                    BoxShadow(
+              color: Color(0xFF999999).withOpacity(0.1),
+                                      blurRadius: 10,
+              offset: Offset(0, -10),
+                                    ),
+                                  ],
+                                ),
+        padding: EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // 标题文字
+            Text(
+              '选择要移除的桌台',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF000000),
+              ),
+            ),
+            SizedBox(height: 15),
+            // 多选框区域
+            Expanded(
+              child: SingleChildScrollView(
+                child: Wrap(
+                  spacing: 30,
+                  runSpacing: 12,
+                  children: mergedTables.map((tableInfo) {
+                    final isSelected = selectedRemoveTableIds.contains(tableInfo.tableId);
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (isSelected) {
+                            selectedRemoveTableIds.remove(tableInfo.tableId);
+                          } else {
+                            selectedRemoveTableIds.add(tableInfo.tableId);
+                          }
+                        });
+                      },
+                      child:Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // 多选框
+                            Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                               
+                                borderRadius: BorderRadius.circular(2),
+                                
+                              ),
+                              child: isSelected
+                                  ? Image.asset('assets/reback_tabel_sel.webp', width: 16, height: 16)
+                                  : Image.asset('assets/reback_tabel_unsel.webp', width: 16, height: 16),
+                            ),
+                            SizedBox(width: 6),
+                            // 桌名
+                            Text(
+                              tableInfo.tableName,
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                color: isSelected ? Color(0xFFFF9027) : Color(0xFF000000),
+                  ),
+                ),
+              ],
+            ),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ),
+            SizedBox(height: 20),
+            // 取消和确认按钮
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    // 取消选中桌台
+                    setState(() {
+                      selectedTableIds.clear();
+                      selectedRemoveTableIds.clear();
+                    });
+                  },
+                  child: Container(
+                  width: 160,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: Color(0xFF999999), width: 1),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                      context.l10n.cancel,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w400,
+                      color: Color(0xFF999999),
+                    ),
+                  ),
+                ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    _confirmMerge();
+                  },
+                  child: Container(
+                  width: 160,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: Color(0xFFFF9027),
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                      context.l10n.confirm,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.w400,
+                      color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   /// 构建已选桌台信息显示区域
@@ -826,7 +1380,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
     const double chipHeight = 28.0; // 标签高度
     const double runSpacing = 8.0; // 行间距
     const double maxHeight = chipHeight * 3 + runSpacing * 2; // 3行的最大高度
-    
+
     return Container(
       width: double.infinity,
       margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -851,9 +1405,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
           SizedBox(height: 8),
           // 限制最大高度为3行，超过时可滚动
           ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: maxHeight,
-            ),
+            constraints: BoxConstraints(maxHeight: maxHeight),
             child: SingleChildScrollView(
               controller: _selectedTablesScrollController,
               physics: BouncingScrollPhysics(),
@@ -876,14 +1428,14 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   /// 构建单个桌台标签（可点击取消选中）
   Widget _buildTableChip(String tableId, String tableName) {
     // 不再限制桌台名称长度，改为动态调整字体大小
-    
+
     // 获取桌台状态颜色
     final table = _getTableById(tableId);
     final status = _getStatus(table?.businessStatus.toInt() ?? 0);
     final bgColor = _getStatusColor(status);
     // 空桌台用深色文字，其他状态用白色文字
-    final textColor =  Color(0xff333333) ;
-    
+    final textColor = Color(0xff333333);
+
     return GestureDetector(
       onTap: () {
         // 取消选中该桌台
@@ -918,7 +1470,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
                   } else if (tableName.length > 8) {
                     fontSize = 12;
                   }
-                  
+
                   return Text(
                     tableName,
                     style: TextStyle(
@@ -933,11 +1485,7 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
               ),
             ),
             SizedBox(width: 4),
-            Icon(
-              Icons.close,
-              size: 16,
-              color: textColor,
-            ),
+            Icon(Icons.close, size: 16, color: textColor),
           ],
         ),
       ),
@@ -993,25 +1541,24 @@ class _MergeTablesPageState extends BaseListPageState<MergeTablesPage> with Tick
   Widget _buildTabContent(int tabIndex) {
     return Obx(() {
       final data = tabDataList[tabIndex];
-      
+
       // 如果当前tab正在加载且没有数据，显示加载状态
       if (isLoading && data.isEmpty) {
         return buildLoadingWidget();
       }
-      
+
       // 判断当前tab是否有网络错误：
       // 1. 全局有错误状态
-      // 2. 当前tab没有数据 
+      // 2. 当前tab没有数据
       // 3. 当前tab不在预加载成功列表中（说明加载失败了）
-      bool currentTabHasError = hasNetworkError && 
-                               data.isEmpty && 
-                               !_preloadedTabs.contains(tabIndex);
-      
+      bool currentTabHasError =
+          hasNetworkError && data.isEmpty && !_preloadedTabs.contains(tabIndex);
+
       // 如果当前tab有网络错误，显示网络错误状态
       if (currentTabHasError) {
         return buildNetworkErrorState();
       }
-      
+
       // 无论是否有数据，都使用可刷新的网格布局
       // 这样空数据状态也能进行下拉刷新
       return _buildRefreshableGrid(data, tabIndex);

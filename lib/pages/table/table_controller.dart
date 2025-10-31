@@ -377,20 +377,12 @@ class TableControllerRefactored extends GetxController {
   }
 
   /// 跳转到并桌页面
-  Future<void> _navigateToMergePage() async {
-    // 准备所有tab的桌台数据
-    List<List<TableListModel>> allTabTables = [];
-    for (var tabData in tabDataList) {
-      allTabTables.add(tabData);
-    }
-
+  Future<void> _navigateToMergePage({String? operationType}) async {
     // 跳转到并桌页面
     final result = await Get.to(
       () => MergeTablesPage(
-        allTabTables: allTabTables,
         menuModelList: menuModelList,
-        lobbyListModel: lobbyListModel.value,
-        hasInitialNetworkError: hasNetworkError.value,
+        operationType: operationType,
       ),
     );
     
@@ -399,6 +391,11 @@ class TableControllerRefactored extends GetxController {
       logDebug('并桌页面返回，需要重新加载数据', tag: _logTag);
       await getLobbyList();
     }
+  }
+
+  /// 根据类型跳转到并桌页面（公共方法，供页面调用）
+  Future<void> navigateToMergePageWithType(String type) async {
+    await _navigateToMergePage(operationType: type);
   }
 
   /// 切换桌台选中状态

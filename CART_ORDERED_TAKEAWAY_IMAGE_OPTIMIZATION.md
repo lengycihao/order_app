@@ -73,7 +73,7 @@ RobustImageWidget(
 - **触发时机**: 订单详情数据加载完成后
 - **预加载内容**: 所有订单商品的图片和敏感物图标
 - **实现位置**: `OrderDetailPageNew._preloadOrderDetailImages()`
-
+ 
 ### 3. 预加载管理器集成
 
 使用 `ImageCacheManager` 进行异步预加载：

@@ -6,6 +6,18 @@ part of 'table_list_model.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
+MergedTableInfo _$MergedTableInfoFromJson(Map<String, dynamic> json) =>
+    MergedTableInfo(
+      tableId: _toString(json['table_id']),
+      tableName: json['table_name'] as String,
+    );
+
+Map<String, dynamic> _$MergedTableInfoToJson(MergedTableInfo instance) =>
+    <String, dynamic>{
+      'table_id': instance.tableId,
+      'table_name': instance.tableName,
+    };
+
 TableListModel _$TableListModelFromJson(Map<String, dynamic> json) =>
     TableListModel(
       hallId: _toString(json['hall_id']),
@@ -29,7 +41,9 @@ TableListModel _$TableListModelFromJson(Map<String, dynamic> json) =>
       orderAmount: _toNum(json['order_amount']),
       orderId: _toString(json['order_id']),
       mainTable: json['main_table'],
-      mergedTables: json['merged_tables'],
+      mergedTables: (json['merged_tables'] as List<dynamic>?)
+          ?.map((e) => MergedTableInfo.fromJson(e as Map<String, dynamic>))
+          .toList(),
     );
 
 Map<String, dynamic> _$TableListModelToJson(TableListModel instance) =>

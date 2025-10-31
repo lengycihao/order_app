@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:order_app/pages/table/card/table_card.dart';
 import 'package:order_app/pages/table/table_controller.dart';
 import 'package:order_app/pages/table/state/table_page_state.dart';
+import 'package:order_app/pages/table/components/table_more_options_modal_widget.dart';
 import 'package:get/get.dart';
 import 'package:lib_domain/entrity/home/table_list_model/table_list_model.dart';
 import 'package:order_app/components/skeleton_widget.dart';
@@ -277,7 +278,16 @@ class _TablePageState extends BaseListPageState<TablePage> with WidgetsBindingOb
           //     ),
           //   ),
           GestureDetector(
-            onTap: () => controller.toggleMergeMode(),
+            onTap: () {
+              // 显示更多选项弹窗
+              TableMoreOptionsModalWidget.showMoreModal(
+                context,
+                (String type) {
+                  // 根据选择的类型跳转到并桌页面
+                  controller.navigateToMergePageWithType(type);
+                },
+              );
+            },
             child: Container(
               margin: EdgeInsets.only(right: 15),
               width: 48,

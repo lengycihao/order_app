@@ -18,6 +18,26 @@ String _toString(dynamic value) {
   return '0';
 }
 
+/// 合并的桌台信息
+@JsonSerializable()
+class MergedTableInfo {
+  @JsonKey(name: 'table_id', fromJson: _toString)
+  final String tableId;
+
+  @JsonKey(name: 'table_name')
+  final String tableName;
+
+  MergedTableInfo({
+    required this.tableId,
+    required this.tableName,
+  });
+
+  factory MergedTableInfo.fromJson(Map<String, dynamic> json) =>
+      _$MergedTableInfoFromJson(json);
+
+  Map<String, dynamic> toJson() => _$MergedTableInfoToJson(this);
+}
+
 @JsonSerializable()
 class TableListModel {
   @JsonKey(name: 'hall_id', fromJson: _toString)
@@ -84,7 +104,7 @@ class TableListModel {
   final dynamic mainTable;
 
   @JsonKey(name: 'merged_tables')
-  final dynamic mergedTables;
+  final List<MergedTableInfo>? mergedTables;
 
   TableListModel({
     required this.hallId,
